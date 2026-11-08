@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+/* Warm paper, dark ink, one barber-pole red for actions. */
+:root {
+  --paper: #f6f3ee;
+  --surface: #ffffff;
+  --ink: #1d1b18;
+  --muted: #6c665d;
+  --line: #e3ddd3;
+  --accent: #b3352a;
+  --accent-ink: #ffffff;
+  --accent-soft: #f7e3df;
+  --ok: #2e6b4b;
+  --ok-soft: #e1efe7;
+  --warn: #8a5a00;
+  --warn-soft: #fbf0d9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #141311;
+    --surface: #1d1b19;
+    --ink: #f1ede6;
+    --muted: #a59e93;
+    --line: #34302b;
+    --accent: #e0574a;
+    --accent-ink: #160b09;
+    --accent-soft: #3a1c18;
+    --ok: #7cc79f;
+    --ok-soft: #17291f;
+    --warn: #f0bf63;
+    --warn-soft: #2e2412;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Large, thumb-friendly controls by default. */
+@utility btn {
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-accent text-accent-ink hover:opacity-90;
+}
+@utility btn-ghost {
+  @apply btn border border-line bg-surface text-ink hover:border-ink/40;
+}
+@utility card {
+  @apply rounded-2xl border border-line bg-surface;
+}
+@utility field {
+  @apply min-h-12 w-full rounded-xl border border-line bg-surface px-4 text-base text-ink outline-none focus:border-ink;
+}
