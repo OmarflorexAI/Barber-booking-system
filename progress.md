@@ -1,4 +1,4 @@
-# Progress: Barber Booking System
+# Progress: Barber Master (booking system)
 
 Last updated: 2026-11-07. Source of requirements: `Barbershop Booking System PRD.md`.
 
@@ -256,12 +256,52 @@ All are server functions with permission checks; screens come in U2/U3.
 | 3 | Cutoff longer than 2h makes the reminder arrive after the cutoff | Plan: warn the Owner when saving (B5) |
 | 4 | Texts while SMS registration is pending | **Decided:** go live, show the link on screen |
 | 5 | Stripe fee, negative balance and dispute rules | Not needed now: Stripe is test-only; refunds are in full |
-| 6 | Sole-proprietor texting limits (Shops without an EIN) | Open; check with Twilio during B3 |
-| 7 | Product name and booking link format | Open (working title "Barber Booking", link `/b/<shop-slug>`) |
-| 8 | Which payment provider replaces Stripe | Open; the adapter design keeps this cheap to change |
-| 9 | What exactly is wrong with the "Book now" button | Open; describe it at the start of next session |
+| 6 | Sole-proprietor texting limits (Shops without an EIN) | **Researched** (see below): sole proprietor is enough for a pilot Shop; add a daily cap guard in B1 |
+| 7 | Product name and booking link format | **Decided:** the product is **Barber Master** (app title renamed 2026-11-07). Link stays `/b/<shop-slug>` |
+| 8 | Which payment provider replaces Stripe | **Researched** (see below): leaning Square or Stripe for cards, PayPal/Venmo as an optional extra; Zelle can't be automated. Final pick in the B2 grilling |
+| 9 | "Book now" button | **Bug:** clicking it does nothing (no message, no booking). Fix first thing next session with `/diagnosing-bugs` |
 
-Questions for the Shop visits: share of walk-ins, minutes per manual booking, Telegram or WhatsApp, $39 or $59 a month.
+Questions for the Shop visits: share of walk-ins, minutes per manual booking, Telegram or WhatsApp, $39 or $59 a month, and which card reader/payment app the Shop already uses.
+
+## Research notes (2026-11-07)
+
+### Texting limits for Shops without an EIN (sole proprietor, Twilio A2P 10DLC)
+
+- **Limit:** about **1,000 message segments per day to T-Mobile users**, roughly 3,000 per day across all US carriers. It does not grow with a trust score.
+- **Speed:** 0.5 messages per second per number (Twilio changelog, March 2026).
+- **Campaigns:** reportedly 1 campaign and 1 phone number per brand. Confirm this in the Twilio Console.
+- **Shops with an EIN** use Standard registration: 2,000 to 200,000 per day to T-Mobile, depending on trust score.
+- **What a pilot Shop needs:** 40 Bookings a day × (confirmation + reminder + the odd cancel) is about 100–150 texts. A long text splits into 2–3 segments, especially in Spanish: letters like á, í, ó, ú force a smaller segment size, while ñ and é don't. That is still about 300–450 segments a day, well under 1,000.
+- **Decision for B1/B3:**
+  - Count segments per Shop per day.
+  - Warn the Platform admin at 80% of the cap, and hold extra texts rather than letting the carrier drop them.
+  - Keep templates short.
+- Sources: [Twilio A2P 10DLC brand docs](https://www.twilio.com/docs/trust-hub/registrations/a2p-10dlc-brand), [T-Mobile daily limits](https://support.twilio.com/hc/en-us/articles/1260804800549-T-Mobile-Daily-Message-Limits-for-Long-Code-Messaging-with-A2P-10DLC), [Twilio changelog, March 2026](https://www.twilio.com/en-us/changelog/increased-mms-rate-limits-for-a2p-10dlc-phone-numbers-in-the-u-s0), [Starter vs Standard registration](https://support.twilio.com/hc/en-us/articles/4407882914971-Comparision-between-Starter-and-Standard-registration-for-A2P-10DLC).
+
+### Payment provider (Zelle, PayPal, Venmo, Stripe, Square)
+
+Cost of a $30 haircut paid online (published rates; confirm on each official pricing page before deciding):
+
+| Option | Fee | On $30 | Can we automate it? |
+|---|---|---|---|
+| Stripe (cards) | 2.9% + $0.30 | ≈ $1.17 | Yes: checkout, webhooks, refunds |
+| Square (online cards) | not confirmed in this research (in person: 2.6% + $0.10) | about the same as Stripe | Yes: checkout API, webhooks, refunds |
+| PayPal checkout (also how Venmo is offered) | ≈ 3.49% + $0.49 | ≈ $1.54 | Yes, but costs more; chargebacks and disputes cost about $15–30 each |
+| Zelle | free | $0 | **No.** There is no merchant checkout API: we can't confirm a payment, hold a Slot or refund automatically. Only usable as a manual "pay the Shop by Zelle" note |
+
+Findings:
+- **Stripe is not the expensive one.** For online card payments it is among the cheapest. PayPal and Venmo cost more per payment.
+- **Zelle is free but can't power online booking.** It has no way to tell our system a payment arrived and no automatic refunds. Those two pieces are what the 10-minute hold and the full-refund rule depend on.
+- **Square is the strongest alternative to Stripe** for barbershops. Many already use Square card readers in the shop, so online and in-person money would land in one place.
+
+Recommendation:
+- Card payments: Square, if the pilot Shops already use it, otherwise Stripe.
+- PayPal/Venmo: an optional extra button later.
+- Zelle: shown only as an "in person / Zelle" note, with no automation.
+
+The Payments module is provider-neutral, so this choice stays cheap to change. Decide in the B2 grilling after asking the Shops.
+
+Sources: [NerdWallet: PayPal fees](https://www.nerdwallet.com/article/small-business/paypal-fees), [NerdWallet: payment processors](https://nerdwallet.com/business/software/learn/payment-processors), [Stripe vs Square vs PayPal (Beancount, 2026)](https://beancount.io/blog/2026/10/18/stripe-vs-square-vs-paypal-small-business-fees-payouts-hardware-guide), [Zelle for business banks (FIS)](https://www.fisglobal.com/en/products/fis-zelle), [Zelle on Shopify (community)](https://community.shopify.com/t/can-i-accept-zelle-payments-on-my-online-store/186638), [Zelle/Paze distribution (American Banker)](https://www.americanbanker.com/payments/news/early-warning-services-lands-new-distribution-for-zelle-paze).
 
 ## Out of scope for version 1
 
@@ -269,16 +309,25 @@ Marketplace, deposits, online tips, WhatsApp, walk-in queue/QR, Google Calendar 
 
 ## Tomorrow: start here
 
-1. Create the GitHub repo `Barber-booking-system` and push (commands at the bottom).
-2. Run `/setup-matt-pocock-skills`.
-3. Run `/grill-with-docs` for B1 (sending worker).
+1. If not done yet: create the GitHub repo and push (see Git below).
+2. Fix the "Book now" bug: clicking it does nothing. Use `/diagnosing-bugs`. First suspects: the form's `submit()` returns early when a step value is missing, or the bot check token is never issued, so the button submits nothing.
+3. Run `/setup-matt-pocock-skills`.
+4. Run `/grill-with-docs` for B1 (sending worker).
 
 ## Git
 
-Local repo on branch `main`. To publish to GitHub (PowerShell):
+- Local repo on branch `main`, all work committed.
+- Remote already added: `origin` → `https://github.com/OmarflorexAI/Barber-booking-system.git`.
+- As of 2026-11-07 the repo **does not exist on GitHub yet**. It could not be created from this machine: the GitHub CLI isn't installed and the GitHub connector's token expired.
 
-```powershell
-# Create an empty repo named Barber-booking-system on github.com first (no README, no .gitignore), then:
-git remote add origin https://github.com/<your-username>/Barber-booking-system.git
-git push -u origin main
-```
+To finish (PowerShell):
+
+1. Go to https://github.com/new while logged in as OmarflorexAI.
+2. Name the repo `Barber-booking-system`. Keep it Private, and don't add a README, .gitignore or license.
+3. Run:
+
+   ```powershell
+   git push -u origin main
+   ```
+
+   Git Credential Manager will open a browser window to log in the first time.
