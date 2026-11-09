@@ -101,10 +101,11 @@ export type Reporting = ReturnType<typeof createReporting>;
 /** The Shop's Clients as CSV. No access check here: the exports below check first. */
 async function clientsCsv(sql: Sql, shopId: string): Promise<string> {
   const rows = await sql<
-    { name: string; phone_e164: string; bookings: number; last_booking: string | null; sms_opt_out: boolean; blocked: boolean }[]
+    { name: string; phone_e164: string; bookings: number; no_shows: number; last_booking: string | null; sms_opt_out: boolean; blocked: boolean }[]
   >`
     select c.name, c.phone_e164, c.sms_opt_out, c.blocked,
            count(b.id)::int as bookings,
+           count(b.id) filter (where b.status = 'no_show')::int as no_shows,
            max((b.starts_at at time zone s.timezone)::date)::text as last_booking
     from public.clients c
     join public.shops s on s.id = c.shop_id
@@ -115,9 +116,9 @@ async function clientsCsv(sql: Sql, shopId: string): Promise<string> {
   `;
   const yesNo = (v: boolean) => (v ? "yes" : "no");
   const lines = [
-    "name,phone,bookings,last_booking,texts_opted_out,blocked",
+    "name,phone,bookings,no_shows,last_booking,texts_opted_out,blocked",
     ...rows.map((r) =>
-      [csvCell(r.name), r.phone_e164, String(r.bookings), r.last_booking ?? "", yesNo(r.sms_opt_out), yesNo(r.blocked)].join(","),
+      [csvCell(r.name), r.phone_e164, String(r.bookings), String(r.no_shows), r.last_booking ?? "", yesNo(r.sms_opt_out), yesNo(r.blocked)].join(","),
     ),
   ];
   return lines.join("\r\n") + "\r\n";

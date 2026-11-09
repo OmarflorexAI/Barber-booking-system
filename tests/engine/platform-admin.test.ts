@@ -235,7 +235,7 @@ describe("cancelling a Shop", () => {
     const { shopId } = await newShop();
     await platform.importClients({ userId: adminUser, shopId, csv: "name,phone\nAna,7185550101\n" });
     const csv = await platform.exportClients({ userId: adminUser, shopId, reason: "Shop cancelled, owner wants their list" });
-    expect(csv.split("\r\n")[1]).toBe("Ana,+17185550101,0,,no,no");
+    expect(csv.split("\r\n")[1]).toBe("Ana,+17185550101,0,0,,no,no");
     expect((await platform.listSupportAccess({ userId: adminUser, shopId })).map((l) => l.reason)).toContain(
       "Shop cancelled, owner wants their list",
     );

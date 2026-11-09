@@ -289,15 +289,16 @@ describe("reports", () => {
 
 describe("client export", () => {
   it("exports every Client as a spreadsheet the Owner can open safely", async () => {
-    await book(shop, { client: { name: 'Ana "Jr", Lopez', phone: "+17185550101" } });
+    const { booking: ana } = await book(shop, { client: { name: 'Ana "Jr", Lopez', phone: "+17185550101" } });
+    await sql`update public.bookings set status = 'no_show' where id = ${ana.id}`;
     await book(shop, { client: { name: "=HYPERLINK(1)", phone: "+17185550102" }, startsAt: at(TOMORROW, 11) });
 
     const csv = await reports.exportClientsCsv({ userId: owner, shopId: shop.shopId });
     const lines = csv.trim().split(/\r\n/);
-    expect(lines[0]).toBe("name,phone,bookings,last_booking,texts_opted_out,blocked");
-    expect(lines).toContain('"Ana ""Jr"", Lopez",+17185550101,1,2027-01-12,no,no');
+    expect(lines[0]).toBe("name,phone,bookings,no_shows,last_booking,texts_opted_out,blocked");
+    expect(lines).toContain('"Ana ""Jr"", Lopez",+17185550101,1,1,2027-01-12,no,no');
     // A name starting with "=" must not run as a spreadsheet formula.
-    expect(lines).toContain("'=HYPERLINK(1),+17185550102,1,2027-01-12,no,no");
+    expect(lines).toContain("'=HYPERLINK(1),+17185550102,1,0,2027-01-12,no,no");
     await expectCode(reports.exportClientsCsv({ userId: barberUser, shopId: shop.shopId }), "FORBIDDEN");
   });
 });
