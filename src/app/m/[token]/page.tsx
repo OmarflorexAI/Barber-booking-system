@@ -6,7 +6,7 @@ import { formatPhone } from "@/lib/phone";
 import { formatDateTime, formatMoney } from "@/lib/i18n/dictionaries";
 import { getDictionary } from "@/lib/i18n/server";
 import { bookingEngine } from "@/server/engine";
-import { ManageActions } from "./manage-actions";
+import { ManageActions, PayNowButton } from "./manage-actions";
 
 // The token in the URL is a credential: keep it out of search engines and referrers.
 export const metadata: Metadata = { robots: { index: false, follow: false }, referrer: "no-referrer" };
@@ -15,14 +15,15 @@ export default function ManagePage(props: PageProps<"/m/[token]">) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col gap-6 px-4 py-6">
       <Suspense fallback={<div className="h-40 animate-pulse rounded-2xl bg-line/60" />}>
-        <Manage params={props.params} />
+        <Manage params={props.params} searchParams={props.searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function Manage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+async function Manage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const [{ token }, query] = await Promise.all([params, searchParams]);
+  const justPaid = query.paid === "1";
   await connection();
   const [{ locale, t }, data] = await Promise.all([getDictionary(), bookingEngine().getBookingByToken(token, new Date())]);
 
@@ -54,6 +55,16 @@ async function Manage({ params }: { params: Promise<{ token: string }> }) {
           {formatMoney(booking.priceCents)} · {booking.paymentStatus === "paid" ? t.paid : t.payAtShop}
         </p>
       </section>
+
+      {booking.status === "pending_payment" &&
+        (justPaid ? (
+          <p className="rounded-xl bg-ok-soft px-4 py-3 text-sm text-ok">{t.paidThanks}</p>
+        ) : (
+          <>
+            <p className="text-sm text-muted">{t.holdNote}</p>
+            <PayNowButton token={token} locale={locale} />
+          </>
+        ))}
 
       {booking.status === "confirmed" && !data.canChange && (
         <p className="rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn">{t.tooLate(phone)}</p>

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { SlotPicker, type Slot } from "@/components/slot-picker";
 import { dictionaries, formatDateTime, type Locale } from "@/lib/i18n/dictionaries";
-import { cancelByTokenAction, rescheduleByTokenAction } from "./actions";
+import { cancelByTokenAction, payByTokenAction, rescheduleByTokenAction } from "./actions";
 
 export function ManageActions(props: {
   token: string;
@@ -90,5 +90,35 @@ export function ManageActions(props: {
         </div>
       )}
     </section>
+  );
+}
+
+/** A Booking still held for its online payment: go (back) to the payment page. */
+export function PayNowButton(props: { token: string; locale: Locale }) {
+  const t = dictionaries[props.locale];
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        className="btn-primary"
+        disabled={pending}
+        onClick={() =>
+          start(async () => {
+            const r = await payByTokenAction(props.token);
+            if (r.ok) window.location.assign(r.url);
+            else setError(t.errors[r.code] ?? t.errors.UNKNOWN);
+          })
+        }
+      >
+        {t.payNow}
+      </button>
+      {error && (
+        <p role="alert" className="rounded-xl bg-accent-soft px-4 py-3 text-sm text-accent">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { isBookingError } from "@/server/booking-engine";
 import { bookingEngine } from "@/server/engine";
+import { payments } from "@/server/senders";
 
 export type ManageResult = { ok: true } | { ok: false; code: string };
 
@@ -17,6 +18,22 @@ export async function cancelByTokenAction(token: string): Promise<ManageResult> 
   } catch (e) {
     if (isBookingError(e)) return { ok: false, code: e.code };
     console.error("cancel failed", e);
+    return { ok: false, code: "UNKNOWN" };
+  }
+}
+
+/** Go to the payment page for a Booking still waiting for its online payment. */
+export async function payByTokenAction(token: string): Promise<{ ok: true; url: string } | { ok: false; code: string }> {
+  if (!Token.safeParse(token).success) return { ok: false, code: "NOT_FOUND" };
+  const p = payments();
+  if (!p) return { ok: false, code: "PAYMENTS_OFF" };
+  try {
+    const data = await bookingEngine().getBookingByToken(token, new Date());
+    if (!data) return { ok: false, code: "NOT_FOUND" };
+    return { ok: true, url: (await p.startCheckout({ bookingId: data.booking.id, manageToken: token })).url };
+  } catch (e) {
+    if (isBookingError(e)) return { ok: false, code: e.code };
+    console.error("pay failed", e);
     return { ok: false, code: "UNKNOWN" };
   }
 }

@@ -26,7 +26,7 @@ export default function DayPage(props: PageProps<"/app/day">) {
 type BookingRow = {
   id: string;
   kind: "booking" | "walk_in";
-  status: "confirmed" | "cancelled" | "arrived" | "no_show";
+  status: "pending_payment" | "confirmed" | "cancelled" | "arrived" | "no_show";
   starts_at: string;
   ends_at: string;
   price_cents: number;
@@ -183,7 +183,7 @@ async function Day({ searchParams }: { searchParams: Promise<Record<string, stri
                 <p className="mt-1 text-xs text-muted">{t.status[b.status]}</p>
               </div>
             </div>
-            {b.kind === "booking" && <BookingRowActions bookingId={b.id} status={b.status} locale={locale} />}
+            {b.kind === "booking" && b.status !== "pending_payment" && <BookingRowActions bookingId={b.id} status={b.status} locale={locale} />}
           </li>
         ))}
       </ol>

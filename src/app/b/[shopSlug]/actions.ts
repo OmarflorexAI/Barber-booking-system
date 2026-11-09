@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { isBookingError } from "@/server/booking-engine";
 import { bookingEngine } from "@/server/engine";
+import { payments } from "@/server/senders";
 import { verifyTurnstile } from "@/server/turnstile";
 
 const Input = z.object({
@@ -19,7 +20,7 @@ const Input = z.object({
 });
 
 export type CreateBookingResult =
-  | { ok: true; manageToken: string; barberId: string; startsAt: string; priceCents: number }
+  | { ok: true; manageToken: string; barberId: string; startsAt: string; priceCents: number; checkoutUrl?: string }
   | { ok: false; code: string };
 
 /** The public booking form. Holds no rules itself: it checks the bot test and asks the engine. */
@@ -43,8 +44,19 @@ export async function createBookingAction(raw: z.input<typeof Input>): Promise<C
       locale: input.locale,
       now: new Date(),
     });
+    // An online Booking is only held: send the Client to pay. If that fails, the manage
+    // link still has a "Pay now" button for the rest of the hold.
+    let checkoutUrl: string | undefined;
+    if (input.paymentMethod === "online") {
+      try {
+        checkoutUrl = (await payments()?.startCheckout({ bookingId: booking.id, manageToken }))?.url;
+      } catch (e) {
+        console.error("startCheckout failed", e);
+      }
+    }
     return {
       ok: true,
+      checkoutUrl,
       manageToken,
       barberId: booking.barberId,
       startsAt: booking.startsAt.toISOString(),

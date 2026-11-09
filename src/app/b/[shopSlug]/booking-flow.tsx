@@ -65,6 +65,10 @@ export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Loc
         locale,
         turnstileToken: turnstileToken ?? undefined,
       });
+      if (r.ok && r.checkoutUrl) {
+        window.location.assign(r.checkoutUrl);
+        return;
+      }
       if (r.ok) {
         setResult(r);
         setStep("done");
