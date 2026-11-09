@@ -12,7 +12,8 @@
     "test:unit": "vitest run tests/unit",
     "test:engine": "vitest run tests/engine",
     "e2e": "playwright test",
-    "staff:add": "node --env-file=.env.local scripts/add-staff.mjs"
+    "staff:add": "node --env-file=.env.local scripts/add-staff.mjs",
+    "telegram:webhook": "node --env-file=.env.local scripts/telegram-webhook.mjs"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

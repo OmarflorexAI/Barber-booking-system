@@ -88,7 +88,12 @@ export function createReporting(sql: Sql) {
     return clientsCsv(sql, args.shopId);
   }
 
-  return { weeklyStats, dayStats, exportClientsCsv, exportClientsCsvForAdmin };
+  /** Scheduled job only (the Owner's daily email): one local day, no caller to check. */
+  async function dayStatsForScheduledJob(args: { shopId: string; date: LocalDate }): Promise<PeriodStats> {
+    return sumDays(await statsByDay(args.shopId, args.date, addDays(args.date, 1)));
+  }
+
+  return { weeklyStats, dayStats, exportClientsCsv, exportClientsCsvForAdmin, dayStatsForScheduledJob };
 }
 
 export type Reporting = ReturnType<typeof createReporting>;

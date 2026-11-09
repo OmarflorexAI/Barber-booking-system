@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { dictionaries, type Locale } from "@/lib/i18n/dictionaries";
-import { cancelAsStaffAction, setAttendanceAction, walkInAction, type StaffResult } from "./actions";
+import { cancelAsStaffAction, setAttendanceAction, telegramLinkAction, walkInAction, type StaffResult } from "./actions";
 
 function useStaffAction(locale: Locale) {
   const router = useRouter();
@@ -83,6 +83,39 @@ export function WalkInButton(props: { locale: Locale; shopId: string; barberId: 
         </button>
       </div>
       {error && <p className="text-sm text-accent">{error}</p>}
+    </div>
+  );
+}
+
+export function TelegramLinkButton(props: { locale: Locale; shopId: string; barberId: string }) {
+  const t = dictionaries[props.locale];
+  const [pending, start] = useTransition();
+  const [url, setUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <div className="flex flex-col gap-2 text-sm">
+      {url ? (
+        <a className="text-accent underline" href={url} target="_blank" rel="noreferrer">
+          {t.telegramOpen}
+        </a>
+      ) : (
+        <button
+          type="button"
+          className="btn-ghost self-start px-4 text-sm"
+          disabled={pending}
+          onClick={() =>
+            start(async () => {
+              setError(null);
+              const r = await telegramLinkAction(props.shopId, props.barberId);
+              if (r.ok) setUrl(r.url);
+              else setError(t.errors[r.code] ?? t.errors.UNKNOWN);
+            })
+          }
+        >
+          {t.telegramConnect}
+        </button>
+      )}
+      {error && <p className="text-accent">{error}</p>}
     </div>
   );
 }

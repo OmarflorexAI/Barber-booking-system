@@ -9,7 +9,7 @@ import { formatDay, formatMoney, formatTime } from "@/lib/i18n/dictionaries";
 import { getDictionary } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 import { addDays, isLocalDate, localDayRange, toLocal } from "@/server/booking-engine/time";
-import { BookingRowActions, WalkInButton } from "./day-actions";
+import { BookingRowActions, TelegramLinkButton, WalkInButton } from "./day-actions";
 
 export const metadata: Metadata = { title: "My day", robots: { index: false } };
 
@@ -154,6 +154,8 @@ async function Day({ searchParams }: { searchParams: Promise<Record<string, stri
             .map((s) => ({ id: s.service_id, name: serviceName(s.services) }))}
         />
       )}
+
+      {barber && <TelegramLinkButton locale={locale} shopId={shopId} barberId={barber.id} />}
 
       <ol className="flex flex-col gap-3">
         {(bookings ?? []).length === 0 && <li className="card p-5 text-muted">{t.noBookings}</li>}

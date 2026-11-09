@@ -1,31 +1,104 @@
 import "server-only";
-import { createDispatcher, type Senders } from "./dispatch";
+import { createAlerts, type Alerts, type ChatProvider, type EmailProvider } from "./alerts";
 import { getSql } from "./db";
+import { requireManageLinkSecret } from "./booking-engine/manage-token";
+import { createDispatcher, type Senders } from "./dispatch";
+import { createResendEmail } from "./providers/resend";
+import { createTelegramChat } from "./providers/telegram";
+import { createTwilioSms } from "./providers/twilio";
+import { createTexting, type SmsProvider, type Texting } from "./texting";
+
+/**
+ * Wires the sending worker to real providers. Each provider is used only when its
+ * keys are in the environment; otherwise a log-only stand-in prints what would have
+ * been sent, so everything can be tried locally without accounts.
+ */
+
+const env = (name: string) => process.env[name]?.trim() || undefined;
+const siteUrl = () => env("NEXT_PUBLIC_SITE_URL") ?? "http://localhost:3000";
+const isProd = process.env.NODE_ENV === "production";
 
 /** Show only the last 4 digits of a phone number in logs. */
 const maskPhone = (e164: string) => `***${e164.slice(-4)}`;
 
-/**
- * Placeholder senders until the real providers are connected:
- * texts (Twilio) in B3, Barber alerts (Telegram + Resend) in B4, refunds (payment provider) in B2.
- * They log what would have been sent, so the full flow can be watched locally.
- */
-const logSenders: Senders = {
-  async sms(m) {
-    console.info("[send:sms]", { shopId: m.shopId, bookingId: m.bookingId, to: maskPhone(m.to), template: m.template });
+const logSms: SmsProvider = {
+  async send({ to, body }) {
+    // In development the full text (with its manage link) is handy; in production it stays private.
+    console.info("[send:sms]", { to: maskPhone(to), ...(isProd ? { chars: body.length } : { body }) });
+    return { id: `log-${Date.now()}` };
   },
-  async barberAlert(m) {
-    console.info("[send:barber-alert]", { shopId: m.shopId, bookingId: m.bookingId, barberId: m.barberId, event: m.event });
+};
+const logChat: ChatProvider = {
+  async send({ chatId, text }) {
+    console.info("[send:telegram]", { chatId, text });
   },
+};
+const logEmail: EmailProvider = {
+  async send({ to, subject }) {
+    console.info("[send:email]", { recipients: to.length, subject });
+  },
+};
+
+function smsProvider(): SmsProvider {
+  const accountSid = env("TWILIO_ACCOUNT_SID");
+  const authToken = env("TWILIO_AUTH_TOKEN");
+  return accountSid && authToken ? createTwilioSms({ accountSid, authToken }) : logSms;
+}
+
+/** The real Telegram bot, or null when TELEGRAM_BOT_TOKEN is not set. */
+export function telegramBot() {
+  const botToken = env("TELEGRAM_BOT_TOKEN");
+  return botToken ? createTelegramChat({ botToken }) : null;
+}
+
+function emailProvider(): EmailProvider {
+  const apiKey = env("RESEND_API_KEY");
+  // onboarding@resend.dev only delivers to the Resend account's own address; set EMAIL_FROM
+  // to an address on a verified domain to email anyone.
+  return apiKey ? createResendEmail({ apiKey, from: env("EMAIL_FROM") ?? "Barber Master <onboarding@resend.dev>" }) : logEmail;
+}
+
+let textingModule: Texting | undefined;
+let alertsModule: Alerts | undefined;
+let dispatcher: ReturnType<typeof createDispatcher> | undefined;
+
+/** Client texts (B3). */
+export function texting(): Texting {
+  textingModule ??= createTexting({
+    sql: getSql(),
+    provider: smsProvider(),
+    config: {
+      siteUrl: siteUrl(),
+      manageLinkSecret: requireManageLinkSecret(process.env.MANAGE_LINK_SECRET),
+      defaultFrom: env("TWILIO_FROM_NUMBER") ?? "+15005550006", // Twilio's test "from" number
+      dailySegmentCap: Number(env("SMS_DAILY_SEGMENT_CAP") ?? 900),
+    },
+  });
+  return textingModule;
+}
+
+/** Barber alerts, Telegram linking and the Owner's daily email (B4). */
+export function alerts(): Alerts {
+  alertsModule ??= createAlerts({
+    sql: getSql(),
+    chat: telegramBot() ?? logChat,
+    email: emailProvider(),
+    config: { siteUrl: siteUrl(), botUsername: env("TELEGRAM_BOT_USERNAME") ?? "your_bot" },
+  });
+  return alertsModule;
+}
+
+const senders: Senders = {
+  sms: (m) => texting().send(m),
+  barberAlert: (m) => alerts().send(m),
   async refund(r) {
+    // Refunds go to the payment provider in B2.
     console.info("[send:refund]", r);
   },
 };
 
-let dispatcher: ReturnType<typeof createDispatcher> | undefined;
-
 /** The app-wide sending worker. */
 export function sendingWorker() {
-  dispatcher ??= createDispatcher({ sql: getSql(), senders: logSenders });
+  dispatcher ??= createDispatcher({ sql: getSql(), senders });
   return dispatcher;
 }

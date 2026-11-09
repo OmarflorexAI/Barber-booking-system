@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isBookingError } from "@/server/booking-engine";
 import { bookingEngine } from "@/server/engine";
+import { alerts } from "@/server/senders";
 
 export type StaffResult = { ok: true } | { ok: false; code: string };
 
@@ -42,4 +43,24 @@ export async function cancelAsStaffAction(bookingId: string): Promise<StaffResul
 export async function walkInAction(shopId: string, barberId: string, serviceId: string): Promise<StaffResult> {
   if (![shopId, barberId, serviceId].every((v) => Id.safeParse(v).success)) return { ok: false, code: "INVALID_INPUT" };
   return run((userId) => bookingEngine().logWalkIn({ userId, shopId, barberId, serviceId, now: new Date() }));
+}
+
+/** A one-time Telegram link for the Barber's booking alerts (a Barber for themselves; the Owner for anyone). */
+export async function telegramLinkAction(shopId: string, barberId: string): Promise<{ ok: true; url: string } | { ok: false; code: string }> {
+  if (![shopId, barberId].every((v) => Id.safeParse(v).success)) return { ok: false, code: "INVALID_INPUT" };
+  const userId = await currentUserId();
+  if (!userId) return { ok: false, code: "FORBIDDEN" };
+  try {
+    return { ok: true, url: (await alerts().createTelegramLink({ userId, shopId, barberId })).url };
+  } catch (e) {
+    if (isBookingError(e)) return { ok: false, code: e.code };
+    console.error("telegram link failed", e);
+    return { ok: false, code: "UNKNOWN" };
+  }
+}
+
+/** Stop Telegram alerts for a Barber (they then come by email). */
+export async function telegramUnlinkAction(shopId: string, barberId: string): Promise<StaffResult> {
+  if (![shopId, barberId].every((v) => Id.safeParse(v).success)) return { ok: false, code: "INVALID_INPUT" };
+  return run((userId) => alerts().unlinkTelegram({ userId, shopId, barberId }));
 }
