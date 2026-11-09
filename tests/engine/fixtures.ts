@@ -100,10 +100,10 @@ export async function book(
   });
 }
 
-/** A signed-in staff user. Inserted straight into auth.users (test-only). */
 /** Logins made for each test Shop, so dropShop also deletes ones a test removed from the Shop. */
 const usersByShop = new Map<string, Set<string>>();
 
+/** A signed-in staff user. Inserted straight into auth.users (test-only). */
 export async function makeUser(shopId: string, role: "owner" | "barber", barberId?: string) {
   const id = randomUUID();
   if (!usersByShop.has(shopId)) usersByShop.set(shopId, new Set());
