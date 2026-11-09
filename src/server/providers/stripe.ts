@@ -4,7 +4,9 @@ import { InvalidWebhook, type PaymentEvent, type PaymentProvider } from "@/serve
 /**
  * Stripe (test mode) behind the provider-neutral PaymentProvider port, through
  * fetch (no SDK). Stripe Connect with direct charges: each payment is made on the
- * Shop's own account (the `Stripe-Account` header). Errors never include keys.
+ * Shop's own account (the `Stripe-Account` header). Shops get Standard accounts: Stripe
+ * runs their setup and the full Stripe Dashboard, where they can also refund by hand.
+ * Errors never include keys.
  */
 
 const API = "https://api.stripe.com/v1";
@@ -83,12 +85,7 @@ export function createStripePayments(cfg: { secretKey: string; webhookSecret: st
     async createAccountLink({ accountId, shopId, returnUrl, refreshUrl }) {
       let id = accountId;
       if (!id) {
-        const account = await call<{ id: string }>("POST", "/accounts", {
-          type: "express",
-          country: "US",
-          capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
-          metadata: { shop_id: shopId },
-        });
+        const account = await call<{ id: string }>("POST", "/accounts", { type: "standard", country: "US", metadata: { shop_id: shopId } });
         id = account.id;
       }
       const link = await call<{ url: string }>("POST", "/account_links", {
