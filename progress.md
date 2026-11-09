@@ -4,7 +4,9 @@ Last updated: 2026-11-09. Source of requirements: `Barbershop Booking System PRD
 
 ## Where we are
 
-Phase 1 (the core slice) is **done and verified**. On 2026-11-09 the "Book now" bug was fixed, and **B1 (sending worker)**, **B5 (Owner tools + reporting)** and **B6 (Platform admin backend)** were built and reviewed. Agreed order from here: B3/B4 (connect texts, alerts, email) → B2 (payments, last) → talk about a landing page → UI.
+Phase 1 (the core slice) is **done and verified**. On 2026-11-09 the "Book now" bug was fixed, and **B1 (sending worker)**, **B5 (Owner tools + reporting)** and **B6 (Platform admin backend)** were built and reviewed. Later the same day **B3 (client texts)** and **B4 (alerts + daily email)** were built and reviewed; they run on log-only stand-ins until the Twilio, Telegram and Resend keys are in `.env.local`. Agreed order from here: plug in the real keys → B2 (payments, last) → talk about a landing page → UI.
+
+Verified on 2026-11-09 (after B3/B4): `npm test` 120 passed (8 files), `npm run e2e` 4 passed, typecheck and lint clean. On the dev server the sending worker and the daily job run cleanly; both webhooks refuse unsigned requests.
 
 Verified on 2026-11-09 (after B6): `npm test` 106 passed (5 files), typecheck and lint clean. `/api/cron/daily` returns 401 without the secret and `{"purged":{"shops":0}}` with it.
 
@@ -186,7 +188,24 @@ Decisions already made: 10-minute hold; reschedule keeps payment only if paid on
 - **Accounts:** Stripe test account with Connect enabled, plus the Stripe CLI for local webhooks.
 - Stories: 30, 31, 40, 44, 84, 86; payment parts of 1–28.
 
-### B3: Client texts (Twilio)
+### B3: Client texts (Twilio) — DONE 2026-11-09 (waiting on real keys)
+
+What was built:
+- **`src/server/texting`**: `createTexting({ sql, provider, config, clock })`.
+  - `send` writes the text in the Client's language (`bookings.locale`, set by the booking form), with their manage link, sends it and logs it in `sms_log`.
+  - Templates (`templates.ts`): confirmation, reminder, cancelled by the shop, time changed; English and Spanish. All carry STOP wording and fit in 2 segments. Spanish dates drop accents ("sab"), because one accent would switch the whole text to the 70-character alphabet.
+  - **Daily limit:** 900 segments per Shop per local day (`SMS_DAILY_SEGMENT_CAP`). Over it the text waits until the Shop's next day (`RetryLater` in the dispatcher; the wait doesn't use up retries). A warning is logged at 80%.
+  - `handleReply`: STOP-type words opt the number out, START-type words opt it back in, for every Shop texting from that number.
+- **Manage links** are now an HMAC of the Booking id with `MANAGE_LINK_SECRET` (in `.env.local`, never change it once live), so the reminder can rebuild the link. Bookings made before 2026-11-09 evening have old random links; their reminders would carry a link that doesn't open (dev data only).
+- **Twilio adapter** (`src/server/providers/twilio.ts`, fetch, no SDK) and **`POST /api/twilio/inbound`** (checks Twilio's signature against `NEXT_PUBLIC_SITE_URL`).
+- **Tests:** `tests/engine/texting.test.ts` (4) and `tests/unit/twilio-signature.test.ts` (2).
+- **Simplified on purpose:**
+  - One platform Twilio account with an optional per-Shop sending number (`shops.sms_from_number`), instead of a subaccount per Shop.
+  - Twilio's Advanced Opt-Out sends the STOP/START/HELP replies (keep it on for the number).
+  - The refund notice text comes with B2 payments.
+  - Two workers running at the very same moment could go a text or two over the cap (no lock); a text can repeat if the log insert fails after sending (at-least-once, like all sends).
+
+Original plan:
 
 - **Adapter:** `sendSms` adapter using the Shop's Twilio subaccount (stored per Shop), with a send log per Shop.
 - **Templates:** English and Spanish versions of:
@@ -202,7 +221,23 @@ Decisions already made: 10-minute hold; reschedule keeps payment only if paid on
 - **Accounts:** Twilio account. Per-Shop A2P 10DLC registration is a slow, real-world process: start it early for pilot Shops.
 - Stories: 44–56 (Client text parts), 65.
 
-### B4: Barber and Owner alerts (Telegram + Resend)
+### B4: Barber and Owner alerts (Telegram + Resend) — DONE 2026-11-09 (waiting on real keys)
+
+What was built:
+- **`src/server/alerts`**: `createAlerts({ sql, chat, email, config, clock })`.
+  - `send`: new, cancelled, moved and paid alerts to the Barber's Telegram, with a link to `/app/day?date=...`. If Telegram isn't linked or fails: email to the Barber's login, or to the Owner when the Barber has no login.
+  - `createTelegramLink` (single-use, 24 hours; a Barber for themselves, the Owner for anyone in the Shop), `unlinkTelegram`, `handleTelegramUpdate` ("/start <token>").
+  - `sendDailySummaries`: yesterday's online bookings, walk-ins, no-shows and minutes saved to each Shop's Owners, from 7:00 Shop time, once per day. A failing Shop is retried next run and doesn't stop the others.
+- **Telegram adapter** + **`POST /api/telegram/webhook`** (checks `TELEGRAM_WEBHOOK_SECRET`, always answers 200). `npm run telegram:webhook -- https://public-address` registers it and prints the bot's username.
+- **Resend adapter** (fetch). Without a verified domain, Resend only delivers to the account's own email.
+- **`/api/cron/daily`** now sends the daily email and runs the 30-day deletion (independently). Schedule it at 11:00 and 12:00 UTC so 7:00 New York works in summer and winter.
+- **Day view:** a small "Get booking alerts on Telegram" button (link only; the QR code comes with the UI phase). `telegramUnlinkAction` exists for the UI.
+- **Wiring** (`src/server/senders.ts`): each provider is used only when its keys are set; otherwise it prints to the server log.
+- **Migration** `20261110090000_messaging.sql`: `bookings.locale`, `shops.sms_from_number`, `shops.daily_email_last_date`, `sms_log`, `barber_telegram` (server-only tables).
+- **Tests:** `tests/engine/alerts.test.ts` (6), plus dispatcher tests for "hold until" and "Booking deleted".
+- **Still to do (needs you):** move Supabase login emails to Resend SMTP (Supabase dashboard > Authentication > Emails > SMTP: host `smtp.resend.com`, port 465, user `resend`, password = the Resend API key). Alerts are English only for now.
+
+Original plan:
 
 - **Telegram linking:**
   1. The Barber gets a one-time deep link (`t.me/<bot>?start=<token>`), shown as a link and a QR code.
@@ -400,8 +435,8 @@ Marketplace, deposits, online tips, WhatsApp, walk-in queue/QR, Google Calendar 
 
 ## Tomorrow: start here
 
-1. Create the accounts (Twilio, Telegram bot, Resend) and paste their keys into `.env.local` only (never into chat). See "Accounts to create".
-2. B3 (Twilio texts) and B4 (Telegram alerts + Resend email), plugged into the `Senders` port.
+1. Paste the keys into `.env.local` only (never into chat): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `RESEND_API_KEY` (`.env.example` lists them). Then test each provider for real; the webhooks need a public address (deploy, or a tunnel).
+2. Move the login emails to Resend SMTP (see B4).
 3. B2 payments last (Stripe test mode).
 4. Talk about whether to build a landing page, then the dashboards and UI (U1–U5).
 
