@@ -1,17 +1,9 @@
-import { timingSafeEqual } from "node:crypto";
 import { connection, type NextRequest } from "next/server";
+import { cronAuthorized } from "@/server/cron-auth";
 import { sendingWorker } from "@/server/senders";
 
 /** Stop draining after this long so one run stays well inside the function time limit. */
 const BUDGET_MS = 50_000;
-
-function authorized(request: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false; // fail closed: no secret configured, no access
-  const got = Buffer.from(request.headers.get("authorization") ?? "");
-  const want = Buffer.from(`Bearer ${secret}`);
-  return got.length === want.length && timingSafeEqual(got, want);
-}
 
 /**
  * Scheduled job: queue due reminders and drain the outbox (texts, Barber alerts, refunds).
@@ -20,7 +12,7 @@ function authorized(request: NextRequest): boolean {
  */
 export async function GET(request: NextRequest) {
   await connection();
-  if (!authorized(request)) return Response.json({ code: "UNAUTHORIZED" }, { status: 401 });
+  if (!cronAuthorized(request)) return Response.json({ code: "UNAUTHORIZED" }, { status: 401 });
 
   const started = Date.now();
   const total = { sent: 0, skipped: 0, retrying: 0, failed: 0 };
