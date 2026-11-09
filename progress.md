@@ -6,14 +6,15 @@ Last updated: 2026-11-09. Source of requirements: `Barbershop Booking System PRD
 
 **The backend (B1–B6) is built and tested.** What's left is trying it with the real services, a few dashboard settings, and one decision (see "Needs you" below). Then: talk about a landing page, then the UI.
 
+Verified on 2026-11-09 (evening, after the no-show rule): `npm test` 138 passed (10 files), `npm run e2e` 4 passed, typecheck and lint clean.
+
 Verified on 2026-11-09 (evening, after the provider setup): `npm test` 135 passed (10 files), `npm run e2e` 4 passed, typecheck and lint clean; a test run now leaves no test logins behind. A real signed Stripe test event went Stripe → `npm run stripe:listen` → `/api/payments/webhook` and was answered 200.
 
 ### Needs you (as of 2026-11-09)
 
-1. **Test a real payment.** First sign in: run `npm run staff:add -- <your email> demo-shop owner` (Claude Code isn't allowed to grant logins), then request the link at `/login`. Then connect the demo shop to Stripe in your normal browser: open `/api/payments/onboard?shop=36587674-9e01-4447-9182-48b76203fc85` and use Stripe's test data. Stripe's CAPTCHA has to be solved by a person (an automated browser kept getting new puzzles). After that, Claude can do the test payment and refund.
+1. **Test a real payment.** Sign-in is set up: `samirflores13@gmail.com` is an owner of the demo shop, and a sign-in link was sent at 22:04 UTC (open it in Brave, or request a new one at `/login`). Then connect the demo shop to Stripe in your normal browser: open `/api/payments/onboard?shop=36587674-9e01-4447-9182-48b76203fc85` and use Stripe's test data. Stripe's CAPTCHA has to be solved by a person (an automated browser kept getting new puzzles). After that, Claude can do the test payment and refund.
 2. **Twilio and Telegram keys.** All five are empty in `.env.local`, so texts and Barber alerts go to the server log for now.
-3. **Login emails through Resend.** Supabase's own sender allows only a few emails an hour, which will block sign-ins. It's one form in the Supabase dashboard; the values are under B4 below.
-4. **No-shows.** Recommended: no new rules, plus a per-client no-show count in the client export. Waiting on your yes or no.
+3. **Login emails through Resend.** Supabase's own sender allows only a few emails an hour, which will block sign-ins. It's one form in the Supabase dashboard (values under B4 below). Until a domain is verified in Resend, these emails only reach the Resend account's own address.
 
 ### Done on 2026-11-09 (evening)
 
@@ -25,6 +26,7 @@ Verified on 2026-11-09 (evening, after the provider setup): `npm test` 135 passe
 - **Fixed: every page reloaded about 10 times a second in dev.** Cause: the dev build cache (`.next`) got out of sync after the dev server was force-stopped several times, so each reconnect got "HMR hash mismatch, reload". Fix: stop the server, delete `.next`, start again. Do the same if it ever comes back.
 - **Console error "attributes didn't match" on `<body>`:** a browser extension adds `location="localhost"` to `<body>`. Added `suppressHydrationWarning` to `<body>` only (`src/app/layout.tsx`); mismatches inside pages still show. It couldn't be reproduced in a headless browser, so confirm in your browser.
 - **Payments review fix:** a paid event whose checkout id didn't match the one saved on the Booking was ignored, which would have kept the money with no booking and no refund. Now every paid event for an existing Booking confirms it or refunds it in full (test added).
+- **No-show rule (decided 2026-11-09, "keep it easy, no stress for me or the clients"):** a phone with **2 no-shows in the last 90 days pays online to book** at Shops that take online payments. Nobody is blocked, nobody has to manage it, and it clears itself as the no-shows age past 90 days. At a Shop without online payments nothing changes. The booking form explains it kindly and switches the client to "Pay online" for them (`PAY_ONLINE_REQUIRED`). The client export has a new `no_shows` column. Settings: `RULES.noShowLimit` and `RULES.noShowWindowDays`. Tests in `tests/engine/payments.test.ts`.
 - **Test cleanup:** tests that removed a Barber left that login behind (39 had piled up). The fixtures now delete every login they made for a Shop, and the 39 orphans were deleted (none belonged to a Shop, a Barber or a Platform admin).
 
 Verified on 2026-11-09 (after B2): `npm test` 134 passed (10 files), `npm run e2e` 4 passed, typecheck and lint clean. Without Stripe keys the webhook answers 503 and onboarding 503; the return route lands on `/app/day?payments=pending`.
@@ -279,7 +281,19 @@ What was built:
 - **Wiring** (`src/server/senders.ts`): each provider is used only when its keys are set; otherwise it prints to the server log.
 - **Migration** `20261110090000_messaging.sql`: `bookings.locale`, `shops.sms_from_number`, `shops.daily_email_last_date`, `sms_log`, `barber_telegram` (server-only tables).
 - **Tests:** `tests/engine/alerts.test.ts` (6), plus dispatcher tests for "hold until" and "Booking deleted".
-- **Still to do (needs you):** move Supabase login emails to Resend SMTP (Supabase dashboard > Authentication > Emails > SMTP: host `smtp.resend.com`, port 465, user `resend`, password = the Resend API key). Alerts are English only for now.
+- **Still to do (needs you):** move Supabase login emails to Resend SMTP. Supabase dashboard > project `barber-booking-dev` > Authentication > Emails > SMTP Settings > turn on **Enable custom SMTP**:
+
+  | Field | Value |
+  |---|---|
+  | Sender email | `onboarding@resend.dev` for now (only delivers to the Resend account's own email); later an address on your verified domain, e.g. `login@yourdomain.com` |
+  | Sender name | `Barber Master` |
+  | Host | `smtp.resend.com` |
+  | Port number | `465` |
+  | Minimum interval per user | `60` seconds (default) |
+  | Username | `resend` |
+  | Password | your Resend API key (`RESEND_API_KEY` in `.env.local`, starts with `re_`) |
+
+  Then Authentication > Rate Limits: raise "emails sent per hour" (custom SMTP starts at 30). Alerts are English only for now.
 
 Original plan:
 
@@ -429,7 +443,7 @@ Original plan:
 | 7 | Product name and booking link format | **Decided:** the product is **Barber Master** (app title renamed 2026-11-07). Link stays `/b/<shop-slug>` |
 | 8 | Which payment provider replaces Stripe | **Researched** (see below): leaning Square or Stripe for cards, PayPal/Venmo as an optional extra; Zelle can't be automated. Final pick in the B2 grilling |
 | 9 | "Book now" button | **Fixed 2026-11-09** (the button now waits for the bot check, and errors scroll into view) |
-| 10 | No-shows | **Recommended (2026-11-09, still waiting on the user):** keep it simple, no new rules. Barbers mark no-shows in the day view; the Owner's stats show them separately. Easiest next step: a no-show count per client in the client export so the Owner can block repeat offenders. A no-show fee waits for payments (B2). |
+| 10 | No-shows | **Decided 2026-11-09:** 2 no-shows in 90 days → that phone pays online to book (only at Shops with online payments); clears itself; `no_shows` column in the client export. Barbers still mark no-shows in the day view. |
 
 Questions for the Shop visits: share of walk-ins, minutes per manual booking, Telegram or WhatsApp, $39 or $59 a month, and which card reader/payment app the Shop already uses.
 
@@ -479,7 +493,7 @@ Marketplace, deposits, online tips, WhatsApp, walk-in queue/QR, Google Calendar 
 
 ## Tomorrow: start here
 
-1. Work through "Needs you" at the top: sign in, connect the demo shop to Stripe, then Claude runs the test payment and refund (start `npm run dev` and `npm run stripe:listen` first).
+1. Work through "Needs you" at the top: sign in (link sent), connect the demo shop to Stripe, then Claude runs the test payment and refund (start `npm run dev` and `npm run stripe:listen` first).
 2. Add the Twilio and Telegram keys to `.env.local` (never into chat) and restart `npm run dev`; their webhooks need a public address (deploy, or a tunnel).
 3. Move the login emails to Resend SMTP (see B4), and send a test email through Resend (to the Resend account's own address until a domain is verified).
 4. Talk about whether to build a landing page, then the dashboards and UI (U1–U5).
