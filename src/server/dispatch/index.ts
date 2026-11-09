@@ -7,6 +7,20 @@ import type { Sql } from "postgres";
  * `Senders` port, so tests use fakes and providers can be swapped.
  */
 
+/**
+ * Thrown by a sender that can't send yet but will be able to later (e.g. the Shop's
+ * daily text limit is used up): the row waits until `retryAt` and keeps its retries.
+ */
+export class RetryLater extends Error {
+  constructor(
+    message: string,
+    readonly retryAt: Date,
+  ) {
+    super(message);
+    this.name = "RetryLater";
+  }
+}
+
 export type SmsTemplate = "confirmation" | "reminder" | "cancelled" | "rescheduled";
 
 export type SmsMessage = { shopId: string; bookingId: string; to: string; template: SmsTemplate };
@@ -114,6 +128,9 @@ export function createDispatcher({ sql, senders }: { sql: Sql; senders: Senders 
 
   async function deliver(row: OutboxRow): Promise<"sent" | "skipped"> {
     const p = row.payload;
+    // The Booking was deleted (Shop data removed, test cleanup): nothing left to tell anyone.
+    // Refund requests still go out: money owed doesn't disappear with the row.
+    if (!row.booking_id && row.type !== "refund_requested") return "skipped";
     switch (row.type) {
       case "barber_alert": {
         const { event, barberId, ...details } = p as { event: BarberAlert["event"]; barberId: string };
@@ -157,7 +174,14 @@ export function createDispatcher({ sql, senders }: { sql: Sql; senders: Senders 
         result[outcome] += 1;
       } catch (e) {
         const error = (e instanceof Error ? e.message : String(e)).slice(0, 500);
-        if (row.attempts >= MAX_ATTEMPTS) {
+        if (e instanceof RetryLater) {
+          // Not a failure: give the attempt back and wait.
+          await sql`
+            update public.outbox set next_attempt_at = ${e.retryAt}, attempts = attempts - 1, last_error = ${error}
+            where id = ${row.id}
+          `;
+          result.retrying += 1;
+        } else if (row.attempts >= MAX_ATTEMPTS) {
           await sql`update public.outbox set status = 'failed', processed_at = ${args.now}, last_error = ${error} where id = ${row.id}`;
           result.failed += 1;
         } else {

@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createDispatcher, type Senders } from "@/server/dispatch";
+import { createDispatcher, RetryLater, type Senders } from "@/server/dispatch";
 import { at, book, dropShop, engine, makeShop, makeUser, minutesBefore, NOW, sql, TOMORROW, uniquePhone, type TestShop } from "./fixtures";
 
 /**
@@ -81,6 +81,15 @@ describe("dispatcher", () => {
     expect(result).toMatchObject({ skipped: 2, failed: 0 });
   });
 
+  it("skips messages about a Booking that was deleted before the worker ran", async () => {
+    const { booking } = await book(shop);
+    await sql`delete from public.bookings where id = ${booking.id}`;
+
+    const result = await run();
+    expect(fake.sent).toEqual([]);
+    expect(result).toMatchObject({ skipped: 1, retrying: 0, failed: 0 });
+  });
+
   it("retries a failed send later, then succeeds once the provider is back", async () => {
     await book(shop);
     fake.failing.add("barberAlert");
@@ -91,6 +100,19 @@ describe("dispatcher", () => {
     fake.failing.delete("barberAlert");
     expect(await run(minutesAfter(NOW, 1))).toMatchObject({ sent: 1 });
     expect(fake.sent).toHaveLength(1);
+  });
+
+  it("holds a message until the time the sender asks for, without using up its retries", async () => {
+    await book(shop);
+    const tomorrow = minutesAfter(NOW, 24 * 60);
+    fake.senders.barberAlert = async () => {
+      throw new RetryLater("daily limit reached", tomorrow);
+    };
+    for (const min of [0, 1, 6, 36, 600]) {
+      expect(await run(minutesAfter(NOW, min))).toMatchObject({ failed: 0 });
+    }
+    const [row] = await sql`select status, attempts, next_attempt_at from public.outbox where shop_id = ${shop.shopId} and type = 'barber_alert'`;
+    expect(row).toMatchObject({ status: "pending", attempts: 0, next_attempt_at: tomorrow });
   });
 
   it("gives up after 4 attempts and records the failure for the admin view", async () => {
