@@ -54,7 +54,7 @@ async function payOnline(over: Parameters<typeof book>[1] = {}) {
   return { booking, manageToken, url };
 }
 
-const paidEvent = (bookingId: string, id = `evt_${bookingId}`): PaymentEvent => ({
+const paidEvent = (bookingId: string, id = `evt_${bookingId}`): Extract<PaymentEvent, { kind: "checkout_completed" }> => ({
   id,
   kind: "checkout_completed",
   bookingId,
@@ -104,6 +104,12 @@ describe("paying online", () => {
     expect(await webhook(paidEvent(booking.id))).toBe("confirmed");
     expect(await webhook(paidEvent(booking.id))).toBe("duplicate");
     expect(await outboxTypes(booking.id)).toEqual(["barber_alert", "sms_confirmation"]);
+  });
+
+  it("never keeps a payment silently, even when the checkout on the Booking is a different one", async () => {
+    const { booking } = await payOnline();
+    expect(await webhook({ ...paidEvent(booking.id), checkoutRef: "cs_other" })).toBe("confirmed");
+    expect(await bookingRow(booking.id)).toMatchObject({ status: "confirmed", payment_status: "paid" });
   });
 
   it("rejects a webhook that the provider didn't sign", async () => {

@@ -135,9 +135,15 @@ export function createPayments({ sql, engine, provider, config, clock = () => ne
         await tx`update public.shops set payments_enabled = ${event.ready} where payment_account_id = ${event.accountId}`;
         return "account_updated";
       }
-      const [b] = await tx<{ checkout_ref: string | null }[]>`select checkout_ref from public.bookings where id = ${event.bookingId}`;
-      if (!b || b.checkout_ref !== event.checkoutRef) {
-        console.warn("[payments] payment for an unknown checkout", { bookingId: event.bookingId });
+      // The event is signed by the provider and the booking id is one we set on the checkout,
+      // so any paid checkout for a Booking goes through recordOnlinePayment: confirmed, or
+      // refunded in full. Never keep a payment silently.
+      const [b] = await tx`select 1 from public.bookings where id = ${event.bookingId}`;
+      if (!b) {
+        console.error("[payments] payment for a booking that no longer exists; refund it by hand", {
+          bookingId: event.bookingId,
+          paymentRef: event.paymentRef,
+        });
         return "ignored";
       }
       return engine.recordOnlinePayment({ bookingId: event.bookingId, paymentRef: event.paymentRef, now }, tx);
