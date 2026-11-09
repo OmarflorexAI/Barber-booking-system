@@ -4,6 +4,10 @@ Last updated: 2026-11-09. Source of requirements: `Barbershop Booking System PRD
 
 ## Where we are
 
+**The backend (B1–B6) is done.** B2 (payments) was finished on 2026-11-09; it runs only when the Stripe test keys are in `.env.local`. Next: plug in the real keys and try each provider, then talk about a landing page, then the UI.
+
+Verified on 2026-11-09 (after B2): `npm test` 134 passed (10 files), `npm run e2e` 4 passed, typecheck and lint clean. Without Stripe keys the webhook answers 503 and onboarding 503; the return route lands on `/app/day?payments=pending`.
+
 Phase 1 (the core slice) is **done and verified**. On 2026-11-09 the "Book now" bug was fixed, and **B1 (sending worker)**, **B5 (Owner tools + reporting)** and **B6 (Platform admin backend)** were built and reviewed. Later the same day **B3 (client texts)** and **B4 (alerts + daily email)** were built and reviewed; they run on log-only stand-ins until the Twilio, Telegram and Resend keys are in `.env.local`. Agreed order from here: plug in the real keys → B2 (payments, last) → talk about a landing page → UI.
 
 Verified on 2026-11-09 (after B3/B4): `npm test` 120 passed (8 files), `npm run e2e` 4 passed, typecheck and lint clean. On the dev server the sending worker and the daily job run cleanly; both webhooks refuse unsigned requests.
@@ -160,7 +164,23 @@ Goal: every row the engine writes to `outbox` and `scheduled_messages` actually 
 - **Done when:** a booking made on `/b/demo-shop` produces fake "sent" records, and the tests are green.
 - Stories: 81, 82, 77 (failure data).
 
-### B2: Payments (Stripe test mode, provider-neutral)
+### B2: Payments (Stripe test mode, provider-neutral) — DONE 2026-11-09 (waiting on Stripe test keys)
+
+**What was built:**
+- Migration `20261110110000_payments.sql`: `shops.payment_account_id` (renamed) and `payments_enabled`; booking status `pending_payment` with `hold_expires_at`, `checkout_ref`, `payment_ref`; `cancelled_by = 'system'`; `payment_events` (server-only); outbox type `refund_failed`.
+- `src/server/payments/index.ts`: the provider-neutral module (`startOnboarding`, `finishOnboarding`, `startCheckout`, `handleWebhook`, `releaseExpiredHolds`, `refund`) behind the `PaymentProvider` port. `src/server/providers/stripe.ts` is the only file that knows Stripe (fetch, no SDK; Connect express accounts with direct charges; signature check with 5-minute tolerance).
+- Engine: an online Booking is created as `pending_payment` for 10 minutes and nobody is told; the paid webhook confirms it and sends the alert, text and reminder. A payment after the hold ran out is refunded in full. Held Bookings count toward the unpaid limit, block the time, can't be marked arrived, and aren't in the stats.
+- Dispatcher: a refund that keeps failing writes a `refund_failed` row; the Owners get an email to refund by hand.
+- Routes: `POST /api/payments/webhook`, `GET /api/payments/onboard?shop=<id>` (Owner), `GET /api/payments/return`. `/api/cron/dispatch` releases expired holds first.
+- UI: online payers go straight to checkout; the manage page shows "Waiting for payment" with a **Pay now** button and a thank-you after paying.
+
+**To try it (test mode):**
+1. Stripe dashboard in test mode: turn on Connect. Copy the test secret key into `STRIPE_SECRET_KEY`.
+2. Install the Stripe CLI and run `stripe listen --forward-connect-to localhost:3000/api/payments/webhook`; put the `whsec_...` it prints in `STRIPE_WEBHOOK_SECRET`. Restart `npm run dev`.
+3. As an Owner, open `/api/payments/onboard?shop=<shop id>` and finish Stripe's test onboarding (use its test data).
+4. Book with "pay online", pay with card `4242 4242 4242 4242`; the manage page should turn to Confirmed after a refresh.
+
+**Original plan:**
 
 Decisions already made: 10-minute hold; reschedule keeps payment only if paid online upfront; Stripe is a test placeholder; refunds always in full.
 
@@ -435,10 +455,9 @@ Marketplace, deposits, online tips, WhatsApp, walk-in queue/QR, Google Calendar 
 
 ## Tomorrow: start here
 
-1. Paste the keys into `.env.local` only (never into chat): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `RESEND_API_KEY` (`.env.example` lists them). Then test each provider for real; the webhooks need a public address (deploy, or a tunnel).
+1. Paste the keys into `.env.local` only (never into chat): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `RESEND_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (`.env.example` lists them). Restart `npm run dev`, then test each provider for real; the Twilio and Telegram webhooks need a public address (deploy, or a tunnel).
 2. Move the login emails to Resend SMTP (see B4).
-3. B2 payments last (Stripe test mode).
-4. Talk about whether to build a landing page, then the dashboards and UI (U1–U5).
+3. Talk about whether to build a landing page, then the dashboards and UI (U1–U5).
 
 ## Git
 
