@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import type postgres from "postgres";
 import type { ISql, Sql } from "postgres";
 import { normalizePhone } from "@/lib/phone";
 import { bookingWindow, computeSlots, RULES, type DayHours, type Interval } from "./availability";
@@ -147,7 +148,7 @@ async function lockBarberCalendar(db: Db, barberId: string) {
 async function writeOutbox(db: Db, shopId: string, bookingId: string | null, type: string, payload: Record<string, unknown>) {
   await db`
     insert into public.outbox (shop_id, booking_id, type, payload)
-    values (${shopId}, ${bookingId}, ${type}, ${JSON.stringify(payload)}::jsonb)
+    values (${shopId}, ${bookingId}, ${type}, ${db.json(payload as postgres.JSONValue)})
   `;
 }
 
@@ -726,21 +727,6 @@ export function createBookingEngine(sql: Sql) {
     };
   }
 
-  /** Claim due reminders exactly once, even if two cron runs overlap. */
-  async function claimDueReminders(args: { now: Date; limit?: number }) {
-    return sql<{ id: string; booking_id: string; shop_id: string; send_at: Date }[]>`
-      update public.scheduled_messages sm set sent_at = ${args.now}
-      where sm.id in (
-        select id from public.scheduled_messages
-        where sent_at is null and send_at <= ${args.now}
-        order by send_at
-        limit ${args.limit ?? 50}
-        for update skip locked
-      )
-      returning sm.id, sm.booking_id, sm.shop_id, sm.send_at
-    `;
-  }
-
   return {
     getShopCatalog,
     getAvailability,
@@ -752,7 +738,6 @@ export function createBookingEngine(sql: Sql) {
     addBarberDayOff,
     addShopClosedDay,
     getBookingByToken,
-    claimDueReminders,
   };
 }
 

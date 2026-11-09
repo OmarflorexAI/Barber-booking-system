@@ -366,18 +366,6 @@ describe("days off and closed days", () => {
   });
 });
 
-describe("reminders", () => {
-  it("are claimed exactly once even when two jobs run at the same time", async () => {
-    const { booking } = await book(shop);
-    const due = new Date(booking.startsAt.getTime() - 60 * 60_000);
-    const [a, b] = await Promise.all([engine.claimDueReminders({ now: due }), engine.claimDueReminders({ now: due })]);
-    const mine = [...a, ...b].filter((r) => r.booking_id === booking.id);
-    expect(mine).toHaveLength(1);
-    const again = await engine.claimDueReminders({ now: due });
-    expect(again.filter((r) => r.booking_id === booking.id)).toHaveLength(0);
-  });
-});
-
 describe("daylight saving time", () => {
   it("a 10:00 Booking on the March change day is stored as 14:00 UTC", async () => {
     const { booking } = await book(shop, { startsAt: at("2027-03-14", 10), now: new Date("2027-03-01T15:00:00Z") });
