@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import type { BookingEngine } from "@/server/booking-engine";
 import { SlotPicker, type Slot } from "@/components/slot-picker";
 import { Turnstile } from "@/components/turnstile";
@@ -34,6 +34,15 @@ export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Loc
   const [refreshKey, setRefreshKey] = useState(0);
   const [result, setResult] = useState<{ manageToken: string; barberId: string; startsAt: string; priceCents: number } | null>(null);
   const [pending, startTransition] = useTransition();
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  // Bot check is on when a site key is configured; until it issues a token the server would reject the booking.
+  const botCheckOn = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const botCheckDone = !botCheckOn || !!turnstileToken;
+
+  // An error must be seen where the Client is looking, even on a small, scrolled screen.
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [error]);
 
   const service = services.find((s) => s.id === serviceId) ?? null;
   const offering = barbers.filter((b) => serviceId && b.services[serviceId]);
@@ -69,6 +78,12 @@ export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Loc
     });
   }
 
+  const errorBox = (
+    <p ref={errorRef} role="alert" className="rounded-xl bg-accent-soft px-4 py-3 text-sm text-accent">
+      {error}
+    </p>
+  );
+
   const back = (to: Step) => (
     <button type="button" onClick={() => { setError(null); setStep(to); }} className="self-start text-sm text-muted underline-offset-4 hover:underline">
       ← {t.back}
@@ -85,11 +100,7 @@ export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Loc
         <LanguageToggle locale={locale} label={t.otherLang} />
       </header>
 
-      {error && step !== "done" && (
-        <p role="alert" className="rounded-xl bg-accent-soft px-4 py-3 text-sm text-accent">
-          {error}
-        </p>
-      )}
+      {error && step !== "done" && step !== "details" && errorBox}
 
       {step === "service" && (
         <section className="flex flex-col gap-3">
@@ -272,8 +283,10 @@ export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Loc
 
             <Turnstile onToken={setTurnstileToken} lang={locale} />
 
-            <button type="submit" className="btn-primary" disabled={pending}>
-              {pending ? t.booking : t.confirm}
+            {error && errorBox}
+
+            <button type="submit" className="btn-primary" disabled={pending || !botCheckDone}>
+              {pending ? t.booking : botCheckDone ? t.confirm : t.verifying}
             </button>
           </form>
         </section>

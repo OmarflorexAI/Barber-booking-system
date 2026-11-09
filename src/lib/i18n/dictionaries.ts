@@ -34,6 +34,7 @@ const en = {
   smsPending: "Text messages are not active yet for this shop. Save your booking link below.",
   confirm: "Book now",
   booking: "Booking…",
+  verifying: "Checking you're not a robot…",
   total: "Total",
   // confirmation
   booked: "You're booked!",
@@ -132,6 +133,7 @@ const es: Dictionary = {
   smsPending: "Los mensajes de texto aún no están activos en esta barbería. Guarda el enlace de tu cita.",
   confirm: "Reservar",
   booking: "Reservando…",
+  verifying: "Verificando que no eres un robot…",
   total: "Total",
   booked: "¡Listo, tienes tu cita!",
   bookedWith: "con",
