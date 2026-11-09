@@ -1,10 +1,12 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-07. Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-09. Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-Phase 1 (the core slice) is **done and verified**. Next up is the backend for the remaining phases, then the UI.
+Phase 1 (the core slice) is **done and verified**. On 2026-11-09 the "Book now" bug was fixed and **B1 (sending worker) was built**. Next: B5 (needs no outside accounts), then B2–B4 once the accounts exist.
+
+Verified on 2026-11-09: `npm test` 60 passed (3 files), `npm run e2e` 4 passed, typecheck and lint clean. `/api/cron/dispatch` delivered the 7 waiting demo-shop alerts (to the log senders).
 
 Verified on 2026-11-07:
 - `npm test`: 2 files, 53 tests passed (89s; runs against the hosted dev database).
@@ -55,7 +57,9 @@ Shell: PowerShell, from the repo root.
 
 ## Known issues to fix later
 
-- The "Book now" button on the booking form needs fixing (reported 2026-11-07; details to confirm tomorrow).
+- ~~"Book now" did nothing~~ **Fixed 2026-11-09.** Cause: pressing it before the bot check had issued its token got a "complete the security check" error, rendered at the top of the page, off-screen on a scrolled form. Now the button waits for the bot check ("Checking you're not a robot…") and errors show beside it and scroll into view. Regression test: `tests/e2e/book-now.spec.ts` (Pixel 7, 1280x800, 360x560).
+- Found and fixed while building B1: outbox payloads were stored as JSON strings instead of objects (migration `20261109181000_outbox_payload_objects.sql` repaired old rows).
+- Scheduler for go-live: Vercel cron on the free (Hobby) plan runs at most once a day; the worker needs every minute. Options at deploy time (U5): Vercel Pro, or Supabase `pg_cron` + `pg_net` calling `/api/cron/dispatch`.
 - Supabase's built-in email sender is rate-limited; login emails will move to Resend.
 
 ## Decisions for B2 (payments), from 2026-11-07
@@ -111,7 +115,27 @@ Then UI:
 
 "Stories" refers to the numbered user stories in the PRD. Each phase follows the workflow above: grill, spec, tickets, implement. The lists below are the starting point for the spec, not final tickets.
 
-### B1: Sending worker and scheduled jobs
+### B1: Sending worker and scheduled jobs — DONE 2026-11-09
+
+What was built:
+- `src/server/dispatch/index.ts`: `createDispatcher({ sql, senders })`, which exposes `run({ now, shopIds? })` and `failures()`.
+- `Senders` port: `sms`, `barberAlert`, `refund`.
+- `src/server/senders.ts`: log-only senders, until the real providers are connected in B2–B4.
+- `GET /api/cron/dispatch`: requires `Authorization: Bearer $CRON_SECRET` (the secret is in `.env.local`) and drains the outbox for up to 50 seconds.
+- Migration `20261109180000_outbox_dispatch.sql` adds:
+  - `outbox.next_attempt_at`, used both as the claim lease and the retry time
+  - a `skipped` status
+  - an `sms_reminder` type
+- How it behaves:
+  - Retries come 1, 5 and 30 minutes after a failure; the 4th failure is final and the row shows in `failures()`.
+  - Texts are skipped at send time if texts are off, the Client opted out, or the Booking was cancelled.
+  - Due reminders become outbox rows in one SQL statement.
+  - Delivery is at least once: a crash after sending but before marking the row done resends after the 5-minute lease.
+- Removed the engine's `claimDueReminders`: reminders now go only through the worker.
+- Tests: `tests/engine/dispatcher.test.ts` (8).
+- Try it locally (Git Bash): `curl -H "Authorization: Bearer <CRON_SECRET from .env.local>" http://localhost:3000/api/cron/dispatch`.
+
+Original plan:
 
 Goal: every row the engine writes to `outbox` and `scheduled_messages` actually gets delivered, exactly once, with failures visible.
 
@@ -309,25 +333,11 @@ Marketplace, deposits, online tips, WhatsApp, walk-in queue/QR, Google Calendar 
 
 ## Tomorrow: start here
 
-1. If not done yet: create the GitHub repo and push (see Git below).
-2. Fix the "Book now" bug: clicking it does nothing. Use `/diagnosing-bugs`. First suspects: the form's `submit()` returns early when a step value is missing, or the bot check token is never issued, so the button submits nothing.
-3. Run `/setup-matt-pocock-skills`.
-4. Run `/grill-with-docs` for B1 (sending worker).
+1. B5 (Owner operations + reporting): needs no outside accounts.
+2. Create the accounts (Resend, Twilio, Telegram bot, Stripe test) so B2–B4 can connect real providers to the `Senders` port.
 
 ## Git
 
 - Local repo on branch `main`, all work committed.
 - Remote already added: `origin` → `https://github.com/OmarflorexAI/Barber-booking-system.git`.
-- As of 2026-11-07 the repo **does not exist on GitHub yet**. It could not be created from this machine: the GitHub CLI isn't installed and the GitHub connector's token expired.
-
-To finish (PowerShell):
-
-1. Go to https://github.com/new while logged in as OmarflorexAI.
-2. Name the repo `Barber-booking-system`. Keep it Private, and don't add a README, .gitignore or license.
-3. Run:
-
-   ```powershell
-   git push -u origin main
-   ```
-
-   Git Credential Manager will open a browser window to log in the first time.
+- Pushed: https://github.com/OmarflorexAI/Barber-booking-system (`main` tracks `origin/main`).
