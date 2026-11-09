@@ -32,11 +32,14 @@ export type BarberAlert = {
   details: Record<string, unknown>;
 };
 export type RefundRequest = { shopId: string; bookingId: string; amountCents: number; reason: string };
+/** An automatic refund gave up after every retry: the Owner must refund by hand. */
+export type RefundFailure = { shopId: string; bookingId: string; amountCents: number; error: string };
 
 export type Senders = {
   sms(m: SmsMessage): Promise<void>;
   barberAlert(m: BarberAlert): Promise<void>;
   refund(r: RefundRequest): Promise<void>;
+  refundFailed(f: RefundFailure): Promise<void>;
 };
 
 type OutboxRow = {
@@ -129,8 +132,8 @@ export function createDispatcher({ sql, senders }: { sql: Sql; senders: Senders 
   async function deliver(row: OutboxRow): Promise<"sent" | "skipped"> {
     const p = row.payload;
     // The Booking was deleted (Shop data removed, test cleanup): nothing left to tell anyone.
-    // Refund requests still go out: money owed doesn't disappear with the row.
-    if (!row.booking_id && row.type !== "refund_requested") return "skipped";
+    // Refunds (and their failure alerts) still go out: money owed doesn't disappear with the row.
+    if (!row.booking_id && row.type !== "refund_requested" && row.type !== "refund_failed") return "skipped";
     switch (row.type) {
       case "barber_alert": {
         const { event, barberId, ...details } = p as { event: BarberAlert["event"]; barberId: string };
@@ -145,6 +148,11 @@ export function createDispatcher({ sql, senders }: { sql: Sql; senders: Senders 
         const to = await textRecipient(row.booking_id!, template);
         if (!to) return "skipped";
         await senders.sms({ shopId: row.shop_id, bookingId: row.booking_id!, to, template });
+        return "sent";
+      }
+      case "refund_failed": {
+        const { amountCents, error } = p as { amountCents: number; error: string };
+        await senders.refundFailed({ shopId: row.shop_id, bookingId: row.booking_id!, amountCents, error });
         return "sent";
       }
       case "refund_requested": {
@@ -182,7 +190,17 @@ export function createDispatcher({ sql, senders }: { sql: Sql; senders: Senders 
           `;
           result.retrying += 1;
         } else if (row.attempts >= MAX_ATTEMPTS) {
-          await sql`update public.outbox set status = 'failed', processed_at = ${args.now}, last_error = ${error} where id = ${row.id}`;
+          await sql.begin(async (tx) => {
+            await tx`update public.outbox set status = 'failed', processed_at = ${args.now}, last_error = ${error} where id = ${row.id}`;
+            if (row.type === "refund_requested") {
+              // Money is owed: tell the Owner, not just the admin failures list.
+              const { amountCents } = row.payload as { amountCents: number };
+              await tx`
+                insert into public.outbox (shop_id, booking_id, type, payload, next_attempt_at)
+                values (${row.shop_id}, ${row.booking_id}, 'refund_failed', ${tx.json({ amountCents, error })}, ${args.now})
+              `;
+            }
+          });
           result.failed += 1;
         } else {
           const retryAt = new Date(args.now.getTime() + RETRY_DELAYS_MIN[row.attempts - 1] * 60_000);

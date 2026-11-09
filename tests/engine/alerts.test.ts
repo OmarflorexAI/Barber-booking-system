@@ -168,3 +168,15 @@ describe("the daily job", () => {
     }
   });
 });
+
+describe("refund problems", () => {
+  it("emails the Owner what to refund by hand when an automatic refund keeps failing", async () => {
+    const { booking } = await book(shop, { client: { name: "Ana Lopez", phone: "7185550101" } });
+    await alerts().refundFailed({ shopId: shop.shopId, bookingId: booking.id, amountCents: 3000, error: "card network down" });
+    expect(f.emails).toHaveLength(1);
+    expect(f.emails[0].to).toEqual([await emailOf(owner)]);
+    expect(f.emails[0].subject).toMatch(/refund/i);
+    expect(f.emails[0].text).toContain("$30");
+    expect(f.emails[0].text).toContain("Ana Lopez");
+  });
+});

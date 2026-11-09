@@ -18,7 +18,7 @@ function fakeSenders() {
       if (failing.has(channel)) throw new Error(`${channel} provider down`);
       sent.push({ channel, msg: msg as Record<string, unknown> });
     };
-  const senders: Senders = { sms: rec("sms"), barberAlert: rec("barberAlert"), refund: rec("refund") };
+  const senders: Senders = { sms: rec("sms"), barberAlert: rec("barberAlert"), refund: rec("refund"), refundFailed: rec("refundFailed") };
   return { senders, sent, failing };
 }
 
@@ -140,6 +140,23 @@ describe("dispatcher", () => {
     await run();
     expect(fake.sent.filter((s) => s.channel === "refund")).toEqual([
       { channel: "refund", msg: { shopId: shop.shopId, bookingId: booking.id, amountCents: 3000, reason: "cancelled_by_owner" } },
+    ]);
+  });
+
+  it("tells the Owner when a refund keeps failing", async () => {
+    const { booking } = await book(shop);
+    await sql`update public.bookings set payment_method = 'online', payment_status = 'paid' where id = ${booking.id}`;
+    const owner = await makeUser(shop.shopId, "owner");
+    await engine.cancelBooking({ bookingId: booking.id, actor: { kind: "staff", userId: owner }, now: NOW });
+    fake.failing.add("refund");
+
+    for (const m of [0, 1, 6, 36]) await run(minutesAfter(NOW, m));
+    await run(minutesAfter(NOW, 37));
+    expect(fake.sent.filter((s) => s.channel === "refundFailed")).toEqual([
+      {
+        channel: "refundFailed",
+        msg: { shopId: shop.shopId, bookingId: booking.id, amountCents: 3000, error: "refund provider down" },
+      },
     ]);
   });
 

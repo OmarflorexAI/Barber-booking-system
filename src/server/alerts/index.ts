@@ -4,7 +4,8 @@ import { authorizeForBarber } from "@/server/booking-engine/access";
 import { notFound } from "@/server/booking-engine/errors";
 import { hashToken as hash } from "@/server/booking-engine";
 import { addDays, toLocal, type LocalDate } from "@/server/booking-engine/time";
-import type { BarberAlert } from "@/server/dispatch";
+import type { BarberAlert, RefundFailure } from "@/server/dispatch";
+import { formatMoney } from "@/lib/i18n/dictionaries";
 import { createReporting } from "@/server/reporting";
 
 /**
@@ -208,7 +209,33 @@ export function createAlerts({ sql, chat, email, config, clock = () => new Date(
     return { sent, failed };
   }
 
-  return { send, createTelegramLink, unlinkTelegram, handleTelegramUpdate, sendDailySummaries };
+  /** An automatic refund gave up: the Owners get an email saying what to refund by hand. */
+  async function refundFailed(f: RefundFailure): Promise<void> {
+    const to = await ownerEmails(f.shopId);
+    if (to.length === 0) throw new Error(`no owner email to report a failed refund for shop ${f.shopId}`);
+    const [b] = await sql<{ starts_at: Date; timezone: string; service: string; client: string | null; phone: string | null }[]>`
+      select k.starts_at, s.timezone, sv.name_en as service, c.name as client, c.phone_e164 as phone
+      from public.bookings k
+      join public.shops s on s.id = k.shop_id
+      join public.services sv on sv.id = k.service_id
+      left join public.clients c on c.id = k.client_id
+      where k.id = ${f.bookingId} and k.shop_id = ${f.shopId}
+    `;
+    const amount = formatMoney(f.amountCents);
+    const what = b ? `${b.client ?? "Walk-in"}${b.phone ? ` (${b.phone})` : ""}, ${b.service}, ${shortWhen(b.starts_at, b.timezone)}` : "a deleted booking";
+    await email.send({
+      to,
+      subject: `Barber Master: a ${amount} refund needs you`,
+      text: [
+        `We could not refund ${amount} automatically for ${what}.`,
+        "Please refund it by hand in your payment account so the client gets their money back.",
+        "",
+        `Reason from the payment provider: ${f.error}`,
+      ].join("\n"),
+    });
+  }
+
+  return { send, createTelegramLink, unlinkTelegram, handleTelegramUpdate, sendDailySummaries, refundFailed };
 }
 
 export type Alerts = ReturnType<typeof createAlerts>;
