@@ -6,6 +6,8 @@ export const RULES = {
   minNoticeMin: 30,
   maxDaysAhead: 30,
   reminderLeadMin: 120,
+  /** An online Booking holds its time this long while the Client pays. */
+  paymentHoldMin: 10,
 } as const;
 
 /** A Barber's working hours for one weekday, in minutes since local midnight. */

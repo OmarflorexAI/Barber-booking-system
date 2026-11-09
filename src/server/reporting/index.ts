@@ -42,7 +42,7 @@ export function createReporting(sql: Sql) {
       from public.bookings b
       join public.shops s on s.id = b.shop_id
       where b.shop_id = ${shopId}
-        and b.status <> 'cancelled'
+        and b.status not in ('cancelled', 'pending_payment')
         and (b.starts_at at time zone s.timezone)::date >= ${from}::date
         and (b.starts_at at time zone s.timezone)::date < ${to}::date
       group by 1
@@ -108,7 +108,7 @@ async function clientsCsv(sql: Sql, shopId: string): Promise<string> {
            max((b.starts_at at time zone s.timezone)::date)::text as last_booking
     from public.clients c
     join public.shops s on s.id = c.shop_id
-    left join public.bookings b on b.client_id = c.id and b.status <> 'cancelled'
+    left join public.bookings b on b.client_id = c.id and b.status not in ('cancelled', 'pending_payment')
     where c.shop_id = ${shopId}
     group by c.id, c.name, c.phone_e164, c.sms_opt_out, c.blocked
     order by c.name

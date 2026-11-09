@@ -28,11 +28,12 @@ export const minutesBefore = (d: Date, min: number) => new Date(d.getTime() - mi
 
 export type TestShop = Awaited<ReturnType<typeof makeShop>>;
 
-export async function makeShop(opts: { smsEnabled?: boolean; cutoffMin?: number } = {}) {
+export async function makeShop(opts: { smsEnabled?: boolean; cutoffMin?: number; onlinePayments?: boolean } = {}) {
   const slug = `test-${randomUUID().slice(0, 8)}`;
   const [shop] = await sql<{ id: string }[]>`
-    insert into public.shops (slug, name, sms_enabled, cancel_cutoff_minutes)
-    values (${slug}, 'Test Shop', ${opts.smsEnabled ?? false}, ${opts.cutoffMin ?? 60})
+    insert into public.shops (slug, name, sms_enabled, cancel_cutoff_minutes, payment_account_id, payments_enabled)
+    values (${slug}, 'Test Shop', ${opts.smsEnabled ?? false}, ${opts.cutoffMin ?? 60},
+            ${opts.onlinePayments ? "acct_test" : null}, ${opts.onlinePayments ?? false})
     returning id
   `;
   const shopId = shop.id;

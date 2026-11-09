@@ -45,7 +45,7 @@ export type BookingSummary = {
   barberId: string;
   serviceId: string;
   kind: "booking" | "walk_in";
-  status: "confirmed" | "cancelled" | "arrived" | "no_show";
+  status: "pending_payment" | "confirmed" | "cancelled" | "arrived" | "no_show";
   startsAt: Date;
   endsAt: Date;
   priceCents: number;
@@ -65,7 +65,8 @@ type ShopRow = {
   cancel_cutoff_minutes: number;
   sms_enabled: boolean;
   status: string;
-  stripe_account_id: string | null;
+  payment_account_id: string | null;
+  payments_enabled: boolean;
 };
 
 type ServiceRow = {
@@ -94,7 +95,7 @@ type BookingRow = {
   service_id: string;
   client_id: string | null;
   kind: "booking" | "walk_in";
-  status: "confirmed" | "cancelled" | "arrived" | "no_show";
+  status: "pending_payment" | "confirmed" | "cancelled" | "arrived" | "no_show";
   starts_at: Date;
   ends_at: Date;
   blocked_until: Date;
@@ -151,6 +152,13 @@ async function writeOutbox(db: Db, shopId: string, bookingId: string | null, typ
 }
 
 /** Schedule (or reschedule) the 2-hour reminder; skip it when the Booking is less than 2 hours away. */
+/** A Booking became real: schedule the reminder, alert the Barber, text the Client (when allowed). */
+async function announceConfirmed(db: Db, b: BookingRow, textTo: string | null, now: Date) {
+  await scheduleReminder(db, b, now);
+  await writeOutbox(db, b.shop_id, b.id, "barber_alert", { event: "created", barberId: b.barber_id });
+  if (textTo) await writeOutbox(db, b.shop_id, b.id, "sms_confirmation", { phone: textTo });
+}
+
 async function scheduleReminder(db: Db, b: { id: string; shop_id: string; starts_at: Date }, now: Date) {
   const sendAt = new Date(b.starts_at.getTime() - RULES.reminderLeadMin * MINUTE);
   if (sendAt <= now) {
@@ -166,7 +174,7 @@ async function scheduleReminder(db: Db, b: { id: string; shop_id: string; starts
 
 async function loadShop(db: Db, shopId: string): Promise<ShopRow> {
   const [shop] = await db<ShopRow[]>`
-    select id, slug, name, phone, address, timezone, cancel_cutoff_minutes, sms_enabled, status, stripe_account_id
+    select id, slug, name, phone, address, timezone, cancel_cutoff_minutes, sms_enabled, status, payment_account_id, payments_enabled
     from public.shops where id = ${shopId}
   `;
   if (!shop) throw notFound("Shop");
@@ -288,7 +296,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
   /** Shop page data: Services with "from" prices and Barbers with profiles. No business rules here beyond pricing. */
   async function getShopCatalog(slug: string, now: Date) {
     const [shop] = await sql<ShopRow[]>`
-      select id, slug, name, phone, address, timezone, cancel_cutoff_minutes, sms_enabled, status, stripe_account_id
+      select id, slug, name, phone, address, timezone, cancel_cutoff_minutes, sms_enabled, status, payment_account_id, payments_enabled
       from public.shops where slug = ${slug} and status = 'active'
     `;
     if (!shop) return null;
@@ -324,7 +332,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
         address: shop.address,
         timezone: shop.timezone,
         cancelCutoffMinutes: shop.cancel_cutoff_minutes,
-        onlinePayments: shop.stripe_account_id !== null,
+        onlinePayments: shop.payments_enabled,
       },
       services: services
         .map((s) => {
@@ -420,7 +428,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     }
 
     const shop = await loadShop(sql, shopId);
-    if (args.paymentMethod === "online" && !shop.stripe_account_id) throw invalid("Online payment is not available.");
+    if (args.paymentMethod === "online" && !shop.payments_enabled) throw invalid("Online payment is not available.");
 
     const date = toLocal(startsAt, shop.timezone).date;
     const { offers } = await loadDay(sql, {
@@ -437,6 +445,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
       .sort((a, b) => a.bookingsThatDay - b.bookingsThatDay || a.sortOrder - b.sortOrder || a.barberId.localeCompare(b.barberId));
     if (candidates.length === 0) throw slotTaken();
 
+    const online = args.paymentMethod === "online";
     for (const offer of candidates) {
       const id = randomUUID();
       const token = manageTokenFor(id, opts.manageLinkSecret);
@@ -454,7 +463,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
           }
           const [{ unpaid }] = await tx<{ unpaid: number }[]>`
             select count(*)::int as unpaid from public.bookings
-            where client_id = ${client.id} and kind = 'booking' and status = 'confirmed'
+            where client_id = ${client.id} and kind = 'booking' and status in ('confirmed', 'pending_payment')
               and payment_status = 'unpaid' and starts_at > ${now}
           `;
           if (unpaid >= 2) {
@@ -466,19 +475,18 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
           await lockBarberCalendar(tx, offer.barberId);
           const [b] = await tx<BookingRow[]>`
             insert into public.bookings
-              (id, shop_id, barber_id, service_id, client_id, kind, starts_at, ends_at, blocked_until,
+              (id, shop_id, barber_id, service_id, client_id, kind, status, hold_expires_at, starts_at, ends_at, blocked_until,
                price_cents, payment_method, manage_token_hash, locale)
             values
-              (${id}, ${shopId}, ${offer.barberId}, ${serviceId}, ${client.id}, 'booking', ${startsAt}, ${endsAt}, ${blockedUntil},
+              (${id}, ${shopId}, ${offer.barberId}, ${serviceId}, ${client.id}, 'booking',
+               ${online ? "pending_payment" : "confirmed"}, ${online ? new Date(now.getTime() + RULES.paymentHoldMin * MINUTE) : null},
+               ${startsAt}, ${endsAt}, ${blockedUntil},
                ${offer.priceCents}, ${args.paymentMethod}, ${hashToken(token)}, ${args.locale ?? "en"})
             returning *
           `;
 
-          await scheduleReminder(tx, b, now);
-          await writeOutbox(tx, shopId, b.id, "barber_alert", { event: "created", barberId: b.barber_id });
-          if (shop.sms_enabled && !client.sms_opt_out) {
-            await writeOutbox(tx, shopId, b.id, "sms_confirmation", { phone });
-          }
+          // An online Booking only holds the time; it is confirmed (and announced) when paid.
+          if (!online) await announceConfirmed(tx, b, shop.sms_enabled && !client.sms_opt_out ? phone : null, now);
           return b;
         });
         return { booking: toSummary(booking), manageToken: token };
@@ -639,6 +647,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
       if (!b) throw notFound("Booking");
       await authorizeForBarber(tx, args.userId, b.shop_id, b.barber_id);
       if (b.status === "cancelled") throw new BookingError("BOOKING_NOT_ACTIVE", "This booking was cancelled.");
+      if (b.status === "pending_payment") throw new BookingError("BOOKING_NOT_ACTIVE", "This booking is still waiting for its payment.");
       const [updated] = await tx<BookingRow[]>`
         update public.bookings set status = ${args.status} where id = ${b.id} returning *
       `;
@@ -710,7 +719,56 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     };
   }
 
+  /**
+   * The payment for an online Booking arrived (called by the payments module, inside
+   * its transaction). A held Booking becomes confirmed; one whose hold already ran out
+   * is refunded in full; a repeat changes nothing.
+   */
+  async function recordOnlinePayment(
+    args: { bookingId: string; paymentRef: string; now: Date },
+    db: Db = sql,
+  ): Promise<"confirmed" | "refunding" | "already_paid"> {
+    const [b] = await db<(BookingRow & { sms_enabled: boolean; sms_opt_out: boolean | null; phone_e164: string | null })[]>`
+      select b.*, s.sms_enabled, c.sms_opt_out, c.phone_e164
+      from public.bookings b
+      join public.shops s on s.id = b.shop_id
+      left join public.clients c on c.id = b.client_id
+      where b.id = ${args.bookingId}
+      for update of b
+    `;
+    if (!b) throw notFound("Booking");
+    if (b.payment_status !== "unpaid") return "already_paid";
+
+    if (b.status === "pending_payment") {
+      const [updated] = await db<BookingRow[]>`
+        update public.bookings
+        set status = 'confirmed', payment_status = 'paid', payment_ref = ${args.paymentRef}, hold_expires_at = null
+        where id = ${b.id} returning *
+      `;
+      await announceConfirmed(db, updated, b.sms_enabled && b.phone_e164 && !b.sms_opt_out ? b.phone_e164 : null, args.now);
+      return "confirmed";
+    }
+    // Paid after the hold was released (or the Booking was otherwise cancelled): give it all back.
+    await db`update public.bookings set payment_status = 'paid', payment_ref = ${args.paymentRef} where id = ${b.id}`;
+    await writeOutbox(db, b.shop_id, b.id, "refund_requested", { amountCents: b.price_cents, reason: "late_payment" });
+    return "refunding";
+  }
+
+  /** Scheduled job: cancel online Bookings whose payment hold ran out, freeing the time. */
+  async function releaseExpiredHolds(args: { now: Date }): Promise<{ bookingId: string; accountId: string | null; checkoutRef: string | null }[]> {
+    const rows = await sql<{ id: string; payment_account_id: string | null; checkout_ref: string | null }[]>`
+      update public.bookings b
+      set status = 'cancelled', cancelled_by = 'system', cancelled_at = ${args.now}, hold_expires_at = null
+      from public.shops s
+      where s.id = b.shop_id and b.status = 'pending_payment' and b.hold_expires_at <= ${args.now}
+      returning b.id, s.payment_account_id, b.checkout_ref
+    `;
+    return rows.map((r) => ({ bookingId: r.id, accountId: r.payment_account_id, checkoutRef: r.checkout_ref }));
+  }
+
   return {
+    recordOnlinePayment,
+    releaseExpiredHolds,
     getShopCatalog,
     getAvailability,
     createBooking,
