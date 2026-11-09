@@ -101,8 +101,13 @@ export async function book(
 }
 
 /** A signed-in staff user. Inserted straight into auth.users (test-only). */
+/** Logins made for each test Shop, so dropShop also deletes ones a test removed from the Shop. */
+const usersByShop = new Map<string, Set<string>>();
+
 export async function makeUser(shopId: string, role: "owner" | "barber", barberId?: string) {
   const id = randomUUID();
+  if (!usersByShop.has(shopId)) usersByShop.set(shopId, new Set());
+  usersByShop.get(shopId)!.add(id);
   await sql`
     insert into auth.users (id, instance_id, aud, role, email)
     values (${id}, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', ${`${id}@test.invalid`})
@@ -138,7 +143,9 @@ export async function outboxTypes(bookingId: string): Promise<string[]> {
 }
 
 export async function dropShop(shop: TestShop) {
-  const users = await sql<{ user_id: string }[]>`select user_id from public.shop_members where shop_id = ${shop.shopId}`;
+  const members = await sql<{ user_id: string }[]>`select user_id from public.shop_members where shop_id = ${shop.shopId}`;
+  const users = [...new Set([...members.map((m) => m.user_id), ...(usersByShop.get(shop.shopId) ?? [])])];
+  usersByShop.delete(shop.shopId);
   await sql`delete from public.shops where id = ${shop.shopId}`;
-  if (users.length) await sql`delete from auth.users where id in ${sql(users.map((u) => u.user_id))}`;
+  if (users.length) await sql`delete from auth.users where id in ${sql(users)}`;
 }
