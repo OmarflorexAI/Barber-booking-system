@@ -1,10 +1,10 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-09. Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-09 (end of day). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-**The backend (B1–B6) is built and tested.** What's left is trying it with the real services, a few dashboard settings, and one decision (see "Needs you" below). Then: talk about a landing page, then the UI.
+**The backend (B1–B6) is built, tested and pushed.** All open decisions are made (the last one, no-shows, on 2026-11-09). What's left is trying it with the real services and a few dashboard settings (see "Needs you" and "Next steps"). Then: talk about a landing page, then the UI.
 
 Verified on 2026-11-09 (evening, after the no-show rule): `npm test` 138 passed (10 files), `npm run e2e` 4 passed, typecheck and lint clean.
 
@@ -83,8 +83,14 @@ Shell: PowerShell, from the repo root.
 | Manage booking | `src/app/m/[token]/` (cancel / change time, cutoff rule) |
 | Login | `src/app/login/`, `src/app/auth/callback`, `src/app/auth/signout`, `src/lib/supabase/`, `src/proxy.ts` |
 | Barber day view | `src/app/app/day/` (arrived / no-show, walk-in, cancel; Owner can switch Barbers) |
-| Scripts | `scripts/add-staff.mjs` (`npm run staff:add`) |
-| Tests | `tests/unit/availability.test.ts` (13), `tests/engine/booking-engine.test.ts` (40, incl. race, deadlock and RLS), `tests/e2e/race.spec.ts` |
+| Sending worker | `src/server/dispatch/` (outbox worker), `src/server/senders.ts` (wires real providers or log-only stand-ins), `src/app/api/cron/dispatch`, `src/app/api/cron/daily`, `src/server/cron-auth.ts` |
+| Payments (B2) | `src/server/payments/` (provider-neutral), `src/server/providers/stripe.ts`, `src/app/api/payments/{webhook,onboard,return}` |
+| Texts (B3) | `src/server/texting/` (templates, daily cap, STOP), `src/server/providers/twilio.ts`, `src/app/api/twilio/inbound` |
+| Alerts (B4) | `src/server/alerts/` (Telegram, email fallback, daily Owner email), `src/server/providers/{telegram,resend}.ts`, `src/app/api/telegram/webhook` |
+| Owner tools (B5) | `src/server/shop-admin/`, `src/server/reporting/`, `src/server/invites.ts` |
+| Platform admin (B6) | `src/server/platform-admin/`, `src/server/logins.ts`, `src/lib/csv.ts` |
+| Scripts | `scripts/add-staff.mjs` (`npm run staff:add`), `scripts/telegram-webhook.mjs` (`npm run telegram:webhook`), `scripts/stripe.mjs` (`npm run stripe`, `npm run stripe:listen`; the CLI itself is in `tools/stripe/`, gitignored) |
+| Tests | `tests/unit/` (availability, Twilio and Stripe signatures), `tests/engine/` (booking engine, dispatcher, texting, alerts, payments, shop admin, platform admin; real database), `tests/e2e/` (race, Book now). 138 + 4 in total. |
 
 ## Known issues to fix later
 
@@ -491,15 +497,34 @@ Sources: [NerdWallet: PayPal fees](https://www.nerdwallet.com/article/small-busi
 
 Marketplace, deposits, online tips, WhatsApp, walk-in queue/QR, Google Calendar sync, automated billing, non-barbershops, native apps, loyalty and gift cards, payroll, multiple locations, custom domains, an AI assistant, other time zones, and Client accounts.
 
-## Tomorrow: start here
+## Next steps (start here next session)
 
-1. Work through "Needs you" at the top: sign in (link sent), connect the demo shop to Stripe, then Claude runs the test payment and refund (start `npm run dev` and `npm run stripe:listen` first).
-2. Add the Twilio and Telegram keys to `.env.local` (never into chat) and restart `npm run dev`; their webhooks need a public address (deploy, or a tunnel).
-3. Move the login emails to Resend SMTP (see B4), and send a test email through Resend (to the Resend account's own address until a domain is verified).
-4. Talk about whether to build a landing page, then the dashboards and UI (U1–U5).
+**To resume:** open PowerShell in the repo and run `npm run dev`; in a second window run `npm run stripe:listen` (needed for payments to reach the app). If pages reload in a loop, stop `npm run dev`, delete `.next`, start again.
+
+**Checks to do first (quick):**
+- [ ] Sign in: open the "Magic Link" email for `samirflores13@gmail.com` in Brave (or request a new one at `/login`); you should land on `/app/day`.
+- [ ] In Brave's console on any page, the `<body>` "attributes didn't match" error should be gone (it couldn't be checked headless).
+
+**Real-service tests (in this order):**
+1. **Stripe payment.** Connect the demo shop: `/api/payments/onboard?shop=36587674-9e01-4447-9182-48b76203fc85` in Brave, Stripe test data, solve the CAPTCHA. Then Claude books with "Pay online", pays with `4242 4242 4242 4242`, checks the booking turns Confirmed and the Barber alert is queued, cancels it and checks the full refund.
+2. **Resend.** Fill the Supabase SMTP form (values under B4) and raise the email rate limit; then Claude sends a test email (to the Resend account's own address until a domain is verified).
+3. **Twilio and Telegram.** Create the accounts, put the 5 keys in `.env.local`, restart. Their webhooks need a public address (a tunnel now, or the deploy). Then test a confirmation text, STOP, and linking a Barber's Telegram.
+
+**Then:**
+4. Talk about whether to build a landing page.
+5. UI phases U1–U5 (see "Remaining plan").
+
+**Left for the deploy (U5):**
+- Every-minute scheduler for `/api/cron/dispatch` (Vercel Pro, or Supabase `pg_cron` + `pg_net`); `/api/cron/daily` at 11:00 and 12:00 UTC.
+- Production Stripe webhook (Events from: Connected accounts; see B2 step 5), production Turnstile keys, a verified Resend domain, Sentry.
+- Choose the payment provider that replaces Stripe (Square or Stripe; see the research notes).
+
+**Small open items (no rush):**
+- Confirm: a no-show still counts as an online Booking and as time saved in the numbers (B5 "Open after review").
+- Photo uploads for Barber profiles (U3); `inviteBarber` has no automated test; alerts are English only.
 
 ## Git
 
-- Local repo on branch `main`, all work committed.
+- Local repo on branch `main`, all work committed and pushed (2026-11-09, end of day).
 - Remote already added: `origin` → `https://github.com/OmarflorexAI/Barber-booking-system.git`.
 - Pushed: https://github.com/OmarflorexAI/Barber-booking-system (`main` tracks `origin/main`).
