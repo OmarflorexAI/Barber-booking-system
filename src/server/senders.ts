@@ -3,6 +3,9 @@ import { createAlerts, type Alerts, type ChatProvider, type EmailProvider } from
 import { getSql } from "./db";
 import { requireManageLinkSecret } from "./booking-engine/manage-token";
 import { createDispatcher, type Senders } from "./dispatch";
+import { bookingEngine } from "./engine";
+import { createPayments, type Payments } from "./payments";
+import { createStripePayments } from "./providers/stripe";
 import { createResendEmail } from "./providers/resend";
 import { createTelegramChat } from "./providers/telegram";
 import { createTwilioSms } from "./providers/twilio";
@@ -60,6 +63,7 @@ function emailProvider(): EmailProvider {
 
 let textingModule: Texting | undefined;
 let alertsModule: Alerts | undefined;
+let paymentsModule: Payments | null | undefined;
 let dispatcher: ReturnType<typeof createDispatcher> | undefined;
 
 /** Client texts (B3). */
@@ -88,13 +92,29 @@ export function alerts(): Alerts {
   return alertsModule;
 }
 
+/** Online payments (B2), or null when STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET are not set. */
+export function payments(): Payments | null {
+  if (paymentsModule === undefined) {
+    const secretKey = env("STRIPE_SECRET_KEY");
+    const webhookSecret = env("STRIPE_WEBHOOK_SECRET");
+    paymentsModule =
+      secretKey && webhookSecret
+        ? createPayments({ sql: getSql(), engine: bookingEngine(), provider: createStripePayments({ secretKey, webhookSecret }), config: { siteUrl: siteUrl() } })
+        : null;
+  }
+  return paymentsModule;
+}
+
 const senders: Senders = {
   sms: (m) => texting().send(m),
   barberAlert: (m) => alerts().send(m),
   async refund(r) {
-    // Refunds go to the payment provider in B2.
-    console.info("[send:refund]", r);
+    const p = payments();
+    // Throwing keeps the refund in the outbox to retry once payments are set up.
+    if (!p) throw new Error("online payments are not set up (STRIPE_SECRET_KEY)");
+    await p.refund(r);
   },
+  refundFailed: (f) => alerts().refundFailed(f),
 };
 
 /** The app-wide sending worker. */
