@@ -499,7 +499,12 @@ Marketplace, deposits, online tips, WhatsApp, walk-in queue/QR, Google Calendar 
 
 ## Next steps (start here next session)
 
-**To resume:** open PowerShell in the repo and run `npm run dev`; in a second window run `npm run stripe:listen` (needed for payments to reach the app). If pages reload in a loop, stop `npm run dev`, delete `.next`, start again.
+**First thing next session (Claude does this before anything else):** start the app and the Stripe listener, both in the background, then check them:
+1. `npm run dev` (the app, http://localhost:3000)
+2. `npm run stripe:listen` (forwards Stripe test events to the app; payments don't reach the app without it)
+3. Check: `/login` loads and doesn't reload in a loop, and the listener prints "Ready!". Its webhook secret must still match `STRIPE_WEBHOOK_SECRET` in `.env.local`. It stays the same until the Stripe CLI login expires, about 90 days after 2026-11-09; then run `npm run stripe -- login` and update the secret.
+
+Both were stopped at the end of the 2026-11-09 session on purpose. If pages reload in a loop, stop `npm run dev`, delete `.next`, start again.
 
 **Checks to do first (quick):**
 - [ ] Sign in: open the "Magic Link" email for `samirflores13@gmail.com` in Brave (or request a new one at `/login`); you should land on `/app/day`.
