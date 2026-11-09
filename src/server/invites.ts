@@ -1,31 +1,27 @@
 import "server-only";
-import { createClient } from "@supabase/supabase-js";
-import { requireOwner } from "./booking-engine/access";
-import { invalid } from "./booking-engine/errors";
+import { requireOwner, requirePlatformAdmin } from "./booking-engine/access";
 import { getSql } from "./db";
-import { shopAdmin } from "./engine";
+import { platformAdmin, shopAdmin } from "./engine";
+import { ensureLogin, signInUrl } from "./logins";
+import { checkNewShop, type NewShop } from "./platform-admin";
 
 /**
- * Give a Barber a login: create the account if it doesn't exist (no password;
- * they sign in with an email link at /login), then connect it to the Barber.
+ * Give a Barber a login and connect it to the Barber.
  * A "you've been added" email is sent once Resend is connected (B4).
  */
 export async function inviteBarber(args: { userId: string; shopId: string; barberId: string; email: string }) {
-  const sql = getSql();
-  await requireOwner(sql, args.userId, args.shopId); // before creating any account
-  const email = args.email.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw invalid("That email doesn't look right.");
+  await requireOwner(getSql(), args.userId, args.shopId); // before creating any account
+  const login = await ensureLogin(args.email);
+  await shopAdmin().linkBarberLogin({ userId: args.userId, shopId: args.shopId, barberId: args.barberId, loginUserId: login.id });
+  return { email: login.email, signInUrl: signInUrl() };
+}
 
-  let [user] = await sql<{ id: string }[]>`select id from auth.users where lower(email) = ${email}`;
-  if (!user) {
-    const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data, error } = await admin.auth.admin.createUser({ email, email_confirm: true });
-    if (error || !data.user) throw new Error(`Could not create the login: ${error?.message ?? "unknown error"}`);
-    user = { id: data.user.id };
-  }
-
-  await shopAdmin().linkBarberLogin({ userId: args.userId, shopId: args.shopId, barberId: args.barberId, loginUserId: user.id });
-  return { email, signInUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/login` };
+/** Install visit: create the Owner's login (by email) and the whole Shop in one go. */
+export async function onboardShop(args: Omit<NewShop, "ownerUserId"> & { ownerEmail: string }) {
+  await requirePlatformAdmin(getSql(), args.userId); // before creating any account
+  const { ownerEmail, ...shop } = args;
+  checkNewShop(shop); // reject a bad form before creating a login
+  const login = await ensureLogin(ownerEmail);
+  const created = await platformAdmin().createShop({ ...shop, ownerUserId: login.id });
+  return { ...created, ownerEmail: login.email, signInUrl: signInUrl() };
 }

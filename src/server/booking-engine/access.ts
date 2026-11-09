@@ -32,3 +32,9 @@ export async function requireOwner(db: Db, userId: string, shopId: string): Prom
   if (!role?.owner) throw forbidden();
   return role;
 }
+
+/** Our own team (Platform admins): create Shops, import clients, give support. */
+export async function requirePlatformAdmin(db: Db, userId: string): Promise<void> {
+  const [row] = await db`select 1 from public.platform_admins where user_id = ${userId}`;
+  if (!row) throw forbidden();
+}

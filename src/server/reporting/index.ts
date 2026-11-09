@@ -1,6 +1,7 @@
 import type { Sql } from "postgres";
-import { requireOwner } from "@/server/booking-engine/access";
+import { requireOwner, requirePlatformAdmin } from "@/server/booking-engine/access";
 import { invalid } from "@/server/booking-engine/errors";
+import { csvCell } from "@/lib/csv";
 import { addDays, isLocalDate, toLocal, weekdayOf, type LocalDate } from "@/server/booking-engine/time";
 
 /**
@@ -27,12 +28,6 @@ function sumDays(days: DayRow[]): PeriodStats {
     }),
     { bookings: 0, walkIns: 0, noShows: 0, timeSavedMin: 0 },
   );
-}
-
-/** Quote a CSV cell, and defuse cells a spreadsheet would run as a formula. */
-function csvCell(value: string): string {
-  const safe = /^[=+\-@\t\r]/.test(value) && !/^\+\d+$/.test(value) ? `'${value}` : value;
-  return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 
 export function createReporting(sql: Sql) {
@@ -81,30 +76,44 @@ export function createReporting(sql: Sql) {
   /** Every Client of the Shop as CSV (the Shop owns its data). */
   async function exportClientsCsv(args: ShopActor): Promise<string> {
     await requireOwner(sql, args.userId, args.shopId);
-    const rows = await sql<
-      { name: string; phone_e164: string; bookings: number; last_booking: string | null; sms_opt_out: boolean; blocked: boolean }[]
-    >`
-      select c.name, c.phone_e164, c.sms_opt_out, c.blocked,
-             count(b.id)::int as bookings,
-             max((b.starts_at at time zone s.timezone)::date)::text as last_booking
-      from public.clients c
-      join public.shops s on s.id = c.shop_id
-      left join public.bookings b on b.client_id = c.id and b.status <> 'cancelled'
-      where c.shop_id = ${args.shopId}
-      group by c.id, c.name, c.phone_e164, c.sms_opt_out, c.blocked
-      order by c.name
-    `;
-    const yesNo = (v: boolean) => (v ? "yes" : "no");
-    const lines = [
-      "name,phone,bookings,last_booking,texts_opted_out,blocked",
-      ...rows.map((r) =>
-        [csvCell(r.name), r.phone_e164, String(r.bookings), r.last_booking ?? "", yesNo(r.sms_opt_out), yesNo(r.blocked)].join(","),
-      ),
-    ];
-    return lines.join("\r\n") + "\r\n";
+    return clientsCsv(sql, args.shopId);
   }
 
-  return { weeklyStats, dayStats, exportClientsCsv };
+  /**
+   * The same export for our team (e.g. an Owner who is leaving). The caller must be a
+   * Platform admin; the platform-admin module logs the support access before calling this.
+   */
+  async function exportClientsCsvForAdmin(args: ShopActor): Promise<string> {
+    await requirePlatformAdmin(sql, args.userId);
+    return clientsCsv(sql, args.shopId);
+  }
+
+  return { weeklyStats, dayStats, exportClientsCsv, exportClientsCsvForAdmin };
 }
 
 export type Reporting = ReturnType<typeof createReporting>;
+
+/** The Shop's Clients as CSV. No access check here: the exports below check first. */
+async function clientsCsv(sql: Sql, shopId: string): Promise<string> {
+  const rows = await sql<
+    { name: string; phone_e164: string; bookings: number; last_booking: string | null; sms_opt_out: boolean; blocked: boolean }[]
+  >`
+    select c.name, c.phone_e164, c.sms_opt_out, c.blocked,
+           count(b.id)::int as bookings,
+           max((b.starts_at at time zone s.timezone)::date)::text as last_booking
+    from public.clients c
+    join public.shops s on s.id = c.shop_id
+    left join public.bookings b on b.client_id = c.id and b.status <> 'cancelled'
+    where c.shop_id = ${shopId}
+    group by c.id, c.name, c.phone_e164, c.sms_opt_out, c.blocked
+    order by c.name
+  `;
+  const yesNo = (v: boolean) => (v ? "yes" : "no");
+  const lines = [
+    "name,phone,bookings,last_booking,texts_opted_out,blocked",
+    ...rows.map((r) =>
+      [csvCell(r.name), r.phone_e164, String(r.bookings), r.last_booking ?? "", yesNo(r.sms_opt_out), yesNo(r.blocked)].join(","),
+    ),
+  ];
+  return lines.join("\r\n") + "\r\n";
+}

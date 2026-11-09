@@ -28,7 +28,8 @@ function gridMinutes(t: string | null | undefined): number | null {
   return min % 15 === 0 ? min : null;
 }
 
-function checkWeek(days: DayHours[]) {
+/** Validate a week of hours (each weekday once, 15-minute grid, break inside the day). */
+export function checkWeek(days: DayHours[]) {
   const seen = new Set<number>();
   for (const d of days) {
     if (!Number.isInteger(d.weekday) || d.weekday < 0 || d.weekday > 6 || seen.has(d.weekday)) {

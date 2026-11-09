@@ -108,6 +108,26 @@ export async function makeUser(shopId: string, role: "owner" | "barber", barberI
   return id;
 }
 
+/** A signed-in user with no Shop yet (an invited Owner, or a Platform admin). Remove with dropUser. */
+export async function makeLoneUser() {
+  const id = randomUUID();
+  await sql`
+    insert into auth.users (id, instance_id, aud, role, email)
+    values (${id}, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', ${`${id}@test.invalid`})
+  `;
+  return id;
+}
+
+export async function makePlatformAdmin() {
+  const id = await makeLoneUser();
+  await sql`insert into public.platform_admins (user_id) values (${id})`;
+  return id;
+}
+
+export async function dropUser(id: string) {
+  await sql`delete from auth.users where id = ${id}`;
+}
+
 export async function outboxTypes(bookingId: string): Promise<string[]> {
   const rows = await sql<{ type: string }[]>`select type from public.outbox where booking_id = ${bookingId} order by created_at, type`;
   return rows.map((r) => r.type);
