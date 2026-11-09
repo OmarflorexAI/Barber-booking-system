@@ -1,5 +1,6 @@
 import "server-only";
 import { createBookingEngine, type BookingEngine } from "./booking-engine";
+import { requireManageLinkSecret } from "./booking-engine/manage-token";
 import { getSql } from "./db";
 import { createPlatformAdmin, type PlatformAdmin } from "./platform-admin";
 import { createReporting, type Reporting } from "./reporting";
@@ -12,7 +13,7 @@ let platform: PlatformAdmin | undefined;
 
 /** The app-wide booking engine, bound to the server's Postgres pool. */
 export function bookingEngine(): BookingEngine {
-  engine ??= createBookingEngine(getSql());
+  engine ??= createBookingEngine(getSql(), { manageLinkSecret: requireManageLinkSecret(process.env.MANAGE_LINK_SECRET) });
   return engine;
 }
 

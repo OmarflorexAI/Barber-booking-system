@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import postgres from "postgres";
 import { createBookingEngine } from "@/server/booking-engine";
+import { requireManageLinkSecret } from "@/server/booking-engine/manage-token";
 import { localToUtc } from "@/server/booking-engine/time";
 
 /**
@@ -13,7 +14,9 @@ import { localToUtc } from "@/server/booking-engine/time";
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL missing: engine tests need .env.local");
 
 export const sql = postgres(process.env.DATABASE_URL, { prepare: false, max: 10, onnotice: () => {} });
-export const engine = createBookingEngine(sql);
+/** The same secret the app uses, so links built by texts open Bookings made here. */
+export const MANAGE_LINK_SECRET = requireManageLinkSecret(process.env.MANAGE_LINK_SECRET);
+export const engine = createBookingEngine(sql, { manageLinkSecret: MANAGE_LINK_SECRET });
 
 export const TZ = "America/New_York";
 /** Monday 2027-01-11, 09:00 in New York. All tests use this injected clock. */

@@ -14,6 +14,7 @@ const Input = z.object({
   name: z.string().trim().min(1).max(80),
   phone: z.string().trim().min(7).max(25),
   paymentMethod: z.enum(["in_person", "online"]),
+  locale: z.enum(["en", "es"]).default("en"),
   turnstileToken: z.string().optional(),
 });
 
@@ -39,6 +40,7 @@ export async function createBookingAction(raw: z.input<typeof Input>): Promise<C
       startsAt: new Date(input.startsAt),
       client: { name: input.name, phone: input.phone },
       paymentMethod: input.paymentMethod,
+      locale: input.locale,
       now: new Date(),
     });
     return {

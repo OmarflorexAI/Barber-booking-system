@@ -1,6 +1,7 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type postgres from "postgres";
 import type { ISql, Sql } from "postgres";
+import type { Locale } from "@/lib/i18n/dictionaries";
 import { normalizePhone } from "@/lib/phone";
 import { bookingWindow, computeSlots, RULES, type DayHours, type Interval } from "./availability";
 import {
@@ -13,6 +14,7 @@ import {
   slotTaken,
 } from "./errors";
 import { authorizeForBarber, requireOwner } from "./access";
+import { manageTokenFor } from "./manage-token";
 import { isLocalDate, localDayRange, MINUTE, timeToMinutes, toLocal, weekdayOf, type LocalDate } from "./time";
 
 export * from "./errors";
@@ -119,10 +121,6 @@ const toSummary = (b: BookingRow): BookingSummary => ({
 
 export function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
-}
-
-function newManageToken(): string {
-  return randomBytes(24).toString("base64url");
 }
 
 /** Special price applies while the deal has not ended at the moment of booking. */
@@ -286,7 +284,7 @@ function assertDate(date: string): asserts date is LocalDate {
 
 // ------------------------------------------------------------------ the engine
 
-export function createBookingEngine(sql: Sql) {
+export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }) {
   /** Shop page data: Services with "from" prices and Barbers with profiles. No business rules here beyond pricing. */
   async function getShopCatalog(slug: string, now: Date) {
     const [shop] = await sql<ShopRow[]>`
@@ -404,9 +402,12 @@ export function createBookingEngine(sql: Sql) {
     startsAt: Date;
     client: { name: string; phone: string };
     paymentMethod: PaymentMethod;
+    /** The language the Client booked in; their texts use it. */
+    locale?: Locale;
     now: Date;
   }): Promise<{ booking: BookingSummary; manageToken: string }> {
     const { shopId, serviceId, startsAt, now } = args;
+    if (args.locale !== undefined && args.locale !== "en" && args.locale !== "es") throw invalid("Unknown language.");
     const name = args.client.name.trim().replace(/\s+/g, " ");
     if (name.length < 1 || name.length > 80) throw invalid("Please enter your name.");
     const phone = normalizePhone(args.client.phone);
@@ -437,7 +438,8 @@ export function createBookingEngine(sql: Sql) {
     if (candidates.length === 0) throw slotTaken();
 
     for (const offer of candidates) {
-      const token = newManageToken();
+      const id = randomUUID();
+      const token = manageTokenFor(id, opts.manageLinkSecret);
       try {
         const booking = await sql.begin(async (tx) => {
           // Upserting the Client row locks it until commit, so two Bookings for one
@@ -464,11 +466,11 @@ export function createBookingEngine(sql: Sql) {
           await lockBarberCalendar(tx, offer.barberId);
           const [b] = await tx<BookingRow[]>`
             insert into public.bookings
-              (shop_id, barber_id, service_id, client_id, kind, starts_at, ends_at, blocked_until,
-               price_cents, payment_method, manage_token_hash)
+              (id, shop_id, barber_id, service_id, client_id, kind, starts_at, ends_at, blocked_until,
+               price_cents, payment_method, manage_token_hash, locale)
             values
-              (${shopId}, ${offer.barberId}, ${serviceId}, ${client.id}, 'booking', ${startsAt}, ${endsAt}, ${blockedUntil},
-               ${offer.priceCents}, ${args.paymentMethod}, ${hashToken(token)})
+              (${id}, ${shopId}, ${offer.barberId}, ${serviceId}, ${client.id}, 'booking', ${startsAt}, ${endsAt}, ${blockedUntil},
+               ${offer.priceCents}, ${args.paymentMethod}, ${hashToken(token)}, ${args.locale ?? "en"})
             returning *
           `;
 

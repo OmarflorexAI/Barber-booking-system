@@ -62,6 +62,7 @@ export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Loc
         name,
         phone,
         paymentMethod: payment,
+        locale,
         turnstileToken: turnstileToken ?? undefined,
       });
       if (r.ok) {
