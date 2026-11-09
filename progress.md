@@ -4,9 +4,9 @@ Last updated: 2026-11-09. Source of requirements: `Barbershop Booking System PRD
 
 ## Where we are
 
-Phase 1 (the core slice) is **done and verified**. On 2026-11-09 the "Book now" bug was fixed and **B1 (sending worker) was built**. Next: B5 (needs no outside accounts), then B2–B4 once the accounts exist.
+Phase 1 (the core slice) is **done and verified**. On 2026-11-09 the "Book now" bug was fixed, **B1 (sending worker)** and **B5 (Owner tools + reporting)** were built. Agreed order from here: B6 (admin backend) → B3/B4 (connect texts, alerts, email) → B2 (payments, last) → UI.
 
-Verified on 2026-11-09: `npm test` 60 passed (3 files), `npm run e2e` 4 passed, typecheck and lint clean. `/api/cron/dispatch` delivered the 7 waiting demo-shop alerts (to the log senders).
+Verified on 2026-11-09 (after B5): `npm test` 87 passed (4 files, run one file at a time; about 2 min), `npm run e2e` 4 passed, typecheck and lint clean. `/api/cron/dispatch` delivered the 7 waiting demo-shop alerts (to the log senders).
 
 Verified on 2026-11-07:
 - `npm test`: 2 files, 53 tests passed (89s; runs against the hosted dev database).
@@ -216,7 +216,49 @@ Decisions already made: 10-minute hold; reschedule keeps payment only if paid on
 - **Accounts:** Telegram bot (BotFather) and Resend (API key, later a verified domain).
 - Stories: 49, 53–57.
 
-### B5: Owner operations and reporting
+### B5: Owner operations and reporting — DONE 2026-11-09
+
+New rule from the user (2026-11-09): **a Shop has at most 6 active Barbers** for Clients to choose from.
+- Enforced by the trigger `guard_barber_limit` (SQLSTATE BB002, per-Shop lock so two adds at once can't both get through), in migration `20261109190000_barber_limit.sql`.
+- `MAX_ACTIVE_BARBERS` in `src/server/shop-admin`.
+- The demo shop now has 6 Barbers: Carlos, Dre, Maya, Luis, Jay, Nia. `supabase/seed.sql` is updated, and the 3 new ones were inserted into the dev DB.
+
+What was built:
+- **`src/server/shop-admin`**: `createShopAdmin(sql)`. Every operation checks the caller's role.
+  - **Barbers:** `addBarber`, `removeBarber` (refused while they have upcoming Bookings; the Barber is deactivated, their login loses access and history is kept), `linkBarberLogin` (connecting a new login removes the old one's access).
+  - **Services and prices:** `saveService`, `archiveService`, `setBarberPrice`, `removeBarberPrice`, `setSpecialPrice` (owner only).
+  - **Hours and days off:** `setWeeklyHours` (a Barber sets their own; the Owner sets anyone's), `removeBarberDayOff`, `removeShopClosedDay`.
+  - **Cutoff:** `setCancelCutoff` returns a `REMINDER_AFTER_CUTOFF` warning when the cutoff is over 2h.
+  - **Blocklist:** `blockPhone`, `unblockPhone`, `listBlocked`.
+  - **Profile:** `updateBarberProfile` and `setGallery` (up to 6 photos, https links only).
+- **`src/server/reporting`**: `createReporting(sql)`, owner only.
+  - `weeklyStats`: Bookings, walk-ins, no-shows and time saved per Monday–Sunday New York week.
+  - `dayStats`: the same for one day, for the daily email.
+  - `exportClientsCsv`: cells are made safe against spreadsheet formula injection.
+- **`src/server/invites.ts`**: `inviteBarber` creates the login (service role) if it's new and connects it. The Barber signs in at `/login`. The "you've been added" email comes in B4.
+- **Shared access checks** moved to `src/server/booking-engine/access.ts` (`staffRole`, `authorizeForBarber`, `requireOwner`).
+- Tests: `tests/engine/shop-admin.test.ts` (27). `vitest.config.mts` now runs DB test files one at a time: they share the 15-client pooler, and the heavy-race test failed about 1 in 4 runs when they ran in parallel.
+
+Reviewed with `/code-review` (two axes: standards and spec). Fixed:
+- a leftover login keeping access after a Barber's login was replaced
+- named SQLSTATE constants and error factories
+- date checks on the remove-day operations
+- the name check on `addBarber`
+- reporting split into its own module (it is a separate module in the PRD)
+
+Open after review (decide or do later):
+- **Photo uploads (Supabase Storage)** are not built: the profile takes https links for now. To do with the profile screen (U3).
+- **Gallery minimum:** the PRD says 3–6 photos. The backend allows 0–6 so a Barber can build it up; the screen will ask for at least 3.
+- **"All Barbers' calendar" and "paid online" views** (stories 39, 40, 67):
+  - The day view `/app/day` already reads Bookings with RLS (a Barber sees their own; the Owner switches Barbers).
+  - An all-Barbers-at-once view is a UI task (U2).
+- **No-shows in the numbers:** a no-show still counts as an online Booking and as time saved (the phone call was still avoided), and is also reported separately. Confirm this reading.
+- **`setSpecialPrice`** accepts an end date in the past (it just has no effect). Minor; the screen will use a date picker.
+- **`inviteBarber`** can connect any existing account by email without that person agreeing. Fine for the pilot, where invites happen in person; revisit before self-serve signup.
+- **`inviteBarber`** itself has no automated test (it calls Supabase Auth); `linkBarberLogin` is tested.
+
+Original plan:
+
 
 All are server functions with permission checks; screens come in U2/U3.
 
@@ -333,8 +375,8 @@ Marketplace, deposits, online tips, WhatsApp, walk-in queue/QR, Google Calendar 
 
 ## Tomorrow: start here
 
-1. B5 (Owner operations + reporting): needs no outside accounts.
-2. Create the accounts (Resend, Twilio, Telegram bot, Stripe test) so B2–B4 can connect real providers to the `Senders` port.
+1. B6 (Platform admin backend): needs no outside accounts.
+2. Create the accounts (Resend, Twilio, Telegram bot) so B3/B4 can connect real providers to the `Senders` port. Stripe (B2) is last.
 
 ## Git
 
