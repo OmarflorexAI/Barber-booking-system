@@ -24,12 +24,18 @@ export type BookingErrorCode =
   | "CUTOFF_PASSED" // too late for the Client to cancel or change online
   | "BOOKING_NOT_ACTIVE" // already cancelled or completed
   | "DAY_HAS_BOOKINGS" // day off / closed day over live Bookings
-  | "FORBIDDEN";
+  | "FORBIDDEN"
+  | "BARBER_LIMIT" // a Shop already has its maximum of active Barbers
+  | "BARBER_HAS_BOOKINGS"; // a Barber with upcoming Bookings cannot be removed yet
 
 export const slotTaken = () => new BookingError("SLOT_TAKEN", "That time was just taken. Please pick another.");
 export const notFound = (what: string) => new BookingError("NOT_FOUND", `${what} not found`);
 export const invalid = (message: string) => new BookingError("INVALID_INPUT", message);
 export const forbidden = () => new BookingError("FORBIDDEN", "You are not allowed to do that.");
+export const barberLimit = (max: number) =>
+  new BookingError("BARBER_LIMIT", `A shop can have at most ${max} active barbers.`);
+export const barberHasBookings = (upcoming: number) =>
+  new BookingError("BARBER_HAS_BOOKINGS", "Cancel or move this barber's upcoming bookings first.", { upcoming });
 
 export function isBookingError(e: unknown, code?: BookingErrorCode): e is BookingError {
   return e instanceof BookingError && (code === undefined || e.code === code);
@@ -39,6 +45,11 @@ export function isBookingError(e: unknown, code?: BookingErrorCode): e is Bookin
 export const PG_EXCLUSION_VIOLATION = "23P01";
 /** Raised by the day-off / closed-day guard triggers. */
 export const PG_DAY_HAS_BOOKINGS = "BB001";
+/** Raised by the Barber-limit trigger (more than MAX_ACTIVE_BARBERS active Barbers). */
+export const PG_BARBER_LIMIT = "BB002";
+/** A row points at something that doesn't exist (here: in another Shop, or deleted). */
+export const PG_FOREIGN_KEY_VIOLATION = "23503";
+export const PG_UNIQUE_VIOLATION = "23505";
 
 export function pgCode(e: unknown): string | undefined {
   return typeof e === "object" && e !== null && "code" in e ? String((e as { code: unknown }).code) : undefined;

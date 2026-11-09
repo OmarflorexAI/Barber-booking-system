@@ -15,7 +15,10 @@ barbers as (
   from shop, (values
     ('Carlos', 'Twelve years behind the chair. Clean fades and sharp lines.', array['Fades', 'Line-ups'], 0),
     ('Dre',    'Classic cuts and beard sculpting. Habla español.',             array['Beards', 'Classic cuts'], 1),
-    ('Maya',   'Textured hair specialist. Designs on request.',                array['Designs', 'Curly hair'], 2)
+    ('Maya',   'Textured hair specialist. Designs on request.',                array['Designs', 'Curly hair'], 2),
+    ('Luis',   'Tapers, temple fades and hot-towel shaves.',                   array['Tapers', 'Shaves'], 3),
+    ('Jay',    'Kids cuts with patience. Quick and clean.',                    array['Kids', 'Buzz cuts'], 4),
+    ('Nia',    'Braids prep, shape-ups and color touch-ups.',                  array['Shape-ups', 'Color'], 5)
   ) as b(name, bio, specialties, sort)
   returning id, shop_id, display_name
 ),
