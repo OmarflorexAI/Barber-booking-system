@@ -4,7 +4,9 @@ Last updated: 2026-11-09. Source of requirements: `Barbershop Booking System PRD
 
 ## Where we are
 
-Phase 1 (the core slice) is **done and verified**. On 2026-11-09 the "Book now" bug was fixed, **B1 (sending worker)** and **B5 (Owner tools + reporting)** were built. Agreed order from here: B6 (admin backend) → B3/B4 (connect texts, alerts, email) → B2 (payments, last) → UI.
+Phase 1 (the core slice) is **done and verified**. On 2026-11-09 the "Book now" bug was fixed, and **B1 (sending worker)**, **B5 (Owner tools + reporting)** and **B6 (Platform admin backend)** were built and reviewed. Agreed order from here: B3/B4 (connect texts, alerts, email) → B2 (payments, last) → talk about a landing page → UI.
+
+Verified on 2026-11-09 (after B6): `npm test` 106 passed (5 files), typecheck and lint clean. `/api/cron/daily` returns 401 without the secret and `{"purged":{"shops":0}}` with it.
 
 Verified on 2026-11-09 (after B5): `npm test` 87 passed (4 files, run one file at a time; about 2 min), `npm run e2e` 4 passed, typecheck and lint clean. `/api/cron/dispatch` delivered the 7 waiting demo-shop alerts (to the log senders).
 
@@ -282,6 +284,28 @@ All are server functions with permission checks; screens come in U2/U3.
 
 ### B6: Platform admin operations
 
+**DONE 2026-11-09.** What was built:
+- **`src/server/platform-admin`**: `createPlatformAdmin(sql)`. Every operation requires a Platform admin, except the scheduled `purgeCancelledShops`.
+  - `createShop`: one transaction (Shop, Owner membership, up to 6 Barbers with the Owner first when they cut hair, Services with the same starting price for every Barber, the same starting hours for every Barber). `checkNewShop` validates a form without touching the database.
+  - `listShops`: status, texting registration, billing, minutes per booking, active Barbers, online Bookings in the last 7 days.
+  - `importClients`: CSV from Excel/Sheets/Numbers. Finds the name and phone columns by header, normalizes phones, merges repeats, never changes existing Clients (a blocked number stays blocked), reports bad rows by line. Logged as support access.
+  - `setSmsRegistration` (approved turns texting on; any other status turns it off), `setBillingStatus` (free_month / paid / overdue), `setManualBookingMinutes`.
+  - `openSupportAccess` / `listSupportAccess`: reason required; who, when, why.
+  - `listFailures` (across Shops, with the Shop name) and `retryFailure` (back to the queue with fresh retries).
+  - `cancelShop` (booking page closes at once; cancelling again keeps the first date), `reactivateShop` (cancelled Shops only), `exportClients` (client CSV for a leaving Owner, logged), `purgeCancelledShops` (deletes Shops cancelled 30+ days ago with all their rows and the staff logins that belonged only to them; Platform admins are never deleted).
+- **App layer:** `onboardShop` in `src/server/invites.ts` checks the form, creates the Owner's login by email (`src/server/logins.ts`, shared with `inviteBarber`), then creates the Shop. `platformAdmin()` singleton in `src/server/engine.ts`.
+- **`/api/cron/daily`**: runs the 30-day deletion (the Owner's daily email joins it in B4). Shares `src/server/cron-auth.ts` with `/api/cron/dispatch`.
+- **Migration** `20261109200000_platform_admin.sql`: `shops.sms_registration`, `shops.billing_status`, `shops.cancelled_at` (must be set exactly when status is cancelled).
+- **Shared:** `src/lib/csv.ts` (CSV reader + safe cell writer, also used by the Owner export).
+- **Tests:** `tests/engine/platform-admin.test.ts`, 19 tests.
+- **Review (two-axis) fixes applied:** whitespace Owner name no longer links the Owner to another Barber; only the slug constraint reads as "link name taken"; unknown Shop gives NOT_FOUND; buffers and list limits validated; cancel/reactivate respect the current status; the Owner login is created only after the form passes.
+- **Left as is (on purpose):**
+  - `npm run staff:add` stays as a dev tool until the admin screens (U4) exist.
+  - Deleting a Shop also deletes its support access log ("deletes everything").
+  - `overdue` is an extra billing state beyond free/paid. It's harmless, so it was kept.
+  - The daily job still needs a scheduler at deploy (same note as the dispatcher).
+
+Original plan:
 - **Create a Shop** in one step: Owner, Barbers, Services and hours (it replaces the `staff:add` script).
 - **Client import:** import from CSV, with phone normalization and duplicate merging.
 - **SMS registration:** record the Shop's registration status. Approval flips `sms_enabled`.
@@ -325,7 +349,8 @@ All are server functions with permission checks; screens come in U2/U3.
 | 6 | Sole-proprietor texting limits (Shops without an EIN) | **Researched** (see below): sole proprietor is enough for a pilot Shop; add a daily cap guard in B1 |
 | 7 | Product name and booking link format | **Decided:** the product is **Barber Master** (app title renamed 2026-11-07). Link stays `/b/<shop-slug>` |
 | 8 | Which payment provider replaces Stripe | **Researched** (see below): leaning Square or Stripe for cards, PayPal/Venmo as an optional extra; Zelle can't be automated. Final pick in the B2 grilling |
-| 9 | "Book now" button | **Bug:** clicking it does nothing (no message, no booking). Fix first thing next session with `/diagnosing-bugs` |
+| 9 | "Book now" button | **Fixed 2026-11-09** (the button now waits for the bot check, and errors scroll into view) |
+| 10 | No-shows | **Recommended (2026-11-09, waiting on the user):** keep it simple, no new rules. Barbers mark no-shows in the day view; the Owner's stats show them separately. Easiest next step: a no-show count per client in the client export so the Owner can block repeat offenders. A no-show fee waits for payments (B2). |
 
 Questions for the Shop visits: share of walk-ins, minutes per manual booking, Telegram or WhatsApp, $39 or $59 a month, and which card reader/payment app the Shop already uses.
 
@@ -375,8 +400,10 @@ Marketplace, deposits, online tips, WhatsApp, walk-in queue/QR, Google Calendar 
 
 ## Tomorrow: start here
 
-1. B6 (Platform admin backend): needs no outside accounts.
-2. Create the accounts (Resend, Twilio, Telegram bot) so B3/B4 can connect real providers to the `Senders` port. Stripe (B2) is last.
+1. Create the accounts (Twilio, Telegram bot, Resend) and paste their keys into `.env.local` only (never into chat). See "Accounts to create".
+2. B3 (Twilio texts) and B4 (Telegram alerts + Resend email), plugged into the `Senders` port.
+3. B2 payments last (Stripe test mode).
+4. Talk about whether to build a landing page, then the dashboards and UI (U1–U5).
 
 ## Git
 
