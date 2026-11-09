@@ -21,6 +21,7 @@ export type BookingErrorCode =
   | "SHOP_UNAVAILABLE"
   | "PHONE_BLOCKED"
   | "UNPAID_LIMIT" // already 2 active unpaid Bookings for this phone
+  | "PAY_ONLINE_REQUIRED" // this phone missed too many recent visits: book with online payment
   | "CUTOFF_PASSED" // too late for the Client to cancel or change online
   | "BOOKING_NOT_ACTIVE" // already cancelled or completed
   | "DAY_HAS_BOOKINGS" // day off / closed day over live Bookings

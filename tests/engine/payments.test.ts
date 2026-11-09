@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { isBookingError } from "@/server/booking-engine";
 import { createPayments, type PaymentEvent, type PaymentProvider } from "@/server/payments";
 import { createReporting } from "@/server/reporting";
-import { at, book, dropShop, engine, makeShop, makeUser, NOW, outboxTypes, sql, TOMORROW, type TestShop } from "./fixtures";
+import { at, book, dropShop, engine, makeShop, makeUser, NOW, outboxTypes, sql, TOMORROW, uniquePhone, type TestShop } from "./fixtures";
 
 /**
  * Online payments (B2). Real Postgres; a fake payment provider stands in for Stripe.
@@ -186,5 +186,45 @@ describe("paying online", () => {
     expect((await stats()).bookings).toBe(0);
     await webhook(paidEvent(booking.id));
     expect((await stats()).bookings).toBe(1);
+  });
+});
+
+describe("missed visits (no-shows)", () => {
+  // A past Booking for this phone that the Barber marked as a no-show.
+  async function missedVisit(phone: string, daysAgo: number) {
+    const { booking } = await book(shop, { client: { name: "Test Client", phone } });
+    const startsAt = new Date(NOW.getTime() - daysAgo * 24 * 60 * 60_000);
+    const endsAt = new Date(startsAt.getTime() + 30 * 60_000);
+    await sql`
+      update public.bookings set status = 'no_show', starts_at = ${startsAt}, ends_at = ${endsAt}, blocked_until = ${endsAt}
+      where id = ${booking.id}
+    `;
+  }
+
+  it("after 2 no-shows in 90 days, that phone pays online to book", async () => {
+    const phone = uniquePhone();
+    await missedVisit(phone, 10);
+    await book(shop, { client: { name: "Test Client", phone }, startsAt: at(TOMORROW, 11) }); // one is fine
+    await missedVisit(phone, 20);
+    await expect(book(shop, { client: { name: "Test Client", phone }, startsAt: at(TOMORROW, 12) })).rejects.toSatisfy((e) =>
+      isBookingError(e, "PAY_ONLINE_REQUIRED"),
+    );
+    await book(shop, { client: { name: "Test Client", phone }, startsAt: at(TOMORROW, 12), paymentMethod: "online" });
+  });
+
+  it("forgets no-shows older than 90 days", async () => {
+    const phone = uniquePhone();
+    await missedVisit(phone, 95);
+    await missedVisit(phone, 120);
+    await book(shop, { client: { name: "Test Client", phone } });
+  });
+
+  it("changes nothing at a Shop that doesn't take online payments", async () => {
+    await dropShop(shop);
+    shop = await makeShop();
+    const phone = uniquePhone();
+    await missedVisit(phone, 10);
+    await missedVisit(phone, 20);
+    await book(shop, { client: { name: "Test Client", phone } });
   });
 });

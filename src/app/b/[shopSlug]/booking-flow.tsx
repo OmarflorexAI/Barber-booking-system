@@ -75,6 +75,7 @@ export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Loc
         return;
       }
       setError(t.errors[r.code] ?? t.errors.UNKNOWN);
+      if (r.code === "PAY_ONLINE_REQUIRED") setPayment("online");
       if (r.code === "SLOT_TAKEN" || r.code === "OUTSIDE_WINDOW") {
         setSlot(null);
         setRefreshKey((k) => k + 1);

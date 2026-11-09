@@ -469,6 +469,16 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
           if (unpaid >= 2) {
             throw new BookingError("UNPAID_LIMIT", "You already have 2 upcoming unpaid bookings at this shop.");
           }
+          if (!online && shop.payments_enabled) {
+            const since = new Date(now.getTime() - RULES.noShowWindowDays * 24 * 60 * MINUTE);
+            const [{ missed }] = await tx<{ missed: number }[]>`
+              select count(*)::int as missed from public.bookings
+              where client_id = ${client.id} and status = 'no_show' and starts_at > ${since} and starts_at <= ${now}
+            `;
+            if (missed >= RULES.noShowLimit) {
+              throw new BookingError("PAY_ONLINE_REQUIRED", "Please pay online to book: this number missed recent visits.");
+            }
+          }
 
           const endsAt = new Date(startsAt.getTime() + offer.durationMin * MINUTE);
           const blockedUntil = new Date(endsAt.getTime() + offer.bufferMin * MINUTE);

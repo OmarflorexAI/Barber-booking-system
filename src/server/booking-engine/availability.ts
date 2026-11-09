@@ -8,6 +8,12 @@ export const RULES = {
   reminderLeadMin: 120,
   /** An online Booking holds its time this long while the Client pays. */
   paymentHoldMin: 10,
+  /**
+   * Missed visits: this many no-shows within the window and that phone pays online to
+   * book (only where the Shop takes online payments). It clears itself as they age out.
+   */
+  noShowLimit: 2,
+  noShowWindowDays: 90,
 } as const;
 
 /** A Barber's working hours for one weekday, in minutes since local midnight. */

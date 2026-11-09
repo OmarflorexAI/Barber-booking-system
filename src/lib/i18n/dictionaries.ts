@@ -80,6 +80,7 @@ const en = {
     DAY_HAS_BOOKINGS: "There are bookings that day. Cancel or move them first.",
     BOT_CHECK: "Please complete the security check and try again.",
     PAYMENTS_OFF: "Online payment isn't available right now. Please pay at the shop.",
+    PAY_ONLINE_REQUIRED: "This number missed a couple of recent visits, so this booking is paid online. We've switched it for you: press Book now again.",
     UNKNOWN: "Something went wrong. Please try again.",
   } as Record<string, string>,
   // staff
@@ -183,6 +184,7 @@ const es: Dictionary = {
     DAY_HAS_BOOKINGS: "Hay citas ese día. Cancélalas o muévelas primero.",
     BOT_CHECK: "Completa la verificación de seguridad e intenta otra vez.",
     PAYMENTS_OFF: "El pago en línea no está disponible ahora. Paga en la barbería.",
+    PAY_ONLINE_REQUIRED: "Este número faltó a un par de citas recientes, así que esta cita se paga en línea. Ya lo cambiamos: presiona Reservar otra vez.",
     UNKNOWN: "Algo salió mal. Intenta otra vez.",
   },
   login: "Entrar",
