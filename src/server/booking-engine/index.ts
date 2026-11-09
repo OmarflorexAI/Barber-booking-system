@@ -5,7 +5,6 @@ import { normalizePhone } from "@/lib/phone";
 import { bookingWindow, computeSlots, RULES, type DayHours, type Interval } from "./availability";
 import {
   BookingError,
-  forbidden,
   invalid,
   notFound,
   pgCode,
@@ -13,6 +12,7 @@ import {
   PG_EXCLUSION_VIOLATION,
   slotTaken,
 } from "./errors";
+import { authorizeForBarber, requireOwner } from "./access";
 import { isLocalDate, localDayRange, MINUTE, timeToMinutes, toLocal, weekdayOf, type LocalDate } from "./time";
 
 export * from "./errors";
@@ -279,24 +279,6 @@ async function loadDay(
   };
 }
 
-type StaffRole = { owner: boolean; barberId: string | null };
-
-async function staffRole(db: Db, userId: string, shopId: string): Promise<StaffRole | null> {
-  const [row] = await db<{ role: string; barber_id: string | null }[]>`
-    select m.role, b.id as barber_id
-    from public.shop_members m
-    left join public.barbers b on b.shop_id = m.shop_id and b.user_id = m.user_id
-    where m.shop_id = ${shopId} and m.user_id = ${userId}
-  `;
-  return row ? { owner: row.role === "owner", barberId: row.barber_id } : null;
-}
-
-/** Owners may act on any Barber in their Shop; a Barber only on themselves. */
-async function authorizeForBarber(db: Db, userId: string, shopId: string, barberId: string): Promise<StaffRole> {
-  const role = await staffRole(db, userId, shopId);
-  if (!role || (!role.owner && role.barberId !== barberId)) throw forbidden();
-  return role;
-}
 
 function assertDate(date: string): asserts date is LocalDate {
   if (!isLocalDate(date)) throw invalid("Invalid date");
@@ -680,8 +662,7 @@ export function createBookingEngine(sql: Sql) {
   async function addShopClosedDay(args: { userId: string; shopId: string; date: string }) {
     assertDate(args.date);
     const date = args.date;
-    const role = await staffRole(sql, args.userId, args.shopId);
-    if (!role?.owner) throw forbidden();
+    await requireOwner(sql, args.userId, args.shopId);
     try {
       await sql`insert into public.shop_closed_days (shop_id, day) values (${args.shopId}, ${date}::date) on conflict do nothing`;
     } catch (e) {
