@@ -4,7 +4,28 @@ Last updated: 2026-11-09. Source of requirements: `Barbershop Booking System PRD
 
 ## Where we are
 
-**The backend (B1–B6) is done.** B2 (payments) was finished on 2026-11-09; it runs only when the Stripe test keys are in `.env.local`. Next: plug in the real keys and try each provider, then talk about a landing page, then the UI.
+**The backend (B1–B6) is built and tested.** What's left is trying it with the real services, a few dashboard settings, and one decision (see "Needs you" below). Then: talk about a landing page, then the UI.
+
+Verified on 2026-11-09 (evening, after the provider setup): `npm test` 135 passed (10 files), `npm run e2e` 4 passed, typecheck and lint clean; a test run now leaves no test logins behind. A real signed Stripe test event went Stripe → `npm run stripe:listen` → `/api/payments/webhook` and was answered 200.
+
+### Needs you (as of 2026-11-09)
+
+1. **Test a real payment.** First sign in: run `npm run staff:add -- <your email> demo-shop owner` (Claude Code isn't allowed to grant logins), then request the link at `/login`. Then connect the demo shop to Stripe in your normal browser: open `/api/payments/onboard?shop=36587674-9e01-4447-9182-48b76203fc85` and use Stripe's test data. Stripe's CAPTCHA has to be solved by a person (an automated browser kept getting new puzzles). After that, Claude can do the test payment and refund.
+2. **Twilio and Telegram keys.** All five are empty in `.env.local`, so texts and Barber alerts go to the server log for now.
+3. **Login emails through Resend.** Supabase's own sender allows only a few emails an hour, which will block sign-ins. It's one form in the Supabase dashboard; the values are under B4 below.
+4. **No-shows.** Recommended: no new rules, plus a per-client no-show count in the client export. Waiting on your yes or no.
+
+### Done on 2026-11-09 (evening)
+
+- **B2 payments finished** (details under B2 below) and pushed.
+- **Keys:** `RESEND_API_KEY`, `STRIPE_SECRET_KEY` (test) and `STRIPE_WEBHOOK_SECRET` are set in `.env.local`. The first Stripe key pasted was a **live** key (`sk_live_`); it is commented out in `.env.local` and was never used. Only `sk_test_` keys go in while testing.
+- **Stripe Connect** turned on in test mode with: sellers collect payments directly (direct charges), onboarding hosted by Stripe, and sellers manage their account in the full **Stripe Dashboard**. The app therefore creates **Standard** accounts (was Express), so an Owner can also refund by hand there.
+- **Stripe CLI inside the project:** `tools/stripe/stripe.exe` (v1.55.8, checksum verified; gitignored, nothing installed globally), login saved in `.stripe/` (gitignored). `npm run stripe -- <args>` runs it; `npm run stripe:listen` forwards the 3 events the app uses (`checkout.session.completed`, `checkout.session.async_payment_succeeded`, `account.updated`) to `localhost:3000/api/payments/webhook`. This CLI version requires the event list.
+- **Demo shop:** has a Standard test account `acct_1UZztIKigFGnpZ4J`; its setup isn't finished yet (item 1 above).
+- **Fixed: every page reloaded about 10 times a second in dev.** Cause: the dev build cache (`.next`) got out of sync after the dev server was force-stopped several times, so each reconnect got "HMR hash mismatch, reload". Fix: stop the server, delete `.next`, start again. Do the same if it ever comes back.
+- **Console error "attributes didn't match" on `<body>`:** a browser extension adds `location="localhost"` to `<body>`. Added `suppressHydrationWarning` to `<body>` only (`src/app/layout.tsx`); mismatches inside pages still show. It couldn't be reproduced in a headless browser, so confirm in your browser.
+- **Payments review fix:** a paid event whose checkout id didn't match the one saved on the Booking was ignored, which would have kept the money with no booking and no refund. Now every paid event for an existing Booking confirms it or refunds it in full (test added).
+- **Test cleanup:** tests that removed a Barber left that login behind (39 had piled up). The fixtures now delete every login they made for a Shop, and the 39 orphans were deleted (none belonged to a Shop, a Barber or a Platform admin).
 
 Verified on 2026-11-09 (after B2): `npm test` 134 passed (10 files), `npm run e2e` 4 passed, typecheck and lint clean. Without Stripe keys the webhook answers 503 and onboarding 503; the return route lands on `/app/day?payments=pending`.
 
@@ -68,7 +89,9 @@ Shell: PowerShell, from the repo root.
 - ~~"Book now" did nothing~~ **Fixed 2026-11-09.** Cause: pressing it before the bot check had issued its token got a "complete the security check" error, rendered at the top of the page, off-screen on a scrolled form. Now the button waits for the bot check ("Checking you're not a robot…") and errors show beside it and scroll into view. Regression test: `tests/e2e/book-now.spec.ts` (Pixel 7, 1280x800, 360x560).
 - Found and fixed while building B1: outbox payloads were stored as JSON strings instead of objects (migration `20261109181000_outbox_payload_objects.sql` repaired old rows).
 - Scheduler for go-live: Vercel cron on the free (Hobby) plan runs at most once a day; the worker needs every minute. Options at deploy time (U5): Vercel Pro, or Supabase `pg_cron` + `pg_net` calling `/api/cron/dispatch`.
-- Supabase's built-in email sender is rate-limited; login emails will move to Resend.
+- Supabase's built-in email sender is rate-limited; login emails will move to Resend (see "Needs you").
+- If the dev site starts reloading in a loop ("HMR hash mismatch"): stop `npm run dev`, delete `.next`, start again.
+- `/login` always says "link sent", even for an email without a staff login (on purpose, so it doesn't reveal who has an account). If no email arrives, check the login exists (`npm run staff:add`).
 
 ## Decisions for B2 (payments), from 2026-11-07
 
@@ -81,8 +104,8 @@ Shell: PowerShell, from the repo root.
 
 | Service | Used for | What to get | Status |
 |---|---|---|---|
-| Resend (resend.com) | Login emails, Barber email alerts, daily Owner email | API key; later a verified sending domain | Chosen, not created |
-| Stripe (dashboard.stripe.com), **test mode** | Online payments while testing (Connect enabled) | Secret test key `sk_test_...`; webhook secret via Stripe CLI | Not created |
+| Resend (resend.com) | Login emails, Barber email alerts, daily Owner email | API key; later a verified sending domain | **Key set** 2026-11-09; no email sent through it yet; login emails not moved yet |
+| Stripe (dashboard.stripe.com), **test mode** | Online payments while testing (Connect enabled) | Secret test key `sk_test_...`; webhook secret via Stripe CLI | **Done** 2026-11-09: test key and CLI webhook secret set, Connect on |
 | Telegram | Barber alerts | Message @BotFather > `/newbot` > bot token | Not created |
 | Twilio (twilio.com) | Client texts | Account SID and auth token; per-Shop subaccounts and A2P 10DLC registration come later | Not created |
 | Vercel | Deploy and scheduled jobs (cron) | Account linked to the GitHub repo | Not created |
@@ -164,21 +187,22 @@ Goal: every row the engine writes to `outbox` and `scheduled_messages` actually 
 - **Done when:** a booking made on `/b/demo-shop` produces fake "sent" records, and the tests are green.
 - Stories: 81, 82, 77 (failure data).
 
-### B2: Payments (Stripe test mode, provider-neutral) — DONE 2026-11-09 (waiting on Stripe test keys)
+### B2: Payments (Stripe test mode, provider-neutral) — DONE 2026-11-09 (keys set; waiting on the demo shop's Stripe setup to test a real payment)
 
 **What was built:**
 - Migration `20261110110000_payments.sql`: `shops.payment_account_id` (renamed) and `payments_enabled`; booking status `pending_payment` with `hold_expires_at`, `checkout_ref`, `payment_ref`; `cancelled_by = 'system'`; `payment_events` (server-only); outbox type `refund_failed`.
-- `src/server/payments/index.ts`: the provider-neutral module (`startOnboarding`, `finishOnboarding`, `startCheckout`, `handleWebhook`, `releaseExpiredHolds`, `refund`) behind the `PaymentProvider` port. `src/server/providers/stripe.ts` is the only file that knows Stripe (fetch, no SDK; Connect express accounts with direct charges; signature check with 5-minute tolerance).
+- `src/server/payments/index.ts`: the provider-neutral module (`startOnboarding`, `finishOnboarding`, `startCheckout`, `handleWebhook`, `releaseExpiredHolds`, `refund`) behind the `PaymentProvider` port. `src/server/providers/stripe.ts` is the only file that knows Stripe (fetch, no SDK; Connect **Standard** accounts with direct charges; signature check with 5-minute tolerance).
 - Engine: an online Booking is created as `pending_payment` for 10 minutes and nobody is told; the paid webhook confirms it and sends the alert, text and reminder. A payment after the hold ran out is refunded in full. Held Bookings count toward the unpaid limit, block the time, can't be marked arrived, and aren't in the stats.
 - Dispatcher: a refund that keeps failing writes a `refund_failed` row; the Owners get an email to refund by hand.
 - Routes: `POST /api/payments/webhook`, `GET /api/payments/onboard?shop=<id>` (Owner), `GET /api/payments/return`. `/api/cron/dispatch` releases expired holds first.
 - UI: online payers go straight to checkout; the manage page shows "Waiting for payment" with a **Pay now** button and a thank-you after paying.
 
 **To try it (test mode):**
-1. Stripe dashboard in test mode: turn on Connect. Copy the test secret key into `STRIPE_SECRET_KEY`.
-2. Install the Stripe CLI and run `stripe listen --forward-connect-to localhost:3000/api/payments/webhook`; put the `whsec_...` it prints in `STRIPE_WEBHOOK_SECRET`. Restart `npm run dev`.
+1. Stripe dashboard in test mode: turn on Connect (done: direct payments, Stripe-hosted onboarding, Stripe Dashboard). Copy the test secret key (`sk_test_...`) into `STRIPE_SECRET_KEY` (done).
+2. The Stripe CLI lives in the project (`tools/stripe/`, gitignored; get it from github.com/stripe/stripe-cli/releases). Run `npm run stripe -- login` once, then `npm run stripe:listen`; put the `whsec_...` it prints in `STRIPE_WEBHOOK_SECRET`. Restart `npm run dev`.
 3. As an Owner, open `/api/payments/onboard?shop=<shop id>` and finish Stripe's test onboarding (use its test data).
 4. Book with "pay online", pay with card `4242 4242 4242 4242`; the manage page should turn to Confirmed after a refresh.
+5. Production: create a webhook endpoint in the dashboard with **Events from: Connected accounts**, the 3 events above, URL `https://<deployed address>/api/payments/webhook`. Its signing secret is different from the CLI's.
 
 **Original plan:**
 
@@ -405,7 +429,7 @@ Original plan:
 | 7 | Product name and booking link format | **Decided:** the product is **Barber Master** (app title renamed 2026-11-07). Link stays `/b/<shop-slug>` |
 | 8 | Which payment provider replaces Stripe | **Researched** (see below): leaning Square or Stripe for cards, PayPal/Venmo as an optional extra; Zelle can't be automated. Final pick in the B2 grilling |
 | 9 | "Book now" button | **Fixed 2026-11-09** (the button now waits for the bot check, and errors scroll into view) |
-| 10 | No-shows | **Recommended (2026-11-09, waiting on the user):** keep it simple, no new rules. Barbers mark no-shows in the day view; the Owner's stats show them separately. Easiest next step: a no-show count per client in the client export so the Owner can block repeat offenders. A no-show fee waits for payments (B2). |
+| 10 | No-shows | **Recommended (2026-11-09, still waiting on the user):** keep it simple, no new rules. Barbers mark no-shows in the day view; the Owner's stats show them separately. Easiest next step: a no-show count per client in the client export so the Owner can block repeat offenders. A no-show fee waits for payments (B2). |
 
 Questions for the Shop visits: share of walk-ins, minutes per manual booking, Telegram or WhatsApp, $39 or $59 a month, and which card reader/payment app the Shop already uses.
 
@@ -455,9 +479,10 @@ Marketplace, deposits, online tips, WhatsApp, walk-in queue/QR, Google Calendar 
 
 ## Tomorrow: start here
 
-1. Paste the keys into `.env.local` only (never into chat): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `RESEND_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (`.env.example` lists them). Restart `npm run dev`, then test each provider for real; the Twilio and Telegram webhooks need a public address (deploy, or a tunnel).
-2. Move the login emails to Resend SMTP (see B4).
-3. Talk about whether to build a landing page, then the dashboards and UI (U1–U5).
+1. Work through "Needs you" at the top: sign in, connect the demo shop to Stripe, then Claude runs the test payment and refund (start `npm run dev` and `npm run stripe:listen` first).
+2. Add the Twilio and Telegram keys to `.env.local` (never into chat) and restart `npm run dev`; their webhooks need a public address (deploy, or a tunnel).
+3. Move the login emails to Resend SMTP (see B4), and send a test email through Resend (to the Resend account's own address until a domain is verified).
+4. Talk about whether to build a landing page, then the dashboards and UI (U1–U5).
 
 ## Git
 
