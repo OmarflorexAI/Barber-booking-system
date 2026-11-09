@@ -13,7 +13,9 @@
     "test:engine": "vitest run tests/engine",
     "e2e": "playwright test",
     "staff:add": "node --env-file=.env.local scripts/add-staff.mjs",
-    "telegram:webhook": "node --env-file=.env.local scripts/telegram-webhook.mjs"
+    "telegram:webhook": "node --env-file=.env.local scripts/telegram-webhook.mjs",
+    "stripe": "node scripts/stripe.mjs",
+    "stripe:listen": "node scripts/stripe.mjs listen --events checkout.session.completed,checkout.session.async_payment_succeeded,account.updated --forward-to localhost:3000/api/payments/webhook --forward-connect-to localhost:3000/api/payments/webhook"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

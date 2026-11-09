@@ -46,3 +46,7 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Stripe CLI, kept inside the project (npm run stripe:install), and its test-mode login
+/tools/
+/.stripe/
