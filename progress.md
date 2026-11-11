@@ -16,7 +16,49 @@ Plan: `C:\Users\admin\.claude\plans\we-can-set-up-breezy-starlight.md`. The user
 
 **M2 Leads reach a human — DONE.** The user's login is now a Platform admin in dev (`platform_admins`). A lead sent from the page was saved and the "New lead: …" email arrived in Gmail via Resend 15 s later. A test lead named "M2 Check Barbershop" is still in `public.leads` (the delete was declined; harmless). Leads that can't be emailed stay pending and `/api/cron/daily` retries them.
 
-**M3 360° head gallery — viewer DONE, real heads WAITING.**
+**Update 2026-11-10 (later): M3 DROPPED, page redesigned. This replaces the M3 notes below (kept for history only).**
+- The user stopped the 3D heads after ~2 hours of trouble. The page is redesigned around a WebGL gradient the user supplied: `src/components/ui/animated-gradient.tsx`, hardened so it pauses off-screen or in a hidden tab, draws a still frame under reduced motion and renders at 1x resolution at most.
+- Removed: `gallery.tsx`, `head-viewer.tsx`, `heads.ts`, the gallery strings and every "Styles" link.
+- Still on disk, unused: `scripts/head-frames.mjs`, `heads_reference_images/`, `public/landing/heads/` (test frames, untracked), `C:\Users\admin\tools\head3d\`. Delete them if the 3D idea is dead for good.
+- The look:
+  - Hero = a "melting barber pole" (`POLE_GRADIENT` in `hero.tsx`: pole blue, red and cream stripes); the same gradient comes back in the Closing band.
+  - Navy palette (`--l-*` in `globals.css`).
+  - Big Shoulders headlines and Instrument Sans body, loaded in `page.tsx` and scoped to `.landing`. Mono is left only inside the UI mockups.
+  - The nav is a floating glass pill.
+- Motion:
+  - One load sequence: the headline words rise.
+  - After that, only scroll-driven CSS (`animation-timeline`, behind `@supports` and reduced motion): the hero recedes, the alert cards slide, the problem quotes get struck through, the how-it-works line fills.
+  - Buttons carry a mini pole that turns on hover.
+  - Firefox has no scroll-driven animations yet, so it shows the final states (quotes already struck). This is on purpose.
+- Checked at 1440×900 and 390×844 in EN and ES: no sideways scroll. Typecheck, lint, `npm run build` and the 5 landing e2e tests pass.
+- Build warning "Failed to find font override values for Big Shoulders": it only means there's no size-matched fallback font. Harmless.
+- 2026-11-11, borrowed from the user's reference site (localhost:4173, "How a lesson works"):
+  - **How it works is now a pinned stepper** (`how-stepper.tsx`):
+    - three tall steps; the one nearest the middle of the screen is lit, the others dim to 28%;
+    - the rail fills down to the middle of the screen (`--hp`, set by a scroll handler);
+    - a sticky window on the right swaps scenes (booking / alert / reminder) whose rows pop in staggered (`.bm-scene`, `.bm-pop`).
+    - Below 1024px: plain steps, no rail, no window. Scene text is in `howStage` in `landing.ts`.
+  - **Cards** (`.bm-card` in globals.css, components layer): inset key border; on hover the card lifts 4px, a light line runs along its top edge, and the `.bm-icon` circle turns cream. Used on the 4 hero values (line icons), the setup steps (2×2) and the offer points.
+  - **Staggered fade-up on scroll** (`.bm-reveal`, added by `reveal.tsx`): hidden only when scripts run and motion is allowed.
+  - The old CSS-only rail fill (`bm-fill`) is gone.
+- 2026-11-11, **interactive hero phone** (`hero-phone.tsx`):
+  - The screenshot is replaced by a working pretend booking in the real page's look: service → barber → time → "You're booked". Screens slide; taken times are disabled; nothing is saved.
+  - Booking updates the floating "New booking" alert beside the phone to what was just booked, with a small pop (`.bm-ping`).
+  - With a mouse, the phone leans toward the pointer (off with reduced motion).
+  - Text is in `heroPhone` in `landing.ts`, EN/ES.
+  - New e2e test in `tests/e2e/landing.spec.ts` (6 landing tests now).
+  - The hero's scroll fade (`.bm-lift`) now runs only at ≥1024px, because on phones the phone sits below the fold and was turning see-through.
+- 2026-11-11, **cleanup round** (user's list; done with /frontend-design and the project-only `/impeccable` skill in `.claude/skills/impeccable`, installed with `--no-hooks`, no PRODUCT.md yet: offer `/impeccable init`):
+  - **Nav** (`nav.tsx`, now a client component): a fixed glass bar like the reference site. Past 24px of scroll it eases narrower (1120→920px), shorter and darker. A hairline along its bottom fills with page progress (`--page`, `.bm-nav::after`), a soft highlight slides behind the link of the section in view, and the bar drops in once on load.
+  - **Hero**: no section label, no floating cards around the phone, no ticker row, no 4 value cards. A bigger phone, a "Try it" pill, and a bottom strip of three facts (`heroFacts`). The phone's "any barber" star glyph is now an SVG.
+  - **Problem section ("The counter today") removed**: `problem.tsx` was deleted along with the `.bm-strike` and `.bm-slide` CSS. The page goes Hero → How it works.
+  - **Every pill label above headings removed** (`SectionLabel` is gone), along with the unused strings (`*Label`, `heroTrust`, `problem*`, `values`).
+  - **Features = a price board** (`features-list.tsx`): each name is set in Big Shoulders with a dotted leader and "Included" (`featuresPrice`) where the price would be. The selected line opens its detail (grid-rows) and the framed visual blurs over to it. Hover selects with a mouse; tap selects on phones, where the visual sits under the list. The mockups no longer use mono.
+  - **FAQ**: `details name="faq"` keeps one question open at a time (the first starts open). The answer unfolds to its height (`::details-content` + `interpolate-size`) and sharpens out of a blur, and the + turns into a × in a cream circle. Reduced motion keeps only fades. Browsers without `::details-content` just open instantly.
+  - Checks: typecheck, lint, `npm run build` and 7 landing e2e tests pass (a new one covers "questions open one at a time"; the phone test no longer checks the removed alert card). The impeccable detector is clean after fixing one finding (thick accent border on the rounded tickets). Screenshots are at 1440×900 and 390×844 in EN and ES.
+- **Committed and pushed 2026-11-11.** The impeccable skill is committed under `.claude/` without its engine binary (gitignored; the launcher downloads it). `public/landing/heads/` is gitignored now that the 3D gallery is gone.
+
+**M3 360° head gallery — viewer DONE, real heads WAITING.** (superseded, see above)
 
 - Viewer (`head-viewer.tsx`): canvas image-sequence turntable (72 frames, 5° steps), every frame fetched and decoded to ImageBitmap before dragging, drawn only when the frame changes; mouse/touch/pen drag with momentum, `touch-action: pan-y` so phones still scroll, arrow keys (role=slider), reduced motion respected, lazy loading near the viewport, head picker. Measured: p95 16.7 ms per frame while dragging, also with the CPU slowed 4×.
 - Frames go in `public/landing/heads/<id>/{720,1440}/NN.webp`; `heads.ts` lists the heads and shows only those whose frames exist. A generated grey **test head** shows until then (must not ship; it hides itself once a real head exists).
