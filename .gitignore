@@ -50,3 +50,6 @@ next-env.d.ts
 # Stripe CLI, kept inside the project (npm run stripe:install), and its test-mode login
 /tools/
 /.stripe/
+
+# landing: the generated test head (regenerate with `node scripts/head-frames.mjs test`)
+/public/landing/heads/test/
