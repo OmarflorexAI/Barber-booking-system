@@ -51,8 +51,6 @@ next-env.d.ts
 /tools/
 /.stripe/
 
-# landing: frames from the dropped 3D head gallery (nothing uses them)
-/public/landing/heads/
 
 # impeccable skill: the launcher downloads its engine binary on first run
 /.claude/skills/impeccable/scripts/bin/
