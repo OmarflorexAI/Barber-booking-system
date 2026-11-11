@@ -1,163 +1,114 @@
-import Image from "next/image";
-import type { CSSProperties } from "react";
-import { Container, FORM_ID, GlowFrame, MiniCard, PrimaryLink, SecondaryLink, SectionLabel, type PillColor, type } from "./ui";
+import type { CSSProperties, ReactNode } from "react";
+import AnimatedGradient, { type CustomConfig } from "@/components/ui/animated-gradient";
+import { Container, FORM_ID, PrimaryLink, SecondaryLink, type } from "./ui";
+import { HeroPhone } from "./hero-phone";
 import type { SectionProps } from "./types";
 
-/*
- * The cards drift up and down a few pixels, each on its own clock. They use the
- * `translate` property so the 3D tilt in `transform` stays put. Reduced motion
- * gets no animation (the class is motion-safe only).
+/**
+ * The barber pole, melted: pole blue, pole red and shaving-cream white in slow
+ * diagonal stripes. A turning pole means the shop is open.
  */
-const driftCss = `@keyframes bm-drift{0%,100%{translate:0 0}50%{translate:0 -7px}}`;
-const drift = "motion-safe:animate-[bm-drift_var(--d)_ease-in-out_infinite]";
-
-type Float = {
-  label: string;
-  value: string;
-  accent: PillColor;
-  /** Position and depth inside the stage. */
-  place: string;
-  tilt: string;
-  dur: string;
-  delay: string;
+export const POLE_GRADIENT: CustomConfig = {
+  preset: "custom",
+  color1: "#0b1a44",
+  color2: "#e5483d",
+  color3: "#f4eee3",
+  shape: "Stripes",
+  rotation: -30,
+  proportion: 42,
+  scale: 0.42,
+  speed: 18,
+  distortion: 3,
+  swirl: 38,
+  swirlIterations: 6,
+  softness: 55,
+  shapeSize: 38,
+  offset: -200,
 };
 
-export function Hero({ locale, t }: SectionProps) {
-  const c = t.cards;
-  const floats: Float[] = [
-    {
-      label: c.newBooking,
-      value: c.newBookingValue,
-      accent: "red",
-      place: "left-[2%] top-[6%] sm:left-[5%] sm:top-[9%] lg:left-[12%] lg:top-[14%]",
-      tilt: "rotateX(10deg) rotateY(14deg) translateZ(110px)",
-      dur: "9s",
-      delay: "0s",
-    },
-    {
-      label: c.paid,
-      value: c.paidValue,
-      accent: "blue",
-      place: "hidden sm:block sm:right-[9%] sm:top-[30%] lg:right-[18%]",
-      tilt: "rotateX(8deg) rotateY(-16deg) translateZ(150px)",
-      dur: "11s",
-      delay: "-4s",
-    },
-    {
-      label: c.reminder,
-      value: c.reminderValue,
-      accent: "white",
-      place: "right-[2%] bottom-[3%] sm:bottom-auto sm:right-auto sm:left-[6%] sm:top-[62%] lg:left-[13%]",
-      tilt: "rotateX(12deg) rotateY(18deg) translateZ(90px)",
-      dur: "10s",
-      delay: "-2s",
-    },
-    {
-      label: c.week,
-      value: c.weekValue,
-      accent: "red",
-      place: "hidden sm:block sm:right-[5%] sm:top-[68%] lg:right-[10%]",
-      tilt: "rotateX(10deg) rotateY(-12deg) translateZ(125px)",
-      dur: "12s",
-      delay: "-7s",
-    },
-  ];
-  const pills = ["bg-pole-red", "bg-night-ink", "bg-pole-blue", "pole"] as const;
+/** Shown before the shader's first frame, and instead of it without WebGL. */
+export const POLE_FALLBACK = "linear-gradient(125deg, #0b1a44 0%, #1d2350 40%, #7a2a3a 70%, #e5483d 100%)";
+
+const delay = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
+
+export function Hero({ t }: SectionProps) {
+  const words = t.heroTitle.split(" ");
 
   return (
-    <section className="relative pt-14 pb-20 sm:pt-24 sm:pb-28">
-      <style href="bm-hero-drift" precedence="default">
-        {driftCss}
-      </style>
+    <section aria-labelledby="hero-title" className="relative px-2 pt-2 sm:px-3 sm:pt-3">
+      {/* The panel pulls back like a mirror as the page scrolls (scroll-driven, CSS only). */}
+      <div
+        className="bm-recede relative isolate flex min-h-[calc(100svh-16px)] flex-col overflow-hidden rounded-[22px] sm:min-h-[calc(100svh-24px)] sm:rounded-[28px]"
+        style={{ background: POLE_FALLBACK }}
+      >
+        <AnimatedGradient config={POLE_GRADIENT} noise={{ opacity: 0.35, scale: 1 }} />
+        {/* Scrims keep the copy readable over the moving stripes: from the top on phones, from the left on wide screens. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,16,32,.9)_0%,rgba(10,16,32,.82)_45%,rgba(10,16,32,.35)_80%,rgba(10,16,32,.15)_100%)] lg:bg-[linear-gradient(100deg,rgba(10,16,32,.94)_0%,rgba(10,16,32,.82)_42%,rgba(10,16,32,.25)_70%,rgba(10,16,32,.05)_100%)]"
+        />
+        {/* And from the bottom, under the facts strip. */}
+        <div aria-hidden className="absolute inset-x-0 bottom-0 h-48 bg-[linear-gradient(0deg,rgba(10,16,32,.85),rgba(10,16,32,0))]" />
+        <div aria-hidden className="bm-shade absolute inset-0 bg-night opacity-0" />
 
-      <Container>
-        <div className="max-w-[760px]">
-          <SectionLabel>{t.heroLabel}</SectionLabel>
-          <h1 className={`mt-5 ${type.h1}`}>{t.heroTitle}</h1>
-          <p className={`mt-6 max-w-[60ch] ${type.lead}`}>{t.heroBody}</p>
-          <p className="mt-6 flex items-start gap-2.5 font-mono text-[13px] leading-5 text-night-ink/85">
-            <span aria-hidden className="mt-[6px] h-[7px] w-3.5 shrink-0 rounded-full bg-pole-blue" />
-            {t.heroTrust}
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <PrimaryLink href={`#${FORM_ID}`}>{t.heroCta}</PrimaryLink>
-            <SecondaryLink href="/b/demo-shop">{t.heroDemo}</SecondaryLink>
-          </div>
-        </div>
-
-        {/* The signature visual: the real booking page on a phone, with the shop's day floating around it. */}
-        <GlowFrame glow="top" className="mt-14 sm:mt-20" stageClassName="overflow-hidden">
-          <div className="relative h-[380px] [perspective:1100px] sm:h-[500px] lg:h-[560px]">
-            {/* A faint pool of light under the phone. */}
-            <div
-              aria-hidden
-              className="absolute inset-0"
-              style={{
-                background:
-                  "radial-gradient(40% 60% at 50% 70%, rgba(93,134,232,.10), transparent 70%), radial-gradient(30% 40% at 50% 20%, rgba(243,241,236,.06), transparent 70%)",
-              }}
-            />
-            <div className="absolute inset-0 [transform-style:preserve-3d]">
-              <div
-                className="absolute left-1/2 top-[9%] w-[min(64%,230px)] sm:w-[250px] lg:w-[280px]"
-                style={{ transform: "translateX(-50%) rotateX(14deg) rotateY(-9deg) rotateZ(1.5deg)", transformOrigin: "50% 50%" }}
-              >
-                <div className="rounded-[2.4rem] bg-[#050506] p-[7px] shadow-[0_0_0_1px_rgba(255,255,255,.09),0_50px_90px_-30px_rgba(0,0,0,.95),inset_0_0_0_1px_rgba(255,255,255,.05)] sm:p-2">
-                  <div className="relative overflow-hidden rounded-[2rem] bg-[#f5f2ee] pt-7">
-                    <span aria-hidden className="absolute left-1/2 top-2 h-[15px] w-[64px] -translate-x-1/2 rounded-full bg-[#050506]" />
-                    <Image
-                      src={`/landing/booking-services-${locale}.png`}
-                      alt={t.heroShotAlt}
-                      width={780}
-                      height={1560}
-                      sizes="(min-width: 1024px) 280px, (min-width: 640px) 250px, 230px"
-                      fetchPriority="high"
-                      loading="eager"
-                      className="block h-auto w-full"
-                    />
-                    
-                  </div>
-                </div>
+        <Container className="bm-lift relative flex flex-1 flex-col pt-28 sm:pt-32 lg:pt-36">
+          <div className="flex flex-1 flex-col justify-center lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-center lg:gap-12">
+            <div>
+              <h1 id="hero-title" className={type.h1}>
+                {words.map((w, i) => (
+                  <span key={i}>
+                    <span className="bm-word">
+                      <span style={{ "--i": i } as CSSProperties}>{w}</span>
+                    </span>
+                    {i < words.length - 1 && " "}
+                  </span>
+                ))}
+              </h1>
+              <p className={`bm-fade mt-7 max-w-[50ch] ${type.lead}`} style={delay(650)}>
+                {t.heroBody}
+              </p>
+              <div className="bm-fade mt-9 flex flex-wrap gap-3" style={delay(800)}>
+                <PrimaryLink href={`#${FORM_ID}`}>{t.heroCta}</PrimaryLink>
+                <SecondaryLink href="/b/demo-shop">{t.heroDemo}</SecondaryLink>
               </div>
+            </div>
 
-              {floats.map((f) => (
-                <div key={f.label} className={`absolute [transform-style:preserve-3d] ${f.place}`} aria-hidden>
-                  <MiniCard
-                    label={f.label}
-                    value={f.value}
-                    accent={f.accent}
-                    className={`origin-left max-sm:scale-[0.82] ${drift}`}
-                    style={{ transform: f.tilt, "--d": f.dur, animationDelay: f.delay } as CSSProperties}
-                  />
-                </div>
-              ))}
+            {/* The booking page on a phone, live: visitors can book a pretend cut right here. */}
+            <div className="bm-fade" style={delay(450)}>
+              <HeroPhone p={t.heroPhone} lang={t.heroPhone.lang} />
             </div>
           </div>
-        </GlowFrame>
 
-        <ul className="mt-14 grid gap-x-8 gap-y-9 sm:mt-16 sm:grid-cols-2 lg:grid-cols-4">
-          {t.values.map((v, i) => {
-            const pill = pills[i % pills.length];
-            return (
-              <li key={v.title}>
-                <p className="flex items-center gap-2.5 text-[17px] font-semibold tracking-[-0.025em] text-night-ink">
-                  <span
-                    aria-hidden
-                    className={`h-[7px] w-3.5 shrink-0 rounded-full ${pill === "pole" ? "" : pill}`}
-                    style={
-                      pill === "pole"
-                        ? { background: "repeating-linear-gradient(135deg, var(--l-red) 0 3px, var(--l-ink) 3px 5px, var(--l-blue) 5px 8px, var(--l-ink) 8px 10px)" }
-                        : undefined
-                    }
-                  />
-                  {v.title}
-                </p>
-                <p className="mt-2 max-w-[34ch] pl-6 font-mono text-[14px] leading-[1.65] text-night-muted">{v.body}</p>
+          {/* What every shop gets, lettered along the bottom of the window. */}
+          <ul className="bm-fade mt-12 grid gap-x-8 gap-y-3 border-t border-white/15 py-6 sm:grid-cols-3 sm:py-7 lg:mt-14" style={delay(1000)}>
+            {t.heroFacts.map((f, i) => (
+              <li key={f} className="flex items-center gap-3 text-[14px] font-medium text-night-ink/85 sm:text-[15px]">
+                <span aria-hidden className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/20 text-night-ink">
+                  {FACT_ICONS[i % FACT_ICONS.length]}
+                </span>
+                {f}
               </li>
-            );
-          })}
-        </ul>
-      </Container>
+            ))}
+          </ul>
+        </Container>
+      </div>
     </section>
   );
 }
+
+/* Small line icons for the three facts: two speech bubbles, a phone with no download, a shop. */
+const icon = (paths: ReactNode) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-[14px] w-[14px]">
+    {paths}
+  </svg>
+);
+const FACT_ICONS = [
+  icon(<path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2zm4 0h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1" />),
+  icon(
+    <>
+      <rect x="5" y="2" width="14" height="20" rx="2" />
+      <path d="M12 18h.01" />
+    </>,
+  ),
+  icon(<path d="M3 21h18M5 21V10l7-6 7 6v11M10 21v-6h4v6" />),
+];

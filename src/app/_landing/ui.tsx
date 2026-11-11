@@ -1,39 +1,29 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 /**
  * Shared building blocks for the landing page. Every section uses these so the
- * page reads as one system: a 1120px column, mono labels with a small colored
- * pill, Geist headlines with tight tracking, and one kind of glowing frame.
+ * page reads as one system: a 1180px column, condensed signage headlines
+ * (Big Shoulders), a calm sans for reading (Instrument Sans), pill buttons with a
+ * tiny barber pole that turns on hover, and one kind of framed stage for product UI.
  */
 
 export const FORM_ID = "free-month";
 
 export function Container({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`mx-auto w-full max-w-[1120px] px-4 sm:px-6 ${className}`}>{children}</div>;
+  return <div className={`mx-auto w-full max-w-[1180px] px-4 sm:px-6 ${className}`}>{children}</div>;
 }
 
 const pill = { red: "bg-pole-red", blue: "bg-pole-blue", white: "bg-night-ink" } as const;
 export type PillColor = keyof typeof pill;
 
-/** The small label above a section heading: a colored pill and a few words in mono. */
-export function SectionLabel({ children, color = "red" }: { children: ReactNode; color?: PillColor }) {
-  return (
-    <p className="flex items-center gap-2.5 font-mono text-[13px] text-night-ink/90">
-      <span aria-hidden className={`h-[7px] w-3.5 rounded-full ${pill[color]}`} />
-      {children}
-    </p>
-  );
-}
-
-/** Section heading sizes. h1 is only used by the hero. */
+/** The type scale. h1 is only used by the hero. */
 export const type = {
-  h1: "text-balance text-[2.6rem] font-semibold leading-[1.02] tracking-[-0.045em] sm:text-6xl lg:text-[4.25rem]",
-  h2: "text-balance text-[2rem] font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl",
-  h3: "text-lg font-semibold tracking-[-0.02em] sm:text-xl",
-  /** Body copy is mono, like the reference: calm, technical, readable. */
-  body: "font-mono text-[15px] leading-[1.65] text-night-muted",
-  lead: "font-mono text-base leading-[1.65] text-night-ink/85 sm:text-[17px]",
+  h1: "font-display text-balance text-[clamp(3.1rem,7vw,6.5rem)] font-[800] leading-[0.88] tracking-[-0.005em]",
+  h2: "font-display text-balance text-[clamp(2.6rem,6.2vw,4.75rem)] font-[750] leading-[0.92]",
+  h3: "text-lg font-semibold tracking-[-0.015em] sm:text-xl",
+  body: "text-[16px] leading-[1.6] text-night-muted",
+  lead: "text-[17px] leading-[1.6] text-night-ink/85 sm:text-[19px]",
 } as const;
 
 /**
@@ -44,30 +34,56 @@ export const focusRing =
   "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-night-ink";
 
 /**
- * Restyles the shared language toggle (a light-theme pill) as plain mono text for
+ * Restyles the shared language toggle (a light-theme pill) as plain text for
  * the dark page. Used by the nav and the footer so both look the same.
  */
 export const toggleSkin =
-  "[&_button]:inline-flex [&_button]:min-h-11 [&_button]:items-center [&_button]:rounded-md [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-2 [&_button]:font-mono [&_button]:text-night-muted [&_button]:transition-colors [&_button:hover]:text-night-ink [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-solid [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-night-ink [&_button:disabled]:opacity-60";
+  "[&_button]:inline-flex [&_button]:min-h-11 [&_button]:items-center [&_button]:rounded-full [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:font-medium [&_button]:text-night-muted [&_button]:transition-colors [&_button:hover]:text-night-ink [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-solid [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-night-ink [&_button:disabled]:opacity-60";
 
-const btnBase =
-  "inline-flex min-h-11 items-center justify-center rounded-md px-4 font-mono text-[15px] transition-colors focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-night-ink";
+const btnBase = `group inline-flex min-h-12 items-center justify-center gap-3 rounded-full px-6 text-[15px] font-semibold tracking-[-0.01em] transition-[background-color,box-shadow,transform,border-color] duration-300 ease-out active:scale-[0.97] motion-reduce:transition-none ${focusRing}`;
 
-/** The one primary action style: warm white on charcoal. */
+/** The one primary action: cream pill, navy text, a small pole that turns on hover. */
+export const primaryBtn = `${btnBase} bg-night-ink text-night shadow-[0_10px_30px_-12px_rgba(229,72,61,.0)] hover:-translate-y-px hover:bg-white hover:shadow-[0_14px_34px_-12px_rgba(229,72,61,.55)]`;
+/** Second action: a clear glass pill. */
+export const secondaryBtn = `${btnBase} border border-night-ink/25 bg-night-ink/[0.06] text-night-ink backdrop-blur-md hover:border-night-ink/50 hover:bg-night-ink/[0.12]`;
+
+export function Pole({ className = "" }: { className?: string }) {
+  return <span aria-hidden className={`bm-pole ${className}`} />;
+}
+
+function ActionLink({ href, className, children }: { href: string; className: string; children: ReactNode }) {
+  return href.startsWith("#") ? (
+    <a href={href} className={className}>
+      {children}
+    </a>
+  ) : (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 export function PrimaryLink({ href, children }: { href: string; children: ReactNode }) {
-  const cls = `${btnBase} bg-night-ink text-night hover:bg-white`;
-  return href.startsWith("#") ? <a href={href} className={cls}>{children}</a> : <Link href={href} className={cls}>{children}</Link>;
+  return (
+    <ActionLink href={href} className={primaryBtn}>
+      <Pole />
+      {children}
+    </ActionLink>
+  );
 }
 
 export function SecondaryLink({ href, children }: { href: string; children: ReactNode }) {
-  const cls = `${btnBase} bg-night-raised text-night-ink hover:bg-night-line`;
-  return href.startsWith("#") ? <a href={href} className={cls}>{children}</a> : <Link href={href} className={cls}>{children}</Link>;
+  return (
+    <ActionLink href={href} className={secondaryBtn}>
+      {children}
+    </ActionLink>
+  );
 }
 
 /**
- * The signature visual: a grainy frame lit by the barber pole's red, white and
- * blue, with a dark stage inside for product UI. `glow` moves the light around so
- * repeated frames don't look identical.
+ * The stage for product UI: a dark panel lit faintly from one side in pole red
+ * and blue, with a hairline pole stripe along its top edge. `glow` moves the light
+ * so repeated frames don't look identical.
  */
 export function GlowFrame({
   children,
@@ -81,16 +97,21 @@ export function GlowFrame({
   stageClassName?: string;
 }) {
   const light = {
-    top: "radial-gradient(60% 55% at 62% 0%, rgba(229,83,75,.75), transparent 70%), radial-gradient(45% 50% at 38% 4%, rgba(255,255,255,.85), transparent 70%), radial-gradient(55% 55% at 85% 12%, rgba(93,134,232,.8), transparent 72%)",
-    left: "radial-gradient(55% 60% at 0% 40%, rgba(255,255,255,.8), transparent 70%), radial-gradient(50% 55% at 4% 75%, rgba(229,83,75,.75), transparent 72%), radial-gradient(45% 50% at 10% 10%, rgba(93,134,232,.75), transparent 72%)",
-    right: "radial-gradient(55% 60% at 100% 45%, rgba(255,255,255,.8), transparent 70%), radial-gradient(50% 55% at 96% 85%, rgba(93,134,232,.8), transparent 72%), radial-gradient(45% 50% at 92% 8%, rgba(229,83,75,.75), transparent 72%)",
-    bottom: "radial-gradient(60% 55% at 40% 100%, rgba(93,134,232,.8), transparent 70%), radial-gradient(45% 50% at 62% 98%, rgba(255,255,255,.85), transparent 70%), radial-gradient(55% 55% at 15% 92%, rgba(229,83,75,.75), transparent 72%)",
+    top: "radial-gradient(70% 60% at 70% 0%, rgba(229,72,61,.35), transparent 70%), radial-gradient(60% 60% at 20% 0%, rgba(91,134,240,.35), transparent 70%)",
+    left: "radial-gradient(60% 70% at 0% 30%, rgba(91,134,240,.38), transparent 70%), radial-gradient(50% 60% at 0% 90%, rgba(229,72,61,.3), transparent 72%)",
+    right: "radial-gradient(60% 70% at 100% 30%, rgba(229,72,61,.34), transparent 70%), radial-gradient(50% 60% at 100% 90%, rgba(91,134,240,.36), transparent 72%)",
+    bottom: "radial-gradient(70% 60% at 30% 100%, rgba(91,134,240,.36), transparent 70%), radial-gradient(60% 60% at 85% 100%, rgba(229,72,61,.32), transparent 70%)",
   }[glow];
   return (
-    <div className={`relative isolate overflow-hidden rounded-sm bg-[#0b0c0d] ${className}`}>
+    <div className={`relative isolate overflow-hidden rounded-[22px] border border-night-line bg-night-panel ${className}`}>
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-[3px] opacity-80"
+        style={{ background: "repeating-linear-gradient(-45deg, var(--l-red) 0 8px, var(--l-ink) 8px 16px, var(--l-blue) 16px 24px, var(--l-ink) 24px 32px)" }}
+      />
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: light }} />
-      <div aria-hidden className="grain absolute inset-0 -z-10 opacity-[0.55] mix-blend-overlay" />
-      <div className={`relative m-[7%] rounded-sm bg-[#0d0e10] shadow-[0_40px_80px_-30px_rgba(0,0,0,.9)] ${stageClassName}`}>{children}</div>
+      <div aria-hidden className="grain absolute inset-0 -z-10 opacity-[0.35] mix-blend-overlay" />
+      <div className={`relative m-[6%] overflow-hidden rounded-[14px] border border-night-line/70 bg-night shadow-[0_40px_80px_-30px_rgba(0,0,0,.9)] ${stageClassName}`}>{children}</div>
     </div>
   );
 }
@@ -107,16 +128,18 @@ export function MiniCard({
   value: string;
   accent?: PillColor;
   className?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 }) {
-  const bar = { red: "border-t-pole-red", blue: "border-t-pole-blue", white: "border-t-night-ink" }[accent];
   return (
-    <div style={style} className={`w-max rounded-[5px] border border-night-line border-t-2 ${bar} bg-night-panel/95 px-3 py-2 font-mono shadow-[0_18px_40px_-16px_rgba(0,0,0,.9)] ${className}`}>
-      <p className="flex items-center gap-1.5 text-[10px] text-night-muted">
+    <div
+      style={style}
+      className={`w-max rounded-2xl border border-white/10 bg-night-panel/85 px-3.5 py-2.5 shadow-[0_18px_40px_-16px_rgba(0,0,0,.9)] backdrop-blur-md ${className}`}
+    >
+      <p className="flex items-center gap-1.5 text-[11px] font-medium text-night-muted">
         <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${pill[accent]}`} />
         {label}
       </p>
-      <p className="mt-0.5 text-[13px] text-night-ink">{value}</p>
+      <p className="mt-0.5 text-[14px] font-semibold tabular-nums tracking-[-0.01em] text-night-ink">{value}</p>
     </div>
   );
 }

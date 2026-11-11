@@ -4,11 +4,12 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Turnstile } from "@/components/turnstile";
 import type { Locale } from "@/lib/i18n/dictionaries";
 import { landingDictionaries } from "@/lib/i18n/landing";
+import { Pole, primaryBtn } from "./_landing/ui";
 import { submitLeadAction } from "./actions";
 
 /** Dark inputs for the landing page: charcoal well, warm white text, a clear blue focus ring. */
 const field =
-  "min-h-12 w-full rounded-md border border-night-line bg-night px-3.5 font-mono text-[15px] text-night-ink outline-none transition-colors placeholder:text-night-muted hover:border-night-muted/50 focus-visible:border-pole-blue focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-0 focus-visible:outline-pole-blue";
+  "min-h-12 w-full rounded-xl border border-night-line bg-night px-4 text-[16px] text-night-ink outline-none transition-colors placeholder:text-night-muted hover:border-night-muted/50 focus-visible:border-pole-blue focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-0 focus-visible:outline-pole-blue";
 const labelText = "text-sm font-medium tracking-[-0.01em] text-night-ink";
 
 /** "Get your free month": a Shop Owner leaves their details and we call them back. */
@@ -36,13 +37,13 @@ export function LeadForm({ locale }: { locale: Locale }) {
         ref={doneRef}
         tabIndex={-1}
         role="status"
-        className="rounded-md border border-night-line bg-night px-5 py-7 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-night-ink"
+        className="rounded-2xl border border-night-line bg-night px-5 py-7 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-night-ink"
       >
-        <p className="flex items-center gap-2.5 text-xl font-semibold tracking-[-0.03em] text-night-ink">
+        <p className="flex items-center gap-2.5 font-display text-[2rem] font-[800] leading-none text-night-ink">
           <span aria-hidden className="h-[7px] w-3.5 rounded-full bg-pole-blue" />
           {t.thanksTitle}
         </p>
-        <p className="mt-2 font-mono text-[15px] leading-[1.65] text-night-muted">{t.thanksBody}</p>
+        <p className="mt-3 text-[16px] leading-[1.6] text-night-muted">{t.thanksBody}</p>
       </div>
     );
   }
@@ -67,7 +68,7 @@ export function LeadForm({ locale }: { locale: Locale }) {
     });
   }
 
-  const optional = <span className="font-mono text-[13px] font-normal text-night-muted"> ({t.optional})</span>;
+  const optional = <span className="text-[13px] font-normal text-night-muted"> ({t.optional})</span>;
 
   return (
     <form action={submit} className="flex flex-col gap-5">
@@ -108,11 +109,12 @@ export function LeadForm({ locale }: { locale: Locale }) {
       <Turnstile onToken={setToken} lang={locale} />
 
       {error && (
-        <p ref={errorRef} role="alert" className="rounded-md border border-pole-red/40 border-l-2 border-l-pole-red bg-pole-red/10 px-4 py-3 font-mono text-sm leading-[1.6] text-night-ink">
+        <p ref={errorRef} role="alert" className="rounded-xl border border-pole-red/40 border-l-2 border-l-pole-red bg-pole-red/10 px-4 py-3 text-[15px] leading-[1.6] text-night-ink">
           {error}
         </p>
       )}
-      <button type="submit" className="inline-flex min-h-12 w-full items-center justify-center rounded-md bg-night-ink px-6 font-mono text-[15px] text-night transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-night-ink disabled:cursor-not-allowed disabled:bg-night-raised disabled:text-night-muted" disabled={pending || !botCheckDone}>
+      <button type="submit" className={`${primaryBtn} w-full disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-night-raised disabled:text-night-muted disabled:shadow-none`} disabled={pending || !botCheckDone}>
+        <Pole />
         {pending ? t.sending : botCheckDone ? t.send : t.verifying}
       </button>
     </form>

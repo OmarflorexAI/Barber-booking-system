@@ -1,12 +1,12 @@
 import { landingDictionaries } from "@/lib/i18n/landing";
 import { FeatureList } from "./features-list";
 import type { SectionProps } from "./types";
-import { Container, SectionLabel, type, type PillColor } from "./ui";
+import { Container, type, type PillColor } from "./ui";
 
 /**
- * What the Shop gets. Not a sequence, so no numbers: a list of rows on the left,
- * and on wide screens one framed visual on the right that follows the selected
- * row. On phones and tablets the rows are plain text with one shared visual.
+ * What the Shop gets, set like the price board on a barbershop wall: each service
+ * in the signage face, a dotted leader, and where the price would be, "Included".
+ * The selected row opens its line of detail and the framed visual follows it.
  */
 export function Features({ locale, t }: SectionProps) {
   const visuals = [
@@ -17,13 +17,12 @@ export function Features({ locale, t }: SectionProps) {
     <LanguagesVisual key="lang" />,
   ];
   return (
-    <section id="features" aria-labelledby="features-title" className="scroll-mt-20 py-20 sm:py-28">
+    <section id="features" aria-labelledby="features-title" className="scroll-mt-24 py-24 sm:py-32">
       <Container>
-        <SectionLabel color="blue">{t.featuresLabel}</SectionLabel>
-        <h2 id="features-title" className={`${type.h2} mt-5 max-w-[16ch] text-night-ink`}>
+        <h2 id="features-title" className={`${type.h2} max-w-[16ch] text-night-ink`}>
           {t.featuresTitle}
         </h2>
-        <FeatureList items={t.features} visuals={visuals} />
+        <FeatureList items={t.features} price={t.featuresPrice} visuals={visuals} />
       </Container>
     </section>
   );
@@ -46,7 +45,6 @@ const txt = {
 } as const;
 
 const dot = { red: "bg-pole-red", blue: "bg-pole-blue", white: "bg-night-ink" } as const;
-const bar = { red: "border-t-pole-red", blue: "border-t-pole-blue", white: "border-t-night-ink" } as const;
 
 const lean = {
   left: "[transform:perspective(900px)_rotateY(8deg)_rotateZ(-1.5deg)]",
@@ -58,7 +56,7 @@ function Stage({ children, className = "" }: { children: React.ReactNode; classN
   return (
     <div className="@container absolute inset-0">
       <div
-        className={`absolute inset-0 flex flex-col overflow-hidden bg-[linear-gradient(to_right,rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,.035)_1px,transparent_1px)] bg-[size:28px_28px] p-[7cqw] font-mono ${className}`}
+        className={`absolute inset-0 flex flex-col overflow-hidden bg-[linear-gradient(to_right,rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,.035)_1px,transparent_1px)] bg-[size:28px_28px] p-[7cqw] tabular-nums ${className}`}
       >
         {children}
       </div>
@@ -70,7 +68,7 @@ function Stage({ children, className = "" }: { children: React.ReactNode; classN
 function Ticket({ label, value, accent, className = "" }: { label: string; value: string; accent: PillColor; className?: string }) {
   return (
     <div
-      className={`w-max max-w-full rounded-[5px] border border-night-line border-t-2 ${bar[accent]} bg-night-panel px-[3.5cqw] py-[2.6cqw] shadow-[0_18px_40px_-16px_rgba(0,0,0,.9)] ${className}`}
+      className={`w-max max-w-full rounded-[5px] border border-night-line bg-night-panel px-[3.5cqw] py-[2.6cqw] shadow-[0_18px_40px_-16px_rgba(0,0,0,.9)] ${className}`}
     >
       <p className={`flex items-center gap-[1.4cqw] ${txt.small} text-night-muted`}>
         <span aria-hidden className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot[accent]}`} />

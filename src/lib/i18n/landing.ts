@@ -9,11 +9,10 @@ const en = {
   otherLang: "Español",
   staffSignIn: "Staff sign in",
 
-  nav: { how: "How it works", features: "Features", setup: "Setup", styles: "Styles", faq: "Questions" },
+  nav: { how: "How it works", features: "Features", setup: "Setup", faq: "Questions" },
   navLabel: "Sections",
   navMenu: "Sections menu",
-  heroLabel: "Online booking for barbershops",
-  heroTrust: "In Spanish and English. No app for your clients.",
+  heroFacts: ["Spanish and English, on every screen", "No app for your clients to download", "Set up in person, at your shop"],
 
   // Small UI cards floating in the hero and feature visuals.
   cards: {
@@ -48,25 +47,10 @@ const en = {
     textMessage: "Hi Ana, your haircut with Dre is today at 1:30 PM. Reply C to cancel.",
   },
 
-  values: [
-    { title: "Clients book themselves", body: "From your link or the counter QR, any hour, in under a minute." },
-    { title: "Barbers keep cutting", body: "An alert on their phone replaces the call." },
-    { title: "Fewer empty chairs", body: "Reminders with a cancel link, and a no-show rule." },
-    { title: "Done for you", body: "We set it up at the shop, in Spanish and English." },
-  ],
 
-  closingLabel: "When you're ready",
-  closingGallery: "See the styles",
   closingTitle: "Your chair is booked. Your phone stays in your pocket.",
   closingBody: "We set it up at your shop, in Spanish and English. The first month is on us.",
 
-  galleryLabel: "The work",
-  galleryTitle: "Show clients the cut before they book it.",
-  galleryBody: "Each barber's profile shows their best work. Drag a head to turn it around.",
-  galleryHint: "Drag to turn",
-  galleryKeys: "or use the arrow keys",
-  galleryLoading: "Loading the 360° view",
-  galleryPicker: "Haircut styles",
 
   heroTitle: "Stop answering the phone in the middle of a cut.",
   heroBody:
@@ -76,13 +60,39 @@ const en = {
   heroShotAlt: "The booking page a client sees on their phone",
   navCta: "Free month",
 
-  problemLabel: "The counter today",
-  problemTitle: "Right now, the book runs your day",
-  problem: [
-    { quote: "“Hold on, let me check the book.”", body: "Every call, text and Instagram message stops a cut. Your barber puts down the clippers to answer." },
-    { quote: "“He said 3? I wrote 4.”", body: "The notebook, WhatsApp and memory never agree. Two clients show up for the same chair." },
-    { quote: "“Nobody came at 11.”", body: "No-shows leave an empty chair and there's no reminder that would have stopped it." },
-  ],
+  // The interactive phone in the hero: a pretend booking at the demo shop (nothing is saved).
+  heroPhone: {
+    label: "Try the booking page",
+    hint: "Try it: tap a service",
+    shop: "Fresh Cuts Barbershop",
+    address: "1234 Grand Concourse, Bronx, NY",
+    lang: "Español",
+    chooseService: "Choose a service",
+    from: "from",
+    services: [
+      { name: "Haircut", min: 30, price: 30, was: 0, special: "" },
+      { name: "Skin fade", min: 45, price: 35, was: 0, special: "" },
+      { name: "Beard trim", min: 15, price: 15, was: 0, special: "" },
+      { name: "Haircut + beard", min: 45, price: 35, was: 40, special: "Special until November 21" },
+      { name: "Kids cut (under 12)", min: 30, price: 20, was: 0, special: "" },
+    ],
+    back: "Back",
+    chooseBarber: "Choose a barber",
+    anyBarber: "Any available barber",
+    anyBarberHint: "First free chair",
+    barbers: ["Carlos", "Dre", "Maya", "Luis"],
+    pickTime: "Pick a time",
+    day: "Thu, Nov 12",
+    dayShort: "Thu",
+    times: ["10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM"],
+    taken: [1, 4, 5, 9],
+    bookedTitle: "You're booked",
+    bookedWith: "with",
+    bookedAt: "at",
+    bookedNote: "We'll text you a reminder 2 hours before, with a link to change or cancel.",
+    again: "Book another",
+  },
+
 
   howTitle: "From booking to reminder, without a call",
   howShotAlt: "Choosing a time on the booking page",
@@ -92,8 +102,36 @@ const en = {
     { title: "The client gets a reminder", body: "A text 2 hours before, with a link to cancel or change the time, so the chair doesn't sit empty." },
   ],
 
-  featuresLabel: "Included from day one",
+  howBody: "Every booking follows the same three steps, so nobody has to pick up the phone.",
+  // The sticky window beside the steps: one scene per step (example data).
+  howStage: {
+    titles: ["booking / client", "alert / barber", "reminder / client"],
+    service: "Skin fade",
+    serviceMeta: "45 min · $35",
+    barber: "With Dre · Thursday",
+    times: ["3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM"],
+    picked: 2,
+    taken: [1, 4],
+    booked: "Booked · Thu 4:00 PM",
+    alertFrom: "Barber Master",
+    alertWhen: "now",
+    alertTitle: "New booking",
+    alertBody: "Marcus · Skin fade · Thu 4:00 PM",
+    dayTitle: "Dre's Thursday",
+    day: [
+      { time: "2:30 PM", who: "Luis · Fade" },
+      { time: "4:00 PM", who: "Marcus · Skin fade", isNew: true },
+      { time: "5:00 PM", who: "Kevin · Beard trim" },
+    ],
+    newBadge: "New",
+    textFrom: "Fresh Cuts Barbershop",
+    text: "Hi Marcus, your skin fade with Dre is today at 4:00 PM. Change or cancel here: fc.bm/m/8k2",
+    textSent: "Sent 2:00 PM, 2 hours before",
+    textActions: ["Change time", "Cancel"],
+  },
+
   featuresTitle: "What your shop gets",
+  featuresPrice: "Included",
   features: [
     { title: "Pay online or at the shop", body: "The client chooses. Online payments go straight to your account, and cancelled bookings are refunded in full automatically." },
     { title: "Fewer no-shows", body: "A phone that misses two bookings in 90 days pays online to book. Nobody has to chase anyone." },
@@ -102,7 +140,6 @@ const en = {
     { title: "Spanish and English", body: "Every screen and every text, in the language your client uses." },
   ],
 
-  setupLabel: "One visit to your shop",
   setupTitle: "We set it up for you",
   setupBody: "You don't have to learn software. We come to the shop and do it with you.",
   setup: [
@@ -113,11 +150,9 @@ const en = {
   ],
   setupSupport: "When something doesn't work, you text a real person who answers, in Spanish or English.",
 
-  offerLabel: "The offer",
   offerTitle: "Your first month is free",
   offer: ["No contract. Stop any time.", "Your client list is yours. Take it with you whenever you want.", "After the free month, we agree a monthly price together at the visit."],
 
-  faqLabel: "Before you call",
   faqTitle: "Questions owners ask",
   faq: [
     { q: "Do my clients need to download an app?", a: "No. They open a link or scan the QR code and book in their phone's browser. No account, no password." },
@@ -163,11 +198,10 @@ const es: LandingDictionary = {
   otherLang: "English",
   staffSignIn: "Entrar (personal)",
 
-  nav: { how: "Cómo funciona", features: "Funciones", setup: "Instalación", styles: "Estilos", faq: "Preguntas" },
+  nav: { how: "Cómo funciona", features: "Funciones", setup: "Instalación", faq: "Preguntas" },
   navLabel: "Secciones",
   navMenu: "Menú de secciones",
-  heroLabel: "Citas en línea para barberías",
-  heroTrust: "En español e inglés. Tus clientes no necesitan app.",
+  heroFacts: ["Español e inglés, en cada pantalla", "Tus clientes no descargan ninguna app", "Lo instalamos en persona, en tu barbería"],
 
   cards: {
     newBooking: "Nueva cita",
@@ -199,25 +233,10 @@ const es: LandingDictionary = {
     textMessage: "Hola Ana, tu corte con Dre es hoy a la 1:30 p.m. Responde C para cancelar.",
   },
 
-  values: [
-    { title: "Los clientes reservan solos", body: "Desde tu enlace o el QR del mostrador, a cualquier hora, en menos de un minuto." },
-    { title: "Los barberos siguen cortando", body: "Un aviso en el celular reemplaza la llamada." },
-    { title: "Menos sillas vacías", body: "Recordatorios con enlace para cancelar, y una regla para los que no llegan." },
-    { title: "Lo hacemos por ti", body: "Lo instalamos en la barbería, en español e inglés." },
-  ],
 
-  closingLabel: "Cuando quieras",
-  closingGallery: "Ver los estilos",
   closingTitle: "Tu silla está reservada. Tu teléfono, en el bolsillo.",
   closingBody: "Lo instalamos en tu barbería, en español e inglés. El primer mes corre por nuestra cuenta.",
 
-  galleryLabel: "El trabajo",
-  galleryTitle: "Enséñale el corte al cliente antes de que lo reserve.",
-  galleryBody: "El perfil de cada barbero muestra su mejor trabajo. Arrastra una cabeza para girarla.",
-  galleryHint: "Arrastra para girar",
-  galleryKeys: "o usa las flechas",
-  galleryLoading: "Cargando la vista 360°",
-  galleryPicker: "Estilos de corte",
 
   heroTitle: "Deja de contestar el teléfono en medio de un corte.",
   heroBody:
@@ -227,13 +246,38 @@ const es: LandingDictionary = {
   heroShotAlt: "La página de citas que ve un cliente en su celular",
   navCta: "Mes gratis",
 
-  problemLabel: "El mostrador hoy",
-  problemTitle: "Hoy, la libreta manda en tu día",
-  problem: [
-    { quote: "“Espérame, déjame ver la libreta.”", body: "Cada llamada, texto o mensaje de Instagram interrumpe un corte. Tu barbero suelta la máquina para contestar." },
-    { quote: "“¿Dijo a las 3? Yo apunté a las 4.”", body: "La libreta, WhatsApp y la memoria nunca coinciden. Llegan dos clientes para la misma silla." },
-    { quote: "“A las 11 no vino nadie.”", body: "Los que no llegan dejan la silla vacía, y no hubo un recordatorio que lo evitara." },
-  ],
+  heroPhone: {
+    label: "Prueba la página de citas",
+    hint: "Pruébala: toca un servicio",
+    shop: "Fresh Cuts Barbershop",
+    address: "1234 Grand Concourse, Bronx, NY",
+    lang: "English",
+    chooseService: "Elige un servicio",
+    from: "desde",
+    services: [
+      { name: "Corte de pelo", min: 30, price: 30, was: 0, special: "" },
+      { name: "Desvanecido", min: 45, price: 35, was: 0, special: "" },
+      { name: "Arreglo de barba", min: 15, price: 15, was: 0, special: "" },
+      { name: "Corte + barba", min: 45, price: 35, was: 40, special: "Oferta hasta el 21 de noviembre" },
+      { name: "Corte de niño (menor de 12)", min: 30, price: 20, was: 0, special: "" },
+    ],
+    back: "Atrás",
+    chooseBarber: "Elige un barbero",
+    anyBarber: "Cualquier barbero disponible",
+    anyBarberHint: "La primera silla libre",
+    barbers: ["Carlos", "Dre", "Maya", "Luis"],
+    pickTime: "Elige una hora",
+    day: "jue, 12 nov",
+    dayShort: "jue",
+    times: ["10:00 a.m.", "10:30 a.m.", "11:00 a.m.", "11:30 a.m.", "1:00 p.m.", "1:30 p.m.", "2:00 p.m.", "2:30 p.m.", "3:00 p.m.", "3:30 p.m.", "4:00 p.m.", "4:30 p.m."],
+    taken: [1, 4, 5, 9],
+    bookedTitle: "Tu cita está lista",
+    bookedWith: "con",
+    bookedAt: "a las",
+    bookedNote: "Te enviaremos un recordatorio 2 horas antes, con un enlace para cambiar o cancelar.",
+    again: "Reservar otra",
+  },
+
 
   howTitle: "De la reserva al recordatorio, sin una llamada",
   howShotAlt: "Elegir una hora en la página de citas",
@@ -243,8 +287,35 @@ const es: LandingDictionary = {
     { title: "El cliente recibe un recordatorio", body: "Un texto 2 horas antes, con un enlace para cancelar o cambiar la hora, para que la silla no quede vacía." },
   ],
 
-  featuresLabel: "Incluido desde el primer día",
+  howBody: "Cada cita sigue los mismos tres pasos, así nadie tiene que contestar el teléfono.",
+  howStage: {
+    titles: ["cita / cliente", "aviso / barbero", "recordatorio / cliente"],
+    service: "Skin fade",
+    serviceMeta: "45 min · $35",
+    barber: "Con Dre · jueves",
+    times: ["3:00 p.m.", "3:30 p.m.", "4:00 p.m.", "4:30 p.m.", "5:00 p.m.", "5:30 p.m."],
+    picked: 2,
+    taken: [1, 4],
+    booked: "Reservada · jue 4:00 p.m.",
+    alertFrom: "Barber Master",
+    alertWhen: "ahora",
+    alertTitle: "Nueva cita",
+    alertBody: "Marcus · Skin fade · jue 4:00 p.m.",
+    dayTitle: "El jueves de Dre",
+    day: [
+      { time: "2:30 p.m.", who: "Luis · Fade" },
+      { time: "4:00 p.m.", who: "Marcus · Skin fade", isNew: true },
+      { time: "5:00 p.m.", who: "Kevin · Barba" },
+    ],
+    newBadge: "Nueva",
+    textFrom: "Fresh Cuts Barbershop",
+    text: "Hola Marcus, tu skin fade con Dre es hoy a las 4:00 p.m. Cambia o cancela aquí: fc.bm/m/8k2",
+    textSent: "Enviado 2:00 p.m., 2 horas antes",
+    textActions: ["Cambiar hora", "Cancelar"],
+  },
+
   featuresTitle: "Lo que recibe tu barbería",
+  featuresPrice: "Incluido",
   features: [
     { title: "Pago en línea o en la barbería", body: "El cliente elige. Los pagos en línea van directo a tu cuenta, y las citas canceladas se reembolsan completas, solas." },
     { title: "Menos clientes que no llegan", body: "Un número que falta a dos citas en 90 días paga en línea para reservar. Nadie tiene que perseguir a nadie." },
@@ -253,7 +324,6 @@ const es: LandingDictionary = {
     { title: "En español e inglés", body: "Cada pantalla y cada texto, en el idioma de tu cliente." },
   ],
 
-  setupLabel: "Una visita a tu barbería",
   setupTitle: "Nosotros lo configuramos",
   setupBody: "No tienes que aprender ningún programa. Vamos a la barbería y lo hacemos contigo.",
   setup: [
@@ -264,11 +334,9 @@ const es: LandingDictionary = {
   ],
   setupSupport: "Cuando algo no funciona, le escribes a una persona de verdad que contesta, en español o inglés.",
 
-  offerLabel: "La oferta",
   offerTitle: "Tu primer mes es gratis",
   offer: ["Sin contrato. Lo dejas cuando quieras.", "Tu lista de clientes es tuya. Te la llevas cuando quieras.", "Después del mes gratis, acordamos juntos un precio mensual en la visita."],
 
-  faqLabel: "Antes de llamar",
   faqTitle: "Lo que preguntan los dueños",
   faq: [
     { q: "¿Mis clientes tienen que bajar una app?", a: "No. Abren un enlace o escanean el QR y reservan en el navegador del celular. Sin cuenta y sin contraseña." },

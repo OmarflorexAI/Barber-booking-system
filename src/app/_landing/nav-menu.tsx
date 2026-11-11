@@ -42,7 +42,7 @@ export function NavMenu({ links, label, buttonLabel }: { links: { href: string; 
         aria-controls={id}
         aria-label={buttonLabel}
         onClick={() => setOpen((o) => !o)}
-        className={`flex h-11 w-11 items-center justify-center rounded-md text-night-muted transition-colors hover:text-night-ink aria-expanded:text-night-ink ${focusRing}`}
+        className={`flex h-11 w-11 items-center justify-center rounded-full text-night-muted transition-colors hover:text-night-ink aria-expanded:text-night-ink ${focusRing}`}
       >
         {/* Two short rules that fold into a cross when open. */}
         <span aria-hidden className="relative block h-3 w-[18px]">
@@ -59,15 +59,15 @@ export function NavMenu({ links, label, buttonLabel }: { links: { href: string; 
         id={id}
         aria-label={label}
         hidden={!open}
-        className="absolute inset-x-0 top-full border-b border-night-line bg-night shadow-[0_24px_40px_-24px_rgba(0,0,0,.9)]"
+        className="absolute inset-x-0 top-full mt-2 overflow-hidden rounded-3xl border border-white/10 bg-night/90 shadow-[0_24px_40px_-24px_rgba(0,0,0,.9)] backdrop-blur-xl"
       >
-        <ul className="mx-auto grid w-full max-w-[1120px] px-4 py-2 sm:grid-cols-2 sm:px-6 sm:py-3">
+        <ul className="grid w-full px-5 py-2 sm:grid-cols-2 sm:py-3">
           {links.map((l) => (
             <li key={l.href}>
               <a
                 href={l.href}
                 onClick={() => setOpen(false)}
-                className={`flex min-h-12 items-center rounded-sm font-mono text-[15px] text-night-ink/85 transition-colors hover:text-night-ink ${focusRing}`}
+                className={`flex min-h-12 items-center rounded-sm text-[16px] font-medium text-night-ink/85 transition-colors hover:text-night-ink ${focusRing}`}
               >
                 {l.label}
               </a>

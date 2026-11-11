@@ -63,3 +63,25 @@ test("'See a real booking page' opens the demo shop", async ({ page }) => {
   await page.getByRole("link", { name: en.heroDemo }).first().click();
   await expect(page).toHaveURL(/\/b\/demo-shop$/);
 });
+
+test("the hero phone books a pretend cut", async ({ page }) => {
+  const p = en.heroPhone;
+  await page.goto("/");
+  const phone = page.getByRole("group", { name: p.label });
+  await phone.getByRole("button", { name: p.services[3].name }).click();
+  await phone.getByRole("button", { name: p.barbers[2] }).click();
+  await expect(phone.getByRole("button", { name: p.times[p.taken[0]] })).toBeDisabled();
+  await phone.getByRole("button", { name: p.times[6] }).click();
+  await expect(phone.getByText(p.bookedTitle)).toBeVisible();
+  await phone.getByRole("button", { name: p.again }).click();
+  await expect(phone.getByText(p.chooseService)).toBeVisible();
+});
+
+test("the questions open one at a time", async ({ page }) => {
+  await page.goto("/");
+  const [first, second] = [en.faq[0].q, en.faq[1].q].map((q) => page.locator("details", { has: page.getByText(q, { exact: true }) }));
+  await expect(first).toHaveAttribute("open", "");
+  await second.locator("summary").click();
+  await expect(second).toHaveAttribute("open", "");
+  await expect(first).not.toHaveAttribute("open", "");
+});
