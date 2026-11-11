@@ -6,6 +6,42 @@ Last updated: 2026-11-10. Source of requirements: `Barbershop Booking System PRD
 
 **The backend (B1–B6) is built, tested and pushed. Stripe payments now work end to end with real Stripe test mode (2026-11-10). Resend login emails work. The landing page for Shop Owners is built, validated and pushed (2026-11-10); only its 3D head gallery still waits on real frames (M3).** Twilio and Telegram are postponed (agreed 2026-11-10). Next: finish the 3D heads, commit the landing page, then the UI.
 
+### Landing page v3: Cocoon template (decided 2026-11-11, grill session; START HERE)
+
+The navy "barber-pole" landing below is being **replaced**. Template: `C:\Users\admin\Downloads\cocoon-template-1.0.3\cocoon-template-1.0.3` (templatedeck.com, MIT; Tailwind 4 + vanilla JS, static HTML). **Rebuilt as React + Tailwind v4 in our app**, never copied in as-is. The system UI gets its own grill session **after this ships** (order then: `/b` + `/m` → Barber day view → Owner tools → Platform admin).
+
+Decisions:
+- **Kept:** the content rules (only "first month free", no fake numbers/testimonials/logos, EN/ES) and most of `landing.ts`; new copy in EN and ES. The interactive hero phone stays, restyled.
+- **Deleted:** everything else of the old landing (WebGL gradient, pole buttons, stepper, price board, glass nav, Big Shoulders/Instrument Sans). The 3D-head leftovers go first, in their own commit.
+- **Look:** template grayscale + a small barber red (status dots, timeline dot, booked check). Geist + Geist Mono via `next/font`. New SVG wordmark with a scissor-ring mark (favicon + OG image too), user approves it first. This brand later carries into the app, in a calmer, denser form.
+- **Page order:**
+  1. Nav: How it works · Setup · Pricing · FAQ · Español/English · "Talk to us"
+  2. Hero: pill "For barbershops in the Bronx & upper Manhattan"; the phone sits in the wide panel that grows to full width on scroll; no rings
+  3. "Why" block: "Stop answering the phone mid-cut" (3 sentences, no avatars)
+  4. 6-cell facts grid in place of the logo bar; it also replaces the features price board. Only facts that are true at ship time (Twilio/Telegram are still postponed)
+  5. How it works: 3 zigzag rows (booking, alert and reminder cards) over photos
+  6. Set up in one visit: the template's Founders layout with 2 cards
+  7. Your first month: the template's timeline (Day 1 → Day 30, a pulsing "Today" dot), pill "Your first month"
+  8. Pricing: "First month: Free" and "After the first month: one monthly price, no contract, cancel anytime, take your client list with you" + "Talk to us"
+  9. FAQ, one open at a time
+  10. Contact card holding our lead form + Turnstile; the Closing section is gone
+  11. Footer: "Staff sign in" → `/login`; real `/privacy` and `/terms` pages (A2P 10DLC needs them; text written with the user later), no pop-ups
+- Pill labels only in those two places.
+- **Motion:**
+  - Template scroll effects rebuilt: the panel widens, photos fade in, the nav shrinks, fade-ups.
+  - React `<ViewTransition>` (`/vercel-react-view-transitions`) in 3 places only: the phone's screens, the language toggle, and moving between pages.
+  - Reduced motion shows the final states.
+- **Photos:** about 12 free-license stock barbershop photos (Unsplash/Pexels: dark, no brands, no faces as the subject) on a contact sheet; the user picks 5 (3 How-it-works, 1 Setup, 1 Pricing). WebP via `next/image`. Credits and the template's MIT notice go in `THIRD_PARTY_NOTICES.md`; no "Made by templatedeck" on the page.
+- **404:** restyled `not-found.tsx`, EN/ES.
+- **Pass criteria** (validator agent, production build, Lighthouse phone profile):
+  - Performance ≥ 90, LCP < 2.5 s, CLS < 0.1
+  - Zero axe violations, contrast ≥ 4.5:1 (incl. the red), visible focus, skip link, one h1 and a heading order that doesn't change with width, reduced motion respected
+  - title, description, canonical, OG image, `metadataBase`, sitemap and robots, structured data (no fake reviews), `lang` matches EN/ES
+  - No sideways scroll at 360/390/768/1280/1440 px in EN and ES
+  - The lead form still saves, emails and passes Turnstile; landing e2e tests rewritten
+  - No fake numbers, testimonials, logos or prices
+- **Process:** milestones + a separate validator agent (Factory Missions style); `/impeccable init` first (writes `DESIGN.md`); small commits, each shown to the user first.
+
 ### Landing page for Shop Owners (2026-11-10, not committed yet)
 
 Plan: `C:\Users\admin\.claude\plans\we-can-set-up-breezy-starlight.md`. The user asked (2026-11-10) to run it as a "mission" with the Factory Missions framework (https://docs.factory.com/missions/overview.md): goal → milestones with pass criteria → one worker agent per feature → a separate validator agent that didn't write the code, failures go back to a worker. **Keep using it for what's left.** The milestones are below.
