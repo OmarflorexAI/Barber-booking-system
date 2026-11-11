@@ -1,20 +1,74 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-09 (end of day). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-10. Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-**The backend (B1–B6) is built, tested and pushed.** All open decisions are made (the last one, no-shows, on 2026-11-09). What's left is trying it with the real services and a few dashboard settings (see "Needs you" and "Next steps"). Then: talk about a landing page, then the UI.
+**The backend (B1–B6) is built, tested and pushed. Stripe payments now work end to end with real Stripe test mode (2026-11-10). Resend login emails work. The landing page for Shop Owners is built, validated and pushed (2026-11-10); only its 3D head gallery still waits on real frames (M3).** Twilio and Telegram are postponed (agreed 2026-11-10). Next: finish the 3D heads, commit the landing page, then the UI.
+
+### Landing page for Shop Owners (2026-11-10, not committed yet)
+
+Plan: `C:\Users\admin\.claude\plans\we-can-set-up-breezy-starlight.md`. The user asked (2026-11-10) to run it as a "mission" with the Factory Missions framework (https://docs.factory.com/missions/overview.md): goal → milestones with pass criteria → one worker agent per feature → a separate validator agent that didn't write the code, failures go back to a worker. **Keep using it for what's left.** The milestones are below.
+
+**Decisions:** audience = barbershop Owners in the Bronx and upper Manhattan; contact = a short form in the app (leads saved + emailed to Platform admins); price = only "first month free", no price shown; language = phone's language with the Español/English toggle; no fake testimonials or numbers. Look inspired by simeon.sh (adapted, not copied): always-dark charcoal page, Geist headlines with tight tracking, Geist Mono body, small pill section labels, grainy "glow frames" lit in barber-pole red/white/blue, floating tilted mini UI cards.
+
+**M1 Site sections — DONE, validated (round 2: 7/7 criteria pass).** `/` = Nav (with a sections menu below 1024px), Hero, Problem (appointment-book "ledger page"), How it works (3 steps), Features (interactive list on desktop, plain text on phones), Setup (one visit), Offer + lead form (`#free-month`), FAQ, Closing, Gallery (`#styles`), Footer. Checked at 360/390/768/1280 in EN and ES: no sideways scroll, every section opens with a label + h2, even spacing, nav anchors land below the bar, visible keyboard focus everywhere, text contrast ≥ 6.3:1. Fixed after round 1: invisible focus on the FAQ and form fields (Tailwind v4 `outline-none` cancels `outline-2`; shared `focusRing` adds `outline-solid`), uneven Closing section, the same mini card repeated in 5 places, hero text indent, a 2,500px Features stack on phones (page ~1,500px shorter now), and the light body color showing under the dark page (`html:has(.landing)` rule in globals.css).
+
+**M2 Leads reach a human — DONE.** The user's login is now a Platform admin in dev (`platform_admins`). A lead sent from the page was saved and the "New lead: …" email arrived in Gmail via Resend 15 s later. A test lead named "M2 Check Barbershop" is still in `public.leads` (the delete was declined; harmless). Leads that can't be emailed stay pending and `/api/cron/daily` retries them.
+
+**M3 360° head gallery — viewer DONE, real heads WAITING.**
+
+- Viewer (`head-viewer.tsx`): canvas image-sequence turntable (72 frames, 5° steps), every frame fetched and decoded to ImageBitmap before dragging, drawn only when the frame changes; mouse/touch/pen drag with momentum, `touch-action: pan-y` so phones still scroll, arrow keys (role=slider), reduced motion respected, lazy loading near the viewport, head picker. Measured: p95 16.7 ms per frame while dragging, also with the CPU slowed 4×.
+- Frames go in `public/landing/heads/<id>/{720,1440}/NN.webp`; `heads.ts` lists the heads and shows only those whose frames exist. A generated grey **test head** shows until then (must not ship; it hides itself once a real head exists).
+- Reference photos: `heads_reference_images/` (6 single heads `01`–`06` + 2 grids, committed). Each photo shows one side only, so the user chose (2026-11-10) **local AI image-to-3D on this PC's RTX 4060** (images never leave the PC; **no Higgsfield**; the user approved downloading an open-source model of several GB), render a 72-frame turntable per head, then `node scripts/head-frames.mjs folder <frames> --id <id>`. Tools go in `C:\Users\admin\tools\head3d\` (outside the repo, own venv).
+- The 6 head ids (= folder names under `public/landing/heads/`) and EN/ES names are already in `heads.ts`: `curly-taper-fade`, `textured-crop-fade`, `comb-over-hard-part`, `curly-high-fade`, `textured-fade-design-lines`, `slick-back-drop-fade` (from `heads_reference_images/01`…`06`).
+- Test head: only in development and only while no real head exists (`gallery.tsx`); its frames are gitignored, regenerate with `node scripts/head-frames.mjs test`. **In production with no real heads the gallery renders nothing, so the nav/footer/closing "Styles" links point at a missing `#styles`** — fine until deploy, but don't ship without at least one head (or hide those links).
+- Screen-reader strings added (`galleryLoading`, `galleryPicker`, `galleryKeys`); the 6-button picker wraps to 2 columns at 360px (checked with injected markup, not with real heads yet).
+
+**M3 — NOT DONE, start here next session:**
+1. **Check the 3D worker's state.** At the end of the 2026-11-10 session a worker agent was setting up the model in `C:\Users\admin\tools\head3d\` and converting `01-curly-taper-fade` (its log: `C:\Users\admin\tools\head3d\LOG.md`; outputs `out\<id>.glb`, frames, a `run.py`/`run.ps1` pipeline script). It hadn't reported when the session ended, so verify what exists: venv, model weights, GLB, and whether `public/landing/heads/curly-taper-fade/{720,1440}/00..71.webp` exist (those frames were deliberately NOT committed).
+2. Brief for that work: remove the gray background; image → textured GLB (prefer Hunyuan3D-2mini if its texture stage fits 8 GB VRAM and builds on Windows; TripoSR as fallback; avoid gated Hugging Face models); render 72 frames orbiting the vertical axis in 5° steps, frame 00 = the photo's angle, transparent background, 1440×1440, same turning direction as the test sequence; convert with `node scripts/head-frames.mjs folder <dir> --id <id>`.
+3. **Show the user ONE head first** (contact sheet every 30° + photo vs frame 00) and wait for their OK before making the other five.
+4. Then a **validator agent** checks M3: p95 ≤ 17 ms per frame while dragging, sharp at 2× DPR, touch + reduced motion, no layout shift, bytes per head (real frames are expected 2–4× the test head's 0.5 MB / 1.5 MB).
+5. Commit the frames (check total size first; WebP only, never the PNG renders or GLBs).
+
+**M4 Ship-ready — done for everything except the heads.** Verified 2026-11-10: `npm test` 143 passed (11 files), `npm run e2e` 9 passed, typecheck and lint clean, `npm run build` clean (Next 16 dev writes to `.next/dev`, so build and dev can run at the same time). Committed and pushed 2026-11-10.
+
+**Leftovers (polish, no rush):**
+- Build warns that `metadataBase` isn't set (Open Graph image URLs fall back to localhost): set it at deploy (U5) once the domain exists.
+- Turnstile leaves an empty 65 px slot in dev; check with the real widget.
+- The gallery sits last, as the user asked; the validator noted most visitors pass the form before reaching it.
+- On phones the hero's reminder card covers the bottom of the screenshot a little.
+- On desktop the feature titles are `<span>`s inside buttons, on phones `<h3>`s (heading outline differs by width).
+- The validator agents' screenshots and the mission file were in the session scratchpad and are gone; the pass criteria are summarized above.
+
+### Done on 2026-11-10
+
+- **Demo shop connected to Stripe.** The user finished Stripe's onboarding (test data, bank ••••6789, automatic payouts, Radar Lite, no Climate, no Stripe Tax). About 50 seconds later Stripe finished verifying, `account.updated` arrived and `payments_enabled` turned on by itself.
+- **Real payment test passed** (headless browser on `/b/demo-shop`, card `4242…`):
+  - Pay now by card → Stripe Checkout → back on `/m/<token>?paid=1` showing "Confirmed · $30 · Paid online"; the Booking has its payment reference and a Barber alert was queued.
+  - Cancelled from the manage page → `refund_requested` done → Stripe shows refund `re_3UaLEt…` **$30, succeeded**.
+  - 5 abandoned checkouts: the worker released all 5 holds after 10 minutes (`cancelled_by = system`) and Stripe shows those sessions **expired, unpaid**.
+- **Why sign-in failed today:** the magic link is a PKCE link and only works in the browser where it was requested (the user asked in one browser and opened it in another, which had an old secret: "code challenge does not match"). The code is fine (tested: each request saves a fresh secret). Permanent fix = the Magic Link email template change under "Needs you" item 1.
+- **Findings to handle later:**
+  - Stripe Checkout offers Cash App, Klarna and Crypto as well as cards, because `src/server/providers/stripe.ts` doesn't set `payment_method_types`. Slow methods can confirm after the 10-minute hold and then get refunded automatically. **Decision needed:** cards only (cards, Apple Pay, Google Pay)?
+  - With 2 held online Bookings, the form says "You already have 2 upcoming bookings to pay at the shop", which is wrong for card payers. Fix the wording in U1.
+  - Demo Barbers' logins are `@example.com`, which Resend refuses, so their alert emails retry and end in the failures log. Dev data only.
+  - The worker uses the server's clock and the database marks rows due by its own clock; this PC's clock is a few seconds behind, so a just-queued row can wait until the next run. Harmless.
+  - Supabase's built-in sender hit its hourly limit after a handful of sign-in emails.
+- Test data left in the dev DB: Client "Payment Test" with 6 cancelled Bookings (history, harmless).
 
 Verified on 2026-11-09 (evening, after the no-show rule): `npm test` 138 passed (10 files), `npm run e2e` 4 passed, typecheck and lint clean.
 
 Verified on 2026-11-09 (evening, after the provider setup): `npm test` 135 passed (10 files), `npm run e2e` 4 passed, typecheck and lint clean; a test run now leaves no test logins behind. A real signed Stripe test event went Stripe → `npm run stripe:listen` → `/api/payments/webhook` and was answered 200.
 
-### Needs you (as of 2026-11-09)
+### Needs you (as of 2026-11-10)
 
-1. **Test a real payment.** Sign-in is set up: `samirflores13@gmail.com` is an owner of the demo shop, and a sign-in link was sent at 22:04 UTC (open it in Brave, or request a new one at `/login`). Then connect the demo shop to Stripe in your normal browser: open `/api/payments/onboard?shop=36587674-9e01-4447-9182-48b76203fc85` and use Stripe's test data. Stripe's CAPTCHA has to be solved by a person (an automated browser kept getting new puzzles). After that, Claude can do the test payment and refund.
-2. **Twilio and Telegram keys.** All five are empty in `.env.local`, so texts and Barber alerts go to the server log for now.
-3. **Login emails through Resend.** Supabase's own sender allows only a few emails an hour, which will block sign-ins. It's one form in the Supabase dashboard (values under B4 below). Until a domain is verified in Resend, these emails only reach the Resend account's own address.
+1. **Decide:** limit Stripe Checkout to cards (see "Findings" under 2026-11-10)?
+2. **Twilio and Telegram keys** (postponed by agreement on 2026-11-10). All five are empty in `.env.local`, so texts and Barber alerts go to the server log for now.
+3. **Landing page:** judge the first 3D head before the other five are made; approve the commits.
+
+Login emails are **done** (2026-11-10): Supabase sends them through Resend SMTP (`Barber Master <onboarding@resend.dev>`, limit 100/hour), with the Magic Link template `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email&next=/app/day`. Tested: the email arrived in Gmail and its link signed in a browser that never requested it. Until a domain is verified in Resend, these emails only reach the Resend account's own address (`samirflores13@gmail.com`), so other staff can't sign in by email yet.
 
 ### Done on 2026-11-09 (evening)
 
@@ -89,8 +143,10 @@ Shell: PowerShell, from the repo root.
 | Alerts (B4) | `src/server/alerts/` (Telegram, email fallback, daily Owner email), `src/server/providers/{telegram,resend}.ts`, `src/app/api/telegram/webhook` |
 | Owner tools (B5) | `src/server/shop-admin/`, `src/server/reporting/`, `src/server/invites.ts` |
 | Platform admin (B6) | `src/server/platform-admin/`, `src/server/logins.ts`, `src/lib/csv.ts` |
-| Scripts | `scripts/add-staff.mjs` (`npm run staff:add`), `scripts/telegram-webhook.mjs` (`npm run telegram:webhook`), `scripts/stripe.mjs` (`npm run stripe`, `npm run stripe:listen`; the CLI itself is in `tools/stripe/`, gitignored) |
-| Tests | `tests/unit/` (availability, Twilio and Stripe signatures), `tests/engine/` (booking engine, dispatcher, texting, alerts, payments, shop admin, platform admin; real database), `tests/e2e/` (race, Book now). 138 + 4 in total. |
+| Landing page | `src/app/page.tsx`, `src/app/_landing/` (one file per section; `ui.tsx` shared pieces; `nav-menu.tsx`, `features-list.tsx`, `head-viewer.tsx` client parts; `heads.ts` gallery manifest), `src/lib/i18n/landing.ts` (all EN/ES copy), `src/app/lead-form.tsx`, `src/app/actions.ts`, `public/landing/` (booking screenshots, head frames), `heads_reference_images/` |
+| Leads | `supabase/migrations/20261111090000_leads.sql`, `src/server/leads/` (save, 24h repeat guard, email Platform admins, retry from the daily job), `leads()` in `src/server/senders.ts` |
+| Scripts | `scripts/landing-shots.mjs` (`npm run landing:shots`, booking screenshots for the landing), `scripts/head-frames.mjs` (orbit video or frame folder → WebP turntable frames), `scripts/add-staff.mjs` (`npm run staff:add`), `scripts/telegram-webhook.mjs` (`npm run telegram:webhook`), `scripts/stripe.mjs` (`npm run stripe`, `npm run stripe:listen`; the CLI itself is in `tools/stripe/`, gitignored) |
+| Tests | `tests/unit/` (availability, Twilio and Stripe signatures), `tests/engine/` (booking engine, dispatcher, texting, alerts, payments, shop admin, platform admin, leads; real database), `tests/e2e/` (race, Book now, landing). 143 + 9 in total. |
 
 ## Known issues to fix later
 
@@ -507,16 +563,15 @@ Marketplace, deposits, online tips, WhatsApp, walk-in queue/QR, Google Calendar 
 Both were stopped at the end of the 2026-11-09 session on purpose. If pages reload in a loop, stop `npm run dev`, delete `.next`, start again.
 
 **Checks to do first (quick):**
-- [ ] Sign in: open the "Magic Link" email for `samirflores13@gmail.com` in Brave (or request a new one at `/login`); you should land on `/app/day`.
 - [ ] In Brave's console on any page, the `<body>` "attributes didn't match" error should be gone (it couldn't be checked headless).
 
 **Real-service tests (in this order):**
-1. **Stripe payment.** Connect the demo shop: `/api/payments/onboard?shop=36587674-9e01-4447-9182-48b76203fc85` in Brave, Stripe test data, solve the CAPTCHA. Then Claude books with "Pay online", pays with `4242 4242 4242 4242`, checks the booking turns Confirmed and the Barber alert is queued, cancels it and checks the full refund.
-2. **Resend.** Fill the Supabase SMTP form (values under B4) and raise the email rate limit; then Claude sends a test email (to the Resend account's own address until a domain is verified).
+1. ~~**Stripe payment.**~~ **Done 2026-11-10** (pay, confirm, cancel, full refund, hold release; see "Done on 2026-11-10").
+2. ~~**Resend.**~~ **Done 2026-11-10** (login email through Resend; any-browser link).
 3. **Twilio and Telegram.** Create the accounts, put the 5 keys in `.env.local`, restart. Their webhooks need a public address (a tunnel now, or the deploy). Then test a confirmation text, STOP, and linking a Barber's Telegram.
 
 **Then:**
-4. Talk about whether to build a landing page.
+4. ~~Landing page.~~ **Built and pushed 2026-11-10** (see "Landing page for Shop Owners"). **Left: the 3D heads (M3 — "start here next session" list in that section).**
 5. UI phases U1–U5 (see "Remaining plan").
 
 **Left for the deploy (U5):**
@@ -530,6 +585,6 @@ Both were stopped at the end of the 2026-11-09 session on purpose. If pages relo
 
 ## Git
 
-- Local repo on branch `main`, all work committed and pushed (2026-11-09, end of day).
+- Local repo on branch `main`, all work committed and pushed (2026-11-10, end of day), except the 3D head frames, which are still being made (see M3).
 - Remote already added: `origin` → `https://github.com/OmarflorexAI/Barber-booking-system.git`.
 - Pushed: https://github.com/OmarflorexAI/Barber-booking-system (`main` tracks `origin/main`).
