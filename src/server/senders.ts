@@ -3,6 +3,7 @@ import { createAlerts, type Alerts, type ChatProvider, type EmailProvider } from
 import { getSql } from "./db";
 import { requireManageLinkSecret } from "./booking-engine/manage-token";
 import { createDispatcher, type Senders } from "./dispatch";
+import { createLeads, type Leads } from "./leads";
 import { bookingEngine } from "./engine";
 import { createPayments, type Payments } from "./payments";
 import { createStripePayments } from "./providers/stripe";
@@ -65,6 +66,7 @@ let textingModule: Texting | undefined;
 let alertsModule: Alerts | undefined;
 let paymentsModule: Payments | null | undefined;
 let dispatcher: ReturnType<typeof createDispatcher> | undefined;
+let leadsModule: Leads | undefined;
 
 /** Client texts (B3). */
 export function texting(): Texting {
@@ -90,6 +92,12 @@ export function alerts(): Alerts {
     config: { siteUrl: siteUrl(), botUsername: env("TELEGRAM_BOT_USERNAME") ?? "your_bot" },
   });
   return alertsModule;
+}
+
+/** Shop Owners' requests from the landing page, emailed to the Platform admins. */
+export function leads(): Leads {
+  leadsModule ??= createLeads({ sql: getSql(), email: emailProvider() });
+  return leadsModule;
 }
 
 /** Online payments (B2), or null when STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET are not set. */
