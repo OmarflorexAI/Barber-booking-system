@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-12T20:34:44.983Z",
+  "title": "Design System: Barber Master",
+  "extensions": {
+    "colorMeta": {
+      "barber-red": {
+        "role": "primary",
+        "displayName": "Barber Red",
+        "canonical": "oklch(62% 0.2 27)",
+        "hexApprox": "#e6443d",
+        "tonalRamp": [
+          "#240000",
+          "#500003",
+          "#811313",
+          "#b52a27",
+          "#e64c44",
+          "#ff8175",
+          "#ffb3a6",
+          "#ffd3c8"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Closing-Time Black",
+        "canonical": "oklch(6% 0 0)",
+        "hexApprox": "#010101",
+        "tonalRamp": [
+          "#000000",
+          "#010101",
+          "#040404",
+          "#090909",
+          "#121212",
+          "#2e2e2e",
+          "#8c8c8c",
+          "#e8e8e8"
+        ]
+      },
+      "pure-black": {
+        "role": "neutral",
+        "displayName": "Pure Black",
+        "canonical": "#000000",
+        "tonalRamp": [
+          "#000000",
+          "#010101",
+          "#040404",
+          "#090909",
+          "#121212",
+          "#2e2e2e",
+          "#8c8c8c",
+          "#e8e8e8"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Back-Room Panel",
+        "canonical": "oklch(11% 0 0)",
+        "hexApprox": "#040404",
+        "tonalRamp": [
+          "#000000",
+          "#010101",
+          "#040404",
+          "#090909",
+          "#121212",
+          "#2e2e2e",
+          "#8c8c8c",
+          "#e8e8e8"
+        ]
+      },
+      "raised": {
+        "role": "neutral",
+        "displayName": "Raised Chrome",
+        "canonical": "oklch(14% 0 0)",
+        "hexApprox": "#090909",
+        "tonalRamp": [
+          "#000000",
+          "#010101",
+          "#040404",
+          "#090909",
+          "#121212",
+          "#2e2e2e",
+          "#8c8c8c",
+          "#e8e8e8"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(18% 0 0)",
+        "hexApprox": "#121212",
+        "tonalRamp": [
+          "#000000",
+          "#010101",
+          "#040404",
+          "#090909",
+          "#121212",
+          "#2e2e2e",
+          "#8c8c8c",
+          "#e8e8e8"
+        ]
+      },
+      "muted-ink": {
+        "role": "neutral",
+        "displayName": "Ash Gray",
+        "canonical": "oklch(64% 0 0)",
+        "hexApprox": "#8c8c8c",
+        "tonalRamp": [
+          "#000000",
+          "#010101",
+          "#040404",
+          "#090909",
+          "#121212",
+          "#2e2e2e",
+          "#8c8c8c",
+          "#e8e8e8"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Barber-Cape White",
+        "canonical": "oklch(93% 0 0)",
+        "hexApprox": "#e8e8e8",
+        "tonalRamp": [
+          "#000000",
+          "#010101",
+          "#040404",
+          "#090909",
+          "#121212",
+          "#2e2e2e",
+          "#8c8c8c",
+          "#e8e8e8"
+        ]
+      },
+      "pure-white": {
+        "role": "neutral",
+        "displayName": "Pure White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#000000",
+          "#010101",
+          "#040404",
+          "#090909",
+          "#121212",
+          "#2e2e2e",
+          "#8c8c8c",
+          "#e8e8e8"
+        ]
+      }
+    },
+    "cssVariables": {
+      "scope": ".landing",
+      "ground": "--l-bg",
+      "panel": "--l-panel",
+      "raised": "--l-raised",
+      "hairline": "--l-border",
+      "muted-ink": "--l-muted-fg",
+      "ink": "--l-fg",
+      "barber-red": "--l-red"
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The one h1 per page. 2.25rem, 3rem from 640px, 3.75rem from 1024px."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section h2s; 2.25rem from 640px. Also the pricing price line."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "How-it-works step titles; 1.875rem from 640px."
+      },
+      "body-lead": {
+        "displayName": "Body Lead",
+        "purpose": "Hero subline, Why lead, contact intro."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Section copy in muted ink, 48 to 65ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, nav links, form labels, timeline dates."
+      },
+      "mono-time": {
+        "displayName": "Mono Time",
+        "purpose": "Slot times and service meta inside product cards only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "top-glow",
+        "value": "0 -20px 50px -15px rgba(255,255,255,0.05)",
+        "purpose": "Contact card only: faint light from above, paired with the radial top highlight."
+      },
+      {
+        "name": "radial-top-highlight",
+        "value": "radial-gradient(80% 50% at 50% 0%, rgb(26,26,26) 0%, transparent 70%)",
+        "purpose": "Background image on the pricing and contact cards."
+      },
+      {
+        "name": "bezel-ring",
+        "value": "0 0 0 1px rgba(255,255,255,.14)",
+        "purpose": "Hero phone frame edge, black on black."
+      },
+      {
+        "name": "header-glass",
+        "value": "background: oklch(6% 0 0 / 0.8); backdrop-filter: blur(12px)",
+        "purpose": "Sticky header only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-quick",
+        "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "Reveals, the booked-check pop, view-transition arrivals."
+      },
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "FAQ unfold (300ms) and the live-dot ring (2s, repeating only while on screen)."
+      },
+      {
+        "name": "color-transition",
+        "value": "200ms",
+        "purpose": "Pill and link color changes."
+      },
+      {
+        "name": "reveal",
+        "value": "from opacity 0, translate 0 24px; view() cover 0px to 180px",
+        "purpose": "[data-reveal] blocks."
+      },
+      {
+        "name": "panel-widen",
+        "value": "clip-path inset(0 max(pad, 50% - 576px + pad) round 16px) to inset(0 round 0)",
+        "purpose": "Wide panels: hero on scroll(root) 0 to 50vh, setup and pricing on view() cover 10vh to 70vh."
+      },
+      {
+        "name": "photo-fade",
+        "value": "opacity from 0.05 to 0.45; view() cover 0% to 50%",
+        "purpose": "How-it-works photos."
+      },
+      {
+        "name": "nav-settle",
+        "value": "header translate 0 -15px, bar translate 0 7.5px over 0 to 80px of scroll",
+        "purpose": "84px to 69px visible bar with no layout change; hairline fades in 40 to 80px."
+      },
+      {
+        "name": "vt-phone",
+        "value": "out 160ms ease-in; in 260 to 320ms ease-out-quick; 10px slide",
+        "purpose": "Hero phone screens."
+      },
+      {
+        "name": "vt-lang",
+        "value": "out 140ms ease-in; in 220ms ease-out after 80ms",
+        "purpose": "Language switch cross-fade."
+      },
+      {
+        "name": "vt-page",
+        "value": "out 180ms ease-in, 12px up; in 260 to 320ms, 12px from below",
+        "purpose": "Moving between pages."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "xs",
+        "value": "400px"
+      },
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "wide-column",
+        "value": "1152px"
+      }
+    ],
+    "future": {
+      "operateMode": "Not built. The brand is meant to carry into the app (/b, /m, /app/*) in a calmer, denser Operate mode, to be decided in the G System UI grill."
+    }
+  },
+  "components": [
+    {
+      "name": "White Pill",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one primary action per view.",
+      "html": "<a href=\"#\" class=\"ds-pill-white\">Talk to us</a>",
+      "css": ".ds-pill-white{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 20px;border-radius:9999px;background:#fff;color:#000;font:500 0.875rem/1.43 Geist,ui-sans-serif,system-ui,sans-serif;text-decoration:none;white-space:nowrap;transition:background-color 200ms}.ds-pill-white:hover{background:rgba(255,255,255,.85)}.ds-pill-white:focus-visible{outline:2px solid oklch(93% 0 0);outline-offset:2px}"
+    },
+    {
+      "name": "Outline Pill",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "The quieter action beside or instead of the white pill.",
+      "html": "<a href=\"#\" class=\"ds-pill-outline\">Talk to us</a>",
+      "css": ".ds-pill-outline{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 20px;border-radius:9999px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font:500 0.875rem/1.43 Geist,ui-sans-serif,system-ui,sans-serif;text-decoration:none;white-space:nowrap;transition:background-color 200ms}.ds-pill-outline:hover{background:rgba(255,255,255,.1)}.ds-pill-outline:focus-visible{outline:2px solid oklch(93% 0 0);outline-offset:2px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Lead-form field with its label above.",
+      "html": "<label class=\"ds-field-wrap\"><span class=\"ds-field-label\">Phone</span><input class=\"ds-field\" type=\"tel\" placeholder=\"(718) 555-0123\"></label>",
+      "css": ".ds-field-wrap{display:flex;flex-direction:column;gap:6px;background:oklch(6% 0 0);padding:16px}.ds-field-label{font:500 0.875rem Geist,ui-sans-serif,system-ui,sans-serif;color:oklch(93% 0 0)}.ds-field{min-height:48px;padding:12px 16px;border-radius:6px;border:1px solid oklch(18% 0 0);background:oklch(6% 0 0);color:oklch(93% 0 0);font:16px Geist,ui-sans-serif,system-ui,sans-serif;outline:none;transition:border-color 150ms}.ds-field::placeholder{color:oklch(64% 0 0)}.ds-field:hover{border-color:rgba(255,255,255,.25)}.ds-field:focus-visible{border-color:oklch(93% 0 0);outline:2px solid oklch(93% 0 0);outline-offset:2px}"
+    },
+    {
+      "name": "Sticky Nav",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Wordmark left, section links centered, language link and white pill right.",
+      "html": "<header class=\"ds-nav\"><span class=\"ds-nav-brand\"><svg viewBox=\"0 0 32 32\" width=\"28\" height=\"28\" fill=\"none\"><circle cx=\"9.3\" cy=\"23.4\" r=\"4.5\" stroke=\"currentColor\" stroke-width=\"1.25\"/><circle cx=\"22.7\" cy=\"23.4\" r=\"4.5\" stroke=\"currentColor\" stroke-width=\"1.25\"/><path d=\"M12.1 19.8 L26.2 3.2 L14.1 20.9 Z\" fill=\"currentColor\"/><path d=\"M19.9 19.8 L5.8 3.2 L17.9 20.9 Z\" fill=\"currentColor\"/><circle cx=\"16\" cy=\"15.9\" r=\"1.35\" stroke-width=\"0.6\" fill=\"oklch(62% 0.2 27)\" stroke=\"oklch(6% 0 0)\"/></svg>Barber Master</span><nav class=\"ds-nav-links\"><a href=\"#\">How it works</a><a href=\"#\">Setup</a><a href=\"#\">Pricing</a><a href=\"#\">FAQ</a></nav><span class=\"ds-nav-end\"><a href=\"#\">Español</a><a href=\"#\" class=\"ds-nav-cta\">Talk to us</a></span></header>",
+      "css": ".ds-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 24px;background:oklch(6% 0 0 / .8);backdrop-filter:blur(12px);border-bottom:1px solid oklch(18% 0 0);font-family:Geist,ui-sans-serif,system-ui,sans-serif;color:oklch(93% 0 0)}.ds-nav-brand{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:17px;letter-spacing:-0.02em}.ds-nav-links{display:flex;align-items:center;gap:28px}.ds-nav-end{display:flex;align-items:center;gap:8px}.ds-nav a{display:inline-flex;align-items:center;min-height:44px;color:oklch(64% 0 0);font-size:.875rem;text-decoration:none;border-radius:6px;transition:color 200ms}.ds-nav a:hover{color:oklch(93% 0 0)}.ds-nav a:focus-visible{outline:2px solid oklch(93% 0 0);outline-offset:2px}.ds-nav a.ds-nav-cta{padding:0 20px;border-radius:9999px;background:#fff;color:#000;font-weight:500;transition:background-color 200ms}.ds-nav a.ds-nav-cta:hover{background:rgba(255,255,255,.85);color:#000}"
+    },
+    {
+      "name": "Black Pricing Card",
+      "kind": "card",
+      "refersTo": "card-black",
+      "description": "Pure-black card with hairline and radial top highlight, set on a dimmed photo panel.",
+      "html": "<div class=\"ds-card-black\"><div class=\"ds-card-head\"><h3>Free</h3><p>First month</p></div><ul><li><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"#fff\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4.5 12.75l6 6 9-13.5\"/></svg>Setup visit included</li></ul></div>",
+      "css": ".ds-card-black{max-width:340px;border-radius:16px;border:1px solid oklch(18% 0 0);background:#000 radial-gradient(80% 50% at 50% 0%, rgb(26,26,26) 0%, transparent 70%);color:oklch(93% 0 0);font-family:Geist,ui-sans-serif,system-ui,sans-serif;overflow:hidden}.ds-card-head{padding:32px;border-bottom:1px solid rgba(255,255,255,.1)}.ds-card-head h3{margin:0;font-size:2.25rem;font-weight:600;letter-spacing:-0.03em}.ds-card-head p{margin:12px 0 0;font-size:.875rem;color:oklch(64% 0 0)}.ds-card-black ul{list-style:none;margin:0;padding:32px;display:flex;flex-direction:column;gap:12px}.ds-card-black li{display:flex;gap:12px;font-size:.875rem;color:oklch(64% 0 0)}"
+    },
+    {
+      "name": "Mini Product Card",
+      "kind": "custom",
+      "refersTo": "card-mini",
+      "description": "The real product shown small on a dimmed photo box: the Barber alert with a red new dot.",
+      "html": "<div class=\"ds-photo-box\"><div class=\"ds-mini\"><p class=\"ds-mini-meta\"><span>Telegram</span><span>now</span></p><p class=\"ds-mini-title\">New booking</p><ul><li class=\"new\"><span class=\"t\">10:30 AM</span><span>Luis M.</span><span class=\"badge\"><i></i>New</span></li><li><span class=\"t\">11:15 AM</span><span>Walk-in</span></li></ul></div></div>",
+      "css": ".ds-photo-box{display:flex;align-items:center;justify-content:center;height:320px;border-radius:16px;background:#000;padding:24px}.ds-mini{width:100%;max-width:260px;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:oklch(6% 0 0);padding:20px;font-family:Geist,ui-sans-serif,system-ui,sans-serif;color:oklch(93% 0 0)}.ds-mini-meta{display:flex;justify-content:space-between;margin:0;font-size:10px;color:oklch(64% 0 0)}.ds-mini-title{margin:8px 0 12px;font-size:12px;font-weight:600}.ds-mini ul{list-style:none;margin:0;padding:12px 0 0;border-top:1px solid rgba(255,255,255,.1)}.ds-mini li{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;font-size:11px;color:oklch(64% 0 0)}.ds-mini li.new{background:oklch(14% 0 0);color:oklch(93% 0 0)}.ds-mini .t{width:56px;font-family:\"Geist Mono\",ui-monospace,monospace;font-size:10px;font-variant-numeric:tabular-nums}.ds-mini .badge{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:10px;font-weight:500}.ds-mini .badge i{width:6px;height:6px;border-radius:9999px;background:oklch(62% 0.2 27)}"
+    },
+    {
+      "name": "Live Dot",
+      "kind": "custom",
+      "description": "Barber-red status dot with an outward ring; the only repeating animation.",
+      "html": "<span class=\"ds-live\"></span>",
+      "css": ".ds-live{position:relative;display:block;width:11px;height:11px;border-radius:9999px;background:oklch(62% 0.2 27)}.ds-live::after{content:\"\";position:absolute;inset:0;border-radius:inherit;background:oklch(62% 0.2 27);opacity:0}@keyframes ds-ring{0%{transform:scale(1);opacity:.7}80%,100%{transform:scale(2.6);opacity:0}}@media (prefers-reduced-motion:no-preference){.ds-live::after{animation:ds-ring 2s cubic-bezier(0.16,1,0.3,1) infinite}}"
+    },
+    {
+      "name": "FAQ Disclosure",
+      "kind": "custom",
+      "description": "Hairline-ruled native details; the plus rotates into a cross.",
+      "html": "<details class=\"ds-faq\" open><summary>Do I need to set anything up?<svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"><path d=\"M12 4.5v15M4.5 12h15\"/></svg></summary><p>No. We set up your Shop in one visit.</p></details>",
+      "css": ".ds-faq{border-top:1px solid oklch(18% 0 0);border-bottom:1px solid oklch(18% 0 0);font-family:Geist,ui-sans-serif,system-ui,sans-serif}.ds-faq summary{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:56px;padding:20px 0;list-style:none;cursor:pointer;font-size:1rem;font-weight:500;color:oklch(93% 0 0);border-radius:6px}.ds-faq summary::-webkit-details-marker{display:none}.ds-faq summary:focus-visible{outline:2px solid oklch(93% 0 0);outline-offset:2px}.ds-faq svg{color:oklch(64% 0 0);transition:transform 300ms}.ds-faq[open] svg{transform:rotate(45deg);color:oklch(93% 0 0)}.ds-faq p{margin:0;padding:0 40px 24px 0;font-size:1rem;line-height:1.625;color:oklch(64% 0 0)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Shop After Hours",
+    "overview": "A calm, near-black page lit like a barbershop after closing: grayscale ground, near-white ink, hairline borders, and dimmed photographs of real shops sitting behind small dark product cards. Nothing on the page asks for attention except the one thing that is alive, a small barber-red dot. The page sells by showing the product working (an interactive booking phone, the alert, the reminder), so the visual system stays quiet around those depictions and lets them carry the proof.\n\nThe world is the Cocoon template's grayscale grammar (MIT, rebuilt in React and Tailwind v4, never copied in), pinned by the user, plus one accent. It is a one-column, generous, Persuade-mode system: a 1024px reading column, wide 1152px panels that open to the full window on scroll, white pill actions, rounded-2xl black cards. All motion is paint-only (opacity, translate, clip) so layout never moves, and every effect has a resting final state for reduced motion, no scroll-timeline support, or no JS.\n\nThis document records the shipped landing (`/`, `/es`), the legal pages (`/privacy`, `/terms` and their `/es` pairs) and the 404. **Future, not built:** the brand is meant to carry into the app (`/b`, `/m`, `/app/*`) in a calmer, denser \"Operate\" mode. Light or dark, density and type scale for that mode are open questions for the G System UI grill; nothing below should be read as already deciding them. The warm-paper `:root` tokens in `globals.css` (`--paper`, `--ink`, `--accent` and friends) belong to the pre-G app screens and are not part of this system.",
+    "keyCharacteristics": [
+      "Near-black grayscale ground, near-white ink, one barber red reserved for live and status signals.",
+      "Geist for everything; Geist Mono only for times and short product metadata.",
+      "Depth by tone steps and hairlines, not shadows.",
+      "White pill = the action; outlined pill = the quieter action.",
+      "Wide panels clipped to the column with 16px corners that open to full width on scroll.",
+      "Photos always dimmed under dark UI cards; product depictions are the proof."
+    ],
+    "rules": [
+      {
+        "name": "The Live Signal Rule",
+        "body": "Barber red marks only something alive or confirmed: the pivot, a pulsing live dot, a \"new\" dot, a booked check. Never a button, link, heading, border, error or decoration. If it isn't a status, it is grayscale.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Tint Rule",
+        "body": "The ramp is achromatic (chroma 0). Do not warm or cool the grays; the photos bring the only other color.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Family Rule",
+        "body": "Geist sets every word on the page. Hierarchy comes from size, weight (400/500/600) and tracking, never from a second display face.",
+        "section": "typography"
+      },
+      {
+        "name": "The Mono Means Time Rule",
+        "body": "Geist Mono appears only where a booking screen would show a time or duration. Never for body, labels or decoration.",
+        "section": "typography"
+      },
+      {
+        "name": "The Still Layout Rule",
+        "body": "Scroll effects move only opacity, translate and clip. Content boxes never change size or position in flow; the nav \"shrinks\" by translating, not by changing height.",
+        "section": "layout"
+      },
+      {
+        "name": "The Final State Rule",
+        "body": "Every animated element is defined at rest first. Without scroll-timeline support, under reduced motion or with JS off, the page shows each element in its final state.",
+        "section": "layout"
+      },
+      {
+        "name": "The Tone Not Shadow Rule",
+        "body": "Separate surfaces by stepping the ramp and drawing a hairline. Drop shadows are not part of the vocabulary; the two above are light-edge effects, not elevation.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Corner Rule",
+        "body": "Anything that holds content (panel, card, photo box, form card) is 16px. Anything you press or read as a tag is a full pill or a 6px control. No other radii outside product depictions.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "**Do** keep every surface on the achromatic ramp (ground, panel, raised, hairline) and step it to separate layers.",
+      "**Do** use barber red only for live and status signals: pivot, live dot, \"new\" dot, booked check.",
+      "**Do** make the white pill the single primary action in any view, with the outline pill for the quieter alternative.",
+      "**Do** set every heading in Geist with negative tracking (-0.025em to -0.035em) and keep body text in muted ink at 48 to 65ch.",
+      "**Do** show the real product (booking, alert, reminder screens) as the proof, on dimmed photos under small dark cards.",
+      "**Do** use the one focus ring (2px solid ink, 2px offset) on every interactive element, and at least 44px targets.",
+      "**Do** animate only opacity, translate and clip, behind `@supports (animation-timeline: view())` and `prefers-reduced-motion: no-preference`, with the final state as the default.",
+      "**Do** ship every string in English and Spanish at equal visual weight."
+    ],
+    "donts": [
+      "**Don't** use barber red for buttons, links, headings, borders or error states.",
+      "**Don't** add pill labels above headings. The two on the landing (hero and first month) are a user-kept exception, not a pattern for other sections or future surfaces.",
+      "**Don't** add drop shadows for elevation; use a tone step and a hairline.",
+      "**Don't** introduce a second display face, or use Geist Mono outside times and durations.",
+      "**Don't** show photos at full strength behind text; darken them with a black gradient or hold them at 45% on black.",
+      "**Don't** imply customers, results or prices: no logo bars, testimonial cards, rating stars or number counters. The only price is \"first month free\".",
+      "**Don't** animate layout properties or leave anything hidden until a script runs."
+    ]
+  }
+}
