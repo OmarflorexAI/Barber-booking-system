@@ -31,7 +31,13 @@ Decisions:
   - Template scroll effects rebuilt: the panel widens, photos fade in, the nav shrinks, fade-ups.
   - React `<ViewTransition>` (`/vercel-react-view-transitions`) in 3 places only: the phone's screens, the language toggle, and moving between pages.
   - Reduced motion shows the final states.
-- **Photos:** about 12 free-license stock barbershop photos (Unsplash/Pexels: dark, no brands, no faces as the subject) on a contact sheet; the user picks 5 (3 How-it-works, 1 Setup, 1 Pricing). WebP via `next/image`. Credits and the template's MIT notice go in `THIRD_PARTY_NOTICES.md`; no "Made by templatedeck" on the page.
+- **Photos: CHOSEN 2026-11-11.** The user rejected the old-school CC0 set and sent their own Unsplash links (free photos, Unsplash License, not Unsplash+). The 5 picks are in `public/landing/photos/` as WebP, max 2400 px on the long side, serve via `next/image`:
+  - How it works: `how-clipper.webp` (Salah Regouane, unsplash.com/photos/MRCdF3qUbp0), `how-trimmer.webp` (Firza Pratama, zRshOvj0K4o), `how-shop.webp` (Mitchell Orr, pL6-dYFSGWI)
+  - Setup: `setup-street-pole.webp` (Arnaud Padalle, MgepwCgs3Xs)
+  - Pricing: `pricing-red-chairs.webp` (JJ Shev, VrxWLZnCcBA)
+  - Rejected: two photos whose subject is a face (one read as "our team").
+  - Credits and the template's MIT notice go in `THIRD_PARTY_NOTICES.md`; no "Made by templatedeck" on the page.
+- **Logo: CHOSEN 2026-11-11, option A "open scissors"**: two finger rings, tapered blades crossing at a red pivot. Source: `public/brand/mark.svg` (32×32; the light version for dark backgrounds). The build turns it into a `currentColor` React component plus the favicon and OG image. Wordmark: "Barber Master" in Geist semibold, tracking −0.02em.
 - **404:** restyled `not-found.tsx`, EN/ES.
 - **Pass criteria** (validator agent, production build, Lighthouse phone profile):
   - Performance ≥ 90, LCP < 2.5 s, CLS < 0.1
