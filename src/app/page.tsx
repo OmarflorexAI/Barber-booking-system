@@ -1,29 +1,31 @@
 import type { Metadata } from "next";
-import { Big_Shoulders, Instrument_Sans } from "next/font/google";
 import { Suspense } from "react";
 import { landingDictionaries } from "@/lib/i18n/landing";
 import { getLocale } from "@/lib/i18n/server";
-import { Closing } from "./_landing/closing";
+import { Contact } from "./_landing/contact";
+import { Facts } from "./_landing/facts";
 import { Faq } from "./_landing/faq";
-import { Features } from "./_landing/features";
+import { FirstMonth } from "./_landing/first-month";
 import { Footer } from "./_landing/footer";
 import { Hero } from "./_landing/hero";
 import { HowItWorks } from "./_landing/how";
+import { HtmlLang } from "./_landing/html-lang";
 import { Nav } from "./_landing/nav";
-import { Offer } from "./_landing/offer";
-import { RevealObserver } from "./_landing/reveal";
+import { Pricing } from "./_landing/pricing";
 import { Setup } from "./_landing/setup";
+import { focusRing } from "./_landing/ui";
+import { Why } from "./_landing/why";
 
-/* The landing page's own faces: condensed storefront signage for headlines, a calm sans for reading. */
-const display = Big_Shoulders({ subsets: ["latin", "latin-ext"], variable: "--ff-display", axes: ["opsz"] });
-const body = Instrument_Sans({ subsets: ["latin", "latin-ext"], variable: "--ff-body", axes: ["wdth"] });
-
-const en = landingDictionaries.en;
-export const metadata: Metadata = {
-  title: { absolute: en.metaTitle },
-  description: en.metaDescription,
-  openGraph: { title: en.metaTitle, description: en.metaDescription, type: "website", images: ["/landing/booking-services-en.png"] },
-};
+/** Title, description and Open Graph text in the visitor's language. */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const t = landingDictionaries[locale];
+  return {
+    title: { absolute: t.metaTitle },
+    description: t.metaDescription,
+    openGraph: { title: t.metaTitle, description: t.metaDescription, type: "website", locale: locale === "es" ? "es_US" : "en_US" },
+  };
+}
 
 /** The landing page that sells Barber Master to Shop Owners. Clients use their Shop's /b/<slug> link instead. */
 export default function Home() {
@@ -36,21 +38,30 @@ export default function Home() {
 
 async function Landing() {
   const locale = await getLocale();
-  const props = { locale, t: landingDictionaries[locale] };
+  const t = landingDictionaries[locale];
+  const props = { locale, t };
   return (
-    <div lang={locale} className={`landing ${display.variable} ${body.variable} min-h-screen overflow-x-clip`}>
+    <div lang={locale} className="landing min-h-screen overflow-x-clip antialiased">
+      <HtmlLang lang={locale} />
+      <a
+        href="#main"
+        className={`sr-only rounded-full bg-white px-4 py-2 text-sm font-medium text-black focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 ${focusRing}`}
+      >
+        {t.skipLink}
+      </a>
       <Nav {...props} />
-      <main>
+      <main id="main">
         <Hero {...props} />
+        <Why {...props} />
+        <Facts {...props} />
         <HowItWorks {...props} />
-        <Features {...props} />
         <Setup {...props} />
-        <Offer {...props} />
+        <FirstMonth {...props} />
+        <Pricing {...props} />
         <Faq {...props} />
-        <Closing {...props} />
+        <Contact {...props} />
       </main>
       <Footer {...props} />
-      <RevealObserver locale={locale} />
     </div>
   );
 }

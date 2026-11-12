@@ -8,57 +8,18 @@ const en = {
     "Clients book from your link or the QR at the counter. Your barbers get an alert instead of a phone call. We set it all up for you, in Spanish and English. First month free.",
   otherLang: "Español",
   staffSignIn: "Staff sign in",
+  skipLink: "Skip to content",
 
-  nav: { how: "How it works", features: "Features", setup: "Setup", faq: "Questions" },
+  nav: { how: "How it works", setup: "Setup", pricing: "Pricing", faq: "FAQ" },
   navLabel: "Sections",
-  navMenu: "Sections menu",
-  heroFacts: ["Spanish and English, on every screen", "No app for your clients to download", "Set up in person, at your shop"],
+  navMenu: "Menu",
+  navCta: "Talk to us",
 
-  // Small UI cards floating in the hero and feature visuals.
-  cards: {
-    newBooking: "New booking",
-    newBookingValue: "Dre · Skin fade · 3:30 PM",
-    paid: "Paid online",
-    paidValue: "$35.00",
-    reminder: "Reminder sent",
-    reminderValue: "Ana · today 1:30 PM",
-    walkIn: "Walk-in",
-    walkInValue: "Carlos · Haircut",
-    week: "This week",
-    weekValue: "64 bookings · 5.3 h saved",
-    // How it works: what the barber and the client each get.
-    barberAlert: "Alert for Dre",
-    barberAlertValue: "Marcus · Thu 4:00 PM",
-    clientText: "Text to Marcus",
-    clientTextValue: "Tomorrow, 4:00 PM",
-  },
-
-  // Example data inside the feature visuals (clearly illustrative).
-  demo: {
-    ledger: [
-      { who: "Luis · Fade", amount: "$35.00", status: "Paid online" },
-      { who: "Kevin · Beard trim", amount: "$15.00", status: "Pays at the shop" },
-      { who: "Marcus · Haircut", amount: "$30.00", status: "Cancelled · refunded" },
-    ],
-    missed: "Missed",
-    noShowRule: "Next booking: pays online",
-    walkInNow: "Walk-in added",
-    walkInValue: "Carlos · Haircut · now",
-    textMessage: "Hi Ana, your haircut with Dre is today at 1:30 PM. Reply C to cancel.",
-  },
-
-
-  closingTitle: "Your chair is booked. Your phone stays in your pocket.",
-  closingBody: "We set it up at your shop, in Spanish and English. The first month is on us.",
-
-
+  heroPill: "For barbershops in the Bronx & upper Manhattan",
   heroTitle: "Stop answering the phone in the middle of a cut.",
   heroBody:
     "Clients book from your link or the QR code at the counter. Your barbers get an alert on their phone. We set it all up for you, in Spanish and English, and the first month is free.",
-  heroCta: "Get your free month",
   heroDemo: "See a real booking page",
-  heroShotAlt: "The booking page a client sees on their phone",
-  navCta: "Free month",
 
   // The interactive phone in the hero: a pretend booking at the demo shop (nothing is saved).
   heroPhone: {
@@ -93,19 +54,34 @@ const en = {
     again: "Book another",
   },
 
+  // The "why" block under the hero.
+  whyTitle: "Every call stops a cut.",
+  whyLead: "Right now your bookings are all over the place.",
+  whyBody: [
+    "They come in by phone, by WhatsApp, in Instagram DMs and in the notebook by the register. Every call means a barber stops mid-cut, puts the clippers down and checks who's free. The client in the chair waits while they do.",
+    "When someone doesn't show, nobody finds out until the chair is already empty. At the end of the week, it's hard to say how many bookings really came in. Barber Master gives every booking one place to land.",
+  ],
+
+  // The bordered grid of things that work today.
+  factsLabel: "What works today",
+  facts: [
+    "No app or account for your clients",
+    "English and Español on every screen",
+    "Clients pay online or at the shop",
+    "“Any available barber” gives the first free chair",
+    "Walk-ins go on the same day view",
+    "Your client list stays yours. Export it any time.",
+  ],
 
   howTitle: "From booking to reminder, without a call",
-  howShotAlt: "Choosing a time on the booking page",
+  howBody: "Every booking follows the same three steps, so nobody has to pick up the phone.",
   how: [
     { title: "The client books in under a minute", body: "From your link or the QR at the counter. They pick the service, the barber and a free time. No app, no account." },
     { title: "The barber gets an alert", body: "On Telegram or by email, with a link to their day. Nobody has to pick up the phone to know the schedule." },
     { title: "The client gets a reminder", body: "A text 2 hours before, with a link to cancel or change the time, so the chair doesn't sit empty." },
   ],
-
-  howBody: "Every booking follows the same three steps, so nobody has to pick up the phone.",
-  // The sticky window beside the steps: one scene per step (example data).
+  // The small UI cards over the how-it-works photos (example data).
   howStage: {
-    titles: ["booking / client", "alert / barber", "reminder / client"],
     service: "Skin fade",
     serviceMeta: "45 min · $35",
     barber: "With Dre · Thursday",
@@ -130,18 +106,12 @@ const en = {
     textActions: ["Change time", "Cancel"],
   },
 
-  featuresTitle: "What your shop gets",
-  featuresPrice: "Included",
-  features: [
-    { title: "Pay online or at the shop", body: "The client chooses. Online payments go straight to your account, and cancelled bookings are refunded in full automatically." },
-    { title: "Fewer no-shows", body: "A phone that misses two bookings in 90 days pays online to book. Nobody has to chase anyone." },
-    { title: "Walk-ins still welcome", body: "Barbers log walk-ins from their day view, so the schedule stays true." },
-    { title: "Know your week", body: "Bookings per week and the time you saved not answering the phone, in a short email every morning." },
-    { title: "Spanish and English", body: "Every screen and every text, in the language your client uses." },
-  ],
-
   setupTitle: "We set it up for you",
   setupBody: "You don't have to learn software. We come to the shop and do it with you.",
+  setupCards: [
+    { title: "We come to your shop", steps: [0, 1] },
+    { title: "Your link works the same day", steps: [2, 3] },
+  ],
   setup: [
     "We visit the shop and add your services, prices, barbers and hours.",
     "We bring over your client list from your phone or notebook.",
@@ -150,15 +120,64 @@ const en = {
   ],
   setupSupport: "When something doesn't work, you text a real person who answers, in Spanish or English.",
 
+  // The first-month timeline.
+  monthPill: "Your first month",
+  monthTitle: "What the first 30 days look like",
+  monthBody: "Nothing to install and nothing to pay. This is the plan for the month after our visit.",
+  monthStart: "Starts here",
+  month: [
+    {
+      when: "Day 1",
+      title: "We visit, and your link goes live",
+      body: "We set up your services, barbers and hours with you. Your booking link and the QR code for the counter work before we leave.",
+    },
+    {
+      when: "Week 1",
+      title: "Clients start booking from the link",
+      body: "Share it on Instagram and WhatsApp and put the QR by the mirror. Each barber opens their day on their phone and sees who's next.",
+    },
+    {
+      when: "Weeks 2–3",
+      title: "Fewer bookings by phone",
+      body: "As your regulars get used to the link, fewer of them tend to call to book. Walk-ins keep going on the same day view.",
+    },
+    {
+      when: "Day 30",
+      title: "You decide",
+      body: "Keep going at one monthly price, agreed with you before the free month ends. Or stop, and take your client list with you.",
+    },
+  ],
+
   offerTitle: "Your first month is free",
-  offer: ["No contract. Stop any time.", "Your client list is yours. Take it with you whenever you want.", "After the free month, we agree a monthly price together at the visit."],
+  offerBody: "Try it at your shop for a month. Then decide.",
+  plans: [
+    {
+      name: "First month",
+      price: "Free",
+      items: [
+        "Setup visit at your shop",
+        "Your booking link and QR code",
+        "Online payments for your clients",
+        "Each barber's day on their phone",
+        "A short email for the owner every morning",
+      ],
+    },
+    {
+      name: "After the first month",
+      price: "One monthly price",
+      items: ["No contract", "Cancel anytime", "Take your client list with you", "Price agreed with you before the free month ends"],
+    },
+  ],
 
   faqTitle: "Questions owners ask",
   faq: [
     { q: "Do my clients need to download an app?", a: "No. They open a link or scan the QR code and book in their phone's browser. No account, no password." },
     { q: "Do I need a card reader?", a: "No. Clients who pay online pay on a secure page and the money goes to your account. Everyone else pays at the shop like today." },
     { q: "What about walk-ins?", a: "Keep taking them. Your barbers add them to their day in two taps, so online clients never get a time that's already taken." },
-    { q: "How much is it after the free month?", a: "A small monthly fee, agreed at the visit. You'll know the price before the free month ends, and you can stop with no charge." },
+    {
+      q: "How much is it after the free month?",
+      a: "One monthly price, agreed with you before the free month ends. There's no contract: you can cancel anytime, and you take your client list with you.",
+    },
     { q: "Who sees my clients' information?", a: "Only your shop. We never sell it or use it to advertise, and we never store card numbers." },
   ],
 
@@ -186,7 +205,10 @@ const en = {
     UNKNOWN: "That didn't go through. Try again, or text us.",
   } as Record<string, string>,
 
-  footer: "Barber Master. Online booking for barbershops in the Bronx and upper Manhattan.",
+  footer: "Online booking for barbershops in the Bronx and upper Manhattan.",
+  footerLinks: "Legal and staff",
+  privacy: "Privacy",
+  terms: "Terms",
 };
 
 type LandingDictionary = typeof en;
@@ -197,54 +219,18 @@ const es: LandingDictionary = {
     "Tus clientes reservan desde tu enlace o el QR del mostrador. Tus barberos reciben un aviso en vez de una llamada. Lo configuramos todo por ti, en español e inglés. El primer mes es gratis.",
   otherLang: "English",
   staffSignIn: "Entrar (personal)",
+  skipLink: "Saltar al contenido",
 
-  nav: { how: "Cómo funciona", features: "Funciones", setup: "Instalación", faq: "Preguntas" },
+  nav: { how: "Cómo funciona", setup: "Instalación", pricing: "Precio", faq: "Preguntas" },
   navLabel: "Secciones",
-  navMenu: "Menú de secciones",
-  heroFacts: ["Español e inglés, en cada pantalla", "Tus clientes no descargan ninguna app", "Lo instalamos en persona, en tu barbería"],
+  navMenu: "Menú",
+  navCta: "Hablemos",
 
-  cards: {
-    newBooking: "Nueva cita",
-    newBookingValue: "Dre · Skin fade · 3:30 p.m.",
-    paid: "Pagado en línea",
-    paidValue: "$35.00",
-    reminder: "Recordatorio enviado",
-    reminderValue: "Ana · hoy 1:30 p.m.",
-    walkIn: "Sin cita",
-    walkInValue: "Carlos · Corte",
-    week: "Esta semana",
-    weekValue: "64 citas · 5.3 h ahorradas",
-    barberAlert: "Aviso para Dre",
-    barberAlertValue: "Marcus · jue 4:00 p.m.",
-    clientText: "Texto a Marcus",
-    clientTextValue: "Mañana, 4:00 p.m.",
-  },
-
-  demo: {
-    ledger: [
-      { who: "Luis · Fade", amount: "$35.00", status: "Pagado en línea" },
-      { who: "Kevin · Barba", amount: "$15.00", status: "Paga en la barbería" },
-      { who: "Marcus · Corte", amount: "$30.00", status: "Cancelada · reembolsada" },
-    ],
-    missed: "No vino",
-    noShowRule: "Próxima cita: paga en línea",
-    walkInNow: "Sin cita, anotado",
-    walkInValue: "Carlos · Corte · ahora",
-    textMessage: "Hola Ana, tu corte con Dre es hoy a la 1:30 p.m. Responde C para cancelar.",
-  },
-
-
-  closingTitle: "Tu silla está reservada. Tu teléfono, en el bolsillo.",
-  closingBody: "Lo instalamos en tu barbería, en español e inglés. El primer mes corre por nuestra cuenta.",
-
-
+  heroPill: "Para barberías del Bronx y el Alto Manhattan",
   heroTitle: "Deja de contestar el teléfono en medio de un corte.",
   heroBody:
     "Tus clientes reservan desde tu enlace o el código QR del mostrador. Tus barberos reciben un aviso en el celular. Lo configuramos todo por ti, en español e inglés, y el primer mes es gratis.",
-  heroCta: "Quiero mi mes gratis",
   heroDemo: "Ver una página de citas real",
-  heroShotAlt: "La página de citas que ve un cliente en su celular",
-  navCta: "Mes gratis",
 
   heroPhone: {
     label: "Prueba la página de citas",
@@ -278,19 +264,32 @@ const es: LandingDictionary = {
     again: "Reservar otra",
   },
 
+  whyTitle: "Cada llamada interrumpe un corte.",
+  whyLead: "Hoy tus citas están regadas por todos lados.",
+  whyBody: [
+    "Llegan por teléfono, por WhatsApp, por mensajes de Instagram y en la libreta de la caja. Cada llamada obliga a un barbero a parar el corte, soltar la máquina y ver quién está libre. Mientras tanto, el cliente en la silla espera.",
+    "Cuando alguien no llega, nadie se entera hasta que la silla ya está vacía. Al final de la semana cuesta saber cuántas citas entraron de verdad. Barber Master le da a cada cita un solo lugar.",
+  ],
+
+  factsLabel: "Lo que ya funciona",
+  facts: [
+    "Tus clientes no necesitan app ni cuenta",
+    "Español e inglés en cada pantalla",
+    "El cliente paga en línea o en la barbería",
+    "“Cualquier barbero disponible” da la primera silla libre",
+    "Los clientes sin cita van en la misma agenda del día",
+    "Tu lista de clientes es tuya. Descárgala cuando quieras.",
+  ],
 
   howTitle: "De la reserva al recordatorio, sin una llamada",
-  howShotAlt: "Elegir una hora en la página de citas",
+  howBody: "Cada cita sigue los mismos tres pasos, así nadie tiene que contestar el teléfono.",
   how: [
     { title: "El cliente reserva en menos de un minuto", body: "Desde tu enlace o el QR del mostrador. Elige el servicio, el barbero y una hora libre. Sin app y sin cuenta." },
     { title: "El barbero recibe un aviso", body: "Por Telegram o por correo, con un enlace a su día. Nadie tiene que contestar el teléfono para saber la agenda." },
     { title: "El cliente recibe un recordatorio", body: "Un texto 2 horas antes, con un enlace para cancelar o cambiar la hora, para que la silla no quede vacía." },
   ],
-
-  howBody: "Cada cita sigue los mismos tres pasos, así nadie tiene que contestar el teléfono.",
   howStage: {
-    titles: ["cita / cliente", "aviso / barbero", "recordatorio / cliente"],
-    service: "Skin fade",
+    service: "Desvanecido",
     serviceMeta: "45 min · $35",
     barber: "Con Dre · jueves",
     times: ["3:00 p.m.", "3:30 p.m.", "4:00 p.m.", "4:30 p.m.", "5:00 p.m.", "5:30 p.m."],
@@ -300,32 +299,26 @@ const es: LandingDictionary = {
     alertFrom: "Barber Master",
     alertWhen: "ahora",
     alertTitle: "Nueva cita",
-    alertBody: "Marcus · Skin fade · jue 4:00 p.m.",
+    alertBody: "Marcus · Desvanecido · jue 4:00 p.m.",
     dayTitle: "El jueves de Dre",
     day: [
       { time: "2:30 p.m.", who: "Luis · Fade" },
-      { time: "4:00 p.m.", who: "Marcus · Skin fade", isNew: true },
+      { time: "4:00 p.m.", who: "Marcus · Desvanecido", isNew: true },
       { time: "5:00 p.m.", who: "Kevin · Barba" },
     ],
     newBadge: "Nueva",
     textFrom: "Fresh Cuts Barbershop",
-    text: "Hola Marcus, tu skin fade con Dre es hoy a las 4:00 p.m. Cambia o cancela aquí: fc.bm/m/8k2",
+    text: "Hola Marcus, tu desvanecido con Dre es hoy a las 4:00 p.m. Cambia o cancela aquí: fc.bm/m/8k2",
     textSent: "Enviado 2:00 p.m., 2 horas antes",
     textActions: ["Cambiar hora", "Cancelar"],
   },
 
-  featuresTitle: "Lo que recibe tu barbería",
-  featuresPrice: "Incluido",
-  features: [
-    { title: "Pago en línea o en la barbería", body: "El cliente elige. Los pagos en línea van directo a tu cuenta, y las citas canceladas se reembolsan completas, solas." },
-    { title: "Menos clientes que no llegan", body: "Un número que falta a dos citas en 90 días paga en línea para reservar. Nadie tiene que perseguir a nadie." },
-    { title: "Los clientes sin cita, bienvenidos", body: "Los barberos anotan a los que llegan sin cita desde su día, así la agenda siempre está al día." },
-    { title: "Conoce tu semana", body: "Citas por semana y el tiempo que ahorraste sin contestar el teléfono, en un correo corto cada mañana." },
-    { title: "En español e inglés", body: "Cada pantalla y cada texto, en el idioma de tu cliente." },
-  ],
-
   setupTitle: "Nosotros lo configuramos",
   setupBody: "No tienes que aprender ningún programa. Vamos a la barbería y lo hacemos contigo.",
+  setupCards: [
+    { title: "Vamos a tu barbería", steps: [0, 1] },
+    { title: "Tu enlace funciona el mismo día", steps: [2, 3] },
+  ],
   setup: [
     "Visitamos la barbería y agregamos tus servicios, precios, barberos y horarios.",
     "Pasamos tu lista de clientes desde tu celular o tu libreta.",
@@ -334,15 +327,63 @@ const es: LandingDictionary = {
   ],
   setupSupport: "Cuando algo no funciona, le escribes a una persona de verdad que contesta, en español o inglés.",
 
+  monthPill: "Tu primer mes",
+  monthTitle: "Cómo son los primeros 30 días",
+  monthBody: "Nada que instalar y nada que pagar. Este es el plan para el mes después de nuestra visita.",
+  monthStart: "Aquí empieza",
+  month: [
+    {
+      when: "Día 1",
+      title: "Te visitamos y tu enlace queda activo",
+      body: "Configuramos contigo tus servicios, barberos y horarios. Tu enlace de citas y el QR del mostrador funcionan antes de que nos vayamos.",
+    },
+    {
+      when: "Semana 1",
+      title: "Los clientes empiezan a reservar con el enlace",
+      body: "Compártelo en Instagram y WhatsApp y pon el QR junto al espejo. Cada barbero abre su día en el celular y ve quién sigue.",
+    },
+    {
+      when: "Semanas 2–3",
+      title: "Menos citas por teléfono",
+      body: "A medida que tus clientes de siempre se acostumbran al enlace, menos de ellos suelen llamar para reservar. Los clientes sin cita siguen en la misma agenda del día.",
+    },
+    {
+      when: "Día 30",
+      title: "Tú decides",
+      body: "Sigues con un precio mensual, acordado contigo antes de que termine el mes gratis. O lo dejas y te llevas tu lista de clientes.",
+    },
+  ],
+
   offerTitle: "Tu primer mes es gratis",
-  offer: ["Sin contrato. Lo dejas cuando quieras.", "Tu lista de clientes es tuya. Te la llevas cuando quieras.", "Después del mes gratis, acordamos juntos un precio mensual en la visita."],
+  offerBody: "Pruébalo un mes en tu barbería. Después decides.",
+  plans: [
+    {
+      name: "Primer mes",
+      price: "Gratis",
+      items: [
+        "Visita de instalación en tu barbería",
+        "Tu enlace de citas y código QR",
+        "Pagos en línea para tus clientes",
+        "El día de cada barbero en su celular",
+        "Un correo corto para el dueño cada mañana",
+      ],
+    },
+    {
+      name: "Después del primer mes",
+      price: "Un precio mensual",
+      items: ["Sin contrato", "Cancelas cuando quieras", "Te llevas tu lista de clientes", "Precio acordado contigo antes de que termine el mes gratis"],
+    },
+  ],
 
   faqTitle: "Lo que preguntan los dueños",
   faq: [
     { q: "¿Mis clientes tienen que bajar una app?", a: "No. Abren un enlace o escanean el QR y reservan en el navegador del celular. Sin cuenta y sin contraseña." },
     { q: "¿Necesito una máquina para tarjetas?", a: "No. Quien paga en línea lo hace en una página segura y el dinero llega a tu cuenta. Los demás pagan en la barbería como hoy." },
     { q: "¿Y los clientes que llegan sin cita?", a: "Sigue atendiéndolos. Tus barberos los agregan a su día con dos toques, así nadie reserva en línea una hora ya ocupada." },
-    { q: "¿Cuánto cuesta después del mes gratis?", a: "Una cuota mensual pequeña, que acordamos en la visita. Sabrás el precio antes de que termine el mes gratis y puedes dejarlo sin pagar nada." },
+    {
+      q: "¿Cuánto cuesta después del mes gratis?",
+      a: "Un precio mensual, acordado contigo antes de que termine el mes gratis. No hay contrato: cancelas cuando quieras y te llevas tu lista de clientes.",
+    },
     { q: "¿Quién ve los datos de mis clientes?", a: "Solo tu barbería. Nunca los vendemos ni los usamos para publicidad, y nunca guardamos números de tarjeta." },
   ],
 
@@ -370,7 +411,10 @@ const es: LandingDictionary = {
     UNKNOWN: "No se pudo enviar. Inténtalo de nuevo o escríbenos.",
   },
 
-  footer: "Barber Master. Citas en línea para barberías del Bronx y el Alto Manhattan.",
+  footer: "Citas en línea para barberías del Bronx y el Alto Manhattan.",
+  footerLinks: "Legal y personal",
+  privacy: "Privacidad",
+  terms: "Términos",
 };
 
 export const landingDictionaries: Record<Locale, LandingDictionary> = { en, es };

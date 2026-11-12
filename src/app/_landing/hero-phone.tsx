@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import type { LandingDictionary } from "@/lib/i18n/landing";
+import { LiveDot } from "./live-dot";
 
 type Phone = LandingDictionary["heroPhone"];
 
@@ -121,7 +122,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
                 setBooked((n) => n + 1);
                 setStep(3);
               }}
-              className={`${c.card} min-h-9 px-1 text-[11px] tabular-nums transition-[background-color,border-color,transform] duration-150 hover:border-[#1d1b18] active:scale-95 disabled:border-transparent disabled:bg-transparent disabled:text-[#b9b2a7] disabled:line-through focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#1d1b18]`}
+              className={`${c.card} min-h-11 px-1 text-[11px] tabular-nums transition-[background-color,border-color,transform] duration-150 hover:border-[#1d1b18] active:scale-95 disabled:border-transparent disabled:bg-transparent disabled:text-[#b9b2a7] disabled:line-through focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#1d1b18]`}
             >
               {t}
             </button>
@@ -133,7 +134,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
     // 3. Booked
     <Screen key="d" p={p} lang={lang}>
       <div className="flex h-full flex-col items-center pt-6 text-center">
-        <span key={booked} className="bm-ping grid h-12 w-12 place-items-center rounded-full bg-[#2e6b4b] text-white">
+        <span key={booked} className="landing-pop grid h-12 w-12 place-items-center rounded-full bg-barber text-white">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
             <path d="M20 6 9 17l-5-5" />
           </svg>
@@ -150,7 +151,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
         <button
           type="button"
           onClick={() => setStep(0)}
-          className="mt-auto mb-2 min-h-10 w-full rounded-[12px] bg-[#1d1b18] text-[13px] font-medium text-white transition-transform active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d1b18]"
+          className="mt-auto mb-2 min-h-11 w-full rounded-[12px] bg-[#1d1b18] text-[13px] font-medium text-white transition-transform active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d1b18]"
         >
           {p.again}
         </button>
@@ -163,21 +164,21 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
       ref={box}
       onPointerMove={lean}
       onPointerLeave={() => setTilt({ x: 0, y: 0 })}
-      className="relative mx-auto mt-14 w-[min(70vw,272px)] lg:mt-0 lg:w-[288px] lg:justify-self-end"
+      className="relative mx-auto w-full max-w-[288px]"
     >
       <div
         className="transition-transform duration-500 ease-out motion-reduce:transition-none"
         style={{
-          transform: `perspective(1400px) rotateY(${-14 + tilt.x * 14}deg) rotateX(${5 - tilt.y * 10}deg) rotateZ(1.5deg)`,
+          transform: `perspective(1400px) rotateY(${tilt.x * 10}deg) rotateX(${-tilt.y * 8}deg)`,
         }}
       >
-        <div className="rounded-[2.4rem] bg-[#05070d] p-[7px] shadow-[0_0_0_1px_rgba(255,255,255,.12),0_60px_100px_-30px_rgba(0,0,0,.95)]">
+        <div className="rounded-[2.4rem] bg-black p-[7px] shadow-[0_0_0_1px_rgba(255,255,255,.14)]">
           <div
             role="group"
             aria-label={p.label}
             className={`relative h-[440px] overflow-hidden rounded-[2rem] ${c.paper} ${c.ink} sm:h-[500px]`}
           >
-            <span aria-hidden className="absolute left-1/2 top-2 z-10 h-[15px] w-[64px] -translate-x-1/2 rounded-full bg-[#05070d]" />
+            <span aria-hidden className="absolute left-1/2 top-2 z-10 h-[15px] w-[64px] -translate-x-1/2 rounded-full bg-black" />
             {screens.map((s, i) => (
               <div
                 key={i}
@@ -193,13 +194,10 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
         </div>
       </div>
 
-      <p className="mx-auto mt-6 flex w-max max-w-full items-center gap-2 rounded-full border border-white/15 bg-night/50 px-3.5 py-1.5 text-[13px] font-medium text-night-ink/85 backdrop-blur-md">
-        <span aria-hidden className="relative flex h-2 w-2">
-          <span className="absolute inset-0 rounded-full bg-pole-red motion-safe:animate-ping" />
-          <span className="relative h-2 w-2 rounded-full bg-pole-red" />
-        </span>
+      <p className="mx-auto mt-6 flex w-max max-w-full items-center gap-2 rounded-full border border-white/15 bg-background/70 px-3.5 py-1.5 text-[13px] font-medium text-foreground">
+        <LiveDot />
         {step === 3 ? (
-          <Link href="/b/demo-shop" className="underline decoration-night-ink/30 underline-offset-4 transition-colors hover:text-night-ink">
+          <Link href="/b/demo-shop" className="underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white">
             {p.label}
           </Link>
         ) : (
@@ -225,9 +223,12 @@ function Screen({ title, p, lang, onBack, children }: { title?: string; p: Phone
         <button
           type="button"
           onClick={onBack}
-          className={`mt-3 -ml-1 w-max rounded px-1 text-[11px] ${c.muted} transition-colors hover:text-[#1d1b18] focus-visible:outline-2 focus-visible:outline-[#1d1b18]`}
+          className={`-my-1 mt-1 -ml-1 flex min-h-11 w-max min-w-11 items-center gap-0.5 rounded px-1 text-[11px] ${c.muted} transition-colors hover:text-[#1d1b18] focus-visible:outline-2 focus-visible:outline-[#1d1b18]`}
         >
-          ← {p.back}
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          {p.back}
         </button>
       )}
       {title && <p className={`${onBack ? "mt-1.5" : "mt-4"} mb-2.5 text-[14px] font-medium`}>{title}</p>}

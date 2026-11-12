@@ -1,135 +1,112 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { Wordmark } from "@/components/brand/logo";
 import { LanguageToggle } from "@/components/language-toggle";
-import { NavMenu } from "./nav-menu";
-import { FORM_ID, Pole, focusRing, toggleSkin } from "./ui";
+import { CONTACT_ID, focusRing, toggleSkin, whitePill } from "./ui";
 import type { SectionProps } from "./types";
 
-/** The wordmark: a small barber pole (it turns on hover) and the name in the signage face. */
-export function Wordmark({ className = "" }: { className?: string }) {
-  return (
-    <span className={`flex items-center gap-2.5 ${className}`}>
-      <Pole />
-      <span className="font-display text-[19px] font-[800] leading-none tracking-[0.005em] min-[420px]:text-[21px]">Barber Master</span>
-    </span>
-  );
-}
-
 /**
- * A fixed glass bar over the page. Once the visitor scrolls (or swipes) down it
- * eases narrower, shorter and darker; a hairline along its bottom edge fills with the
- * page's scroll progress, and a soft highlight slides behind the link of the section in view.
+ * The sticky bar (the template's): wordmark left, section links centered, the language
+ * switch and a white "Talk to us" pill on the right. Below md the links move into a
+ * disclosure under the bar: Escape or a link tap closes it, Escape gives focus back.
  */
 export function Nav({ locale, t }: SectionProps) {
   const links = [
     { href: "#how", label: t.nav.how },
-    { href: "#features", label: t.nav.features },
     { href: "#setup", label: t.nav.setup },
+    { href: "#pricing", label: t.nav.pricing },
     { href: "#faq", label: t.nav.faq },
   ];
-  const bar = useRef<HTMLElement>(null);
-  const list = useRef<HTMLUListElement>(null);
-  const [scrolled, setScrolled] = useState(false);
-  const [active, setActive] = useState<number | null>(null);
-  const [ind, setInd] = useState({ x: 0, w: 0 });
-  const targets = links.map((l) => l.href).join(",");
+  const [open, setOpen] = useState(false);
+  const menuId = useId();
+  const button = useRef<HTMLButtonElement>(null);
+  const header = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const ids = targets.split(",");
-    let queued = false;
-    const update = () => {
-      queued = false;
-      const y = window.scrollY;
-      const vh = window.innerHeight;
-      const max = document.documentElement.scrollHeight - vh;
-      bar.current?.style.setProperty("--page", max > 0 ? (y / max).toFixed(4) : "0");
-      setScrolled(y > 24);
-      let current: number | null = null;
-      ids.forEach((id, i) => {
-        const s = document.querySelector(id);
-        if (s && s.getBoundingClientRect().top <= vh * 0.4) current = i;
-      });
-      setActive(current);
-    };
-    const queue = () => {
-      if (!queued) {
-        queued = true;
-        requestAnimationFrame(update);
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        button.current?.focus();
       }
     };
-    update();
-    window.addEventListener("scroll", queue, { passive: true });
-    window.addEventListener("resize", queue);
+    const onDown = (e: PointerEvent) => {
+      if (!header.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
     return () => {
-      window.removeEventListener("scroll", queue);
-      window.removeEventListener("resize", queue);
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
     };
-  }, [targets]);
+  }, [open]);
 
-  // Slide the highlight under the active link; re-measure when the bar's width changes (shrink, language).
-  useEffect(() => {
-    const ul = list.current;
-    if (!ul) return;
-    const measure = () => {
-      const a = active === null ? null : (ul.children[active] as HTMLElement | undefined);
-      if (a) setInd({ x: a.offsetLeft, w: a.offsetWidth });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(ul);
-    return () => ro.disconnect();
-  }, [active, locale]);
+  const linkClass = `inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-sm text-muted-foreground transition-colors hover:text-foreground ${focusRing}`;
 
   return (
     <header
-      ref={bar}
-      className={`bm-nav fixed left-1/2 top-3 z-50 flex -translate-x-1/2 items-center gap-2 rounded-[14px] border border-white/[0.11] pl-3.5 pr-1.5 backdrop-blur-[40px] transition-[max-width,width,height,background-color,box-shadow] duration-[600ms] ease-[cubic-bezier(.2,.7,.2,1)] motion-reduce:transition-none sm:top-4 sm:gap-4 sm:pl-4 ${
-        scrolled
-          ? "h-[52px] w-[calc(100%-40px)] max-w-[920px] bg-night/85 shadow-[0_18px_40px_-20px_rgba(0,0,0,.9)]"
-          : "h-14 w-[calc(100%-24px)] max-w-[1120px] bg-night/45 sm:w-[calc(100%-32px)]"
-      }`}
+      ref={header}
+      id="main-header"
+      className="sticky top-0 z-40 w-full border-b border-transparent bg-background/80 backdrop-blur-md"
     >
-      <Link href="/" className={`group flex min-h-11 shrink-0 items-center rounded-lg text-night-ink ${focusRing}`}>
-        <Wordmark />
-      </Link>
+      <div id="main-nav" className="relative mx-auto flex max-w-5xl items-center justify-between gap-2 px-6 py-3">
+        <Link href="/" className={`-ml-1 flex min-h-11 items-center rounded-md px-1 ${focusRing}`}>
+          <Wordmark />
+        </Link>
 
-      <nav aria-label={t.navLabel} className="hidden flex-1 justify-center lg:flex">
-        <ul ref={list} className="relative flex items-center gap-0.5">
-          {links.map((l, i) => (
-            <li key={l.href} className="relative z-10">
-              <a
-                href={l.href}
-                aria-current={i === active ? "location" : undefined}
-                className={`inline-flex min-h-9 items-center rounded-lg px-3 text-[14px] font-medium transition-colors duration-200 hover:text-night-ink ${
-                  i === active ? "text-night-ink" : "text-night-ink/65"
-                } ${focusRing}`}
-              >
+        <nav aria-label={t.navLabel} className="absolute left-1/2 hidden -translate-x-1/2 md:block">
+          <ul className="flex items-center gap-7">
+            {links.map((l) => (
+              <li key={l.href}>
+                <a href={l.href} className={linkClass}>
+                  {l.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="flex items-center gap-1 md:gap-2">
+          <div className={toggleSkin}>
+            <LanguageToggle locale={locale} label={t.otherLang} />
+          </div>
+          <span className="hidden md:block">
+            <a href={`#${CONTACT_ID}`} className={whitePill}>
+              {t.navCta}
+            </a>
+          </span>
+          <button
+            ref={button}
+            type="button"
+            aria-expanded={open}
+            aria-controls={menuId}
+            onClick={() => setOpen((o) => !o)}
+            className={`-mr-2 flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-panel hover:text-foreground aria-expanded:text-foreground md:hidden ${focusRing}`}
+          >
+            <span className="sr-only">{t.navMenu}</span>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="h-5 w-5">
+              {open ? <path d="M6 18 18 6M6 6l12 12" /> : <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />}
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <nav id={menuId} aria-label={t.navLabel} hidden={!open} className="border-t border-border bg-background px-6 pb-5 pt-2 md:hidden">
+        <ul className="flex flex-col">
+          {links.map((l) => (
+            <li key={l.href}>
+              <a href={l.href} onClick={() => setOpen(false)} className={`flex min-h-12 w-full items-center rounded-md text-base text-muted-foreground transition-colors hover:text-foreground ${focusRing}`}>
                 {l.label}
               </a>
             </li>
           ))}
-          <li
-            aria-hidden
-            className="absolute inset-y-0 left-0 rounded-lg bg-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,.08)] transition-[transform,width,opacity] duration-[450ms] ease-[cubic-bezier(.2,.7,.2,1)] motion-reduce:transition-none"
-            style={{ width: ind.w, transform: `translateX(${ind.x}px)`, opacity: active === null ? 0 : 1 }}
-          />
         </ul>
-      </nav>
-
-      <div className="ml-auto flex items-center gap-1 lg:ml-0">
-        <div className={`${toggleSkin} [&_button]:rounded-lg [&_button]:px-2 [&_button]:text-[13px] sm:[&_button]:px-3 sm:[&_button]:text-[14px]`}>
-          <LanguageToggle locale={locale} label={t.otherLang} />
-        </div>
-        <a
-          href={`#${FORM_ID}`}
-          className={`relative inline-flex min-h-10 items-center whitespace-nowrap rounded-[10px] bg-night-ink px-3.5 text-[13px] font-semibold text-night shadow-[0_4px_6px_-2px_rgba(0,0,0,.35)] transition-[background-color,transform] duration-150 hover:-translate-y-px hover:bg-white active:translate-y-px sm:text-[14px] ${focusRing} after:absolute after:-inset-y-1 after:inset-x-0 after:content-['']`}
-        >
+        <a href={`#${CONTACT_ID}`} onClick={() => setOpen(false)} className={`${whitePill} mt-3 w-full`}>
           {t.navCta}
         </a>
-        <NavMenu links={links} label={t.navLabel} buttonLabel={t.navMenu} />
-      </div>
+      </nav>
     </header>
   );
 }

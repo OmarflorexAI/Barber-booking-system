@@ -4,13 +4,13 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Turnstile } from "@/components/turnstile";
 import type { Locale } from "@/lib/i18n/dictionaries";
 import { landingDictionaries } from "@/lib/i18n/landing";
-import { Pole, primaryBtn } from "./_landing/ui";
+import { focusRing, whitePill } from "./_landing/ui";
 import { submitLeadAction } from "./actions";
 
-/** Dark inputs for the landing page: charcoal well, warm white text, a clear blue focus ring. */
+/** Dark inputs for the landing page (the template's): hairline border on the page ground, a white focus ring. */
 const field =
-  "min-h-12 w-full rounded-xl border border-night-line bg-night px-4 text-[16px] text-night-ink outline-none transition-colors placeholder:text-night-muted hover:border-night-muted/50 focus-visible:border-pole-blue focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-0 focus-visible:outline-pole-blue";
-const labelText = "text-sm font-medium tracking-[-0.01em] text-night-ink";
+  "min-h-12 w-full rounded-md border border-border bg-background px-4 py-3 text-[16px] text-foreground outline-none transition-colors placeholder:text-muted-foreground hover:border-white/25 focus-visible:border-foreground focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-foreground";
+const labelText = "text-sm font-medium text-foreground";
 
 /** "Get your free month": a Shop Owner leaves their details and we call them back. */
 export function LeadForm({ locale }: { locale: Locale }) {
@@ -19,6 +19,9 @@ export function LeadForm({ locale }: { locale: Locale }) {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [pending, start] = useTransition();
+  // The bot check's script is heavy; load it only once the form comes near the screen or a field gets focus.
+  const [nearForm, setNearForm] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
   const doneRef = useRef<HTMLDivElement>(null);
   const botCheckOn = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -30,6 +33,13 @@ export function LeadForm({ locale }: { locale: Locale }) {
   useEffect(() => {
     if (done) doneRef.current?.focus();
   }, [done]);
+  useEffect(() => {
+    const el = formRef.current;
+    if (!el || nearForm) return;
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && setNearForm(true), { rootMargin: "600px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [nearForm, done]);
 
   if (done) {
     return (
@@ -37,13 +47,15 @@ export function LeadForm({ locale }: { locale: Locale }) {
         ref={doneRef}
         tabIndex={-1}
         role="status"
-        className="rounded-2xl border border-night-line bg-night px-5 py-7 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-night-ink"
+        className={`rounded-md border border-border bg-background px-5 py-7 text-center outline-none ${focusRing}`}
       >
-        <p className="flex items-center gap-2.5 font-display text-[2rem] font-[800] leading-none text-night-ink">
-          <span aria-hidden className="h-[7px] w-3.5 rounded-full bg-pole-blue" />
+        <p className="flex items-center justify-center gap-2.5 text-2xl font-semibold tracking-[-0.02em] text-foreground">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 shrink-0">
+            <path d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
           {t.thanksTitle}
         </p>
-        <p className="mt-3 text-[16px] leading-[1.6] text-night-muted">{t.thanksBody}</p>
+        <p className="mt-3 text-base leading-relaxed text-muted-foreground">{t.thanksBody}</p>
       </div>
     );
   }
@@ -68,10 +80,10 @@ export function LeadForm({ locale }: { locale: Locale }) {
     });
   }
 
-  const optional = <span className="text-[13px] font-normal text-night-muted"> ({t.optional})</span>;
+  const optional = <span className="text-[13px] font-normal text-muted-foreground"> ({t.optional})</span>;
 
   return (
-    <form action={submit} className="flex flex-col gap-5">
+    <form ref={formRef} action={submit} onFocus={() => setNearForm(true)} className="flex flex-col gap-5">
       <label className="flex flex-col gap-1.5">
         <span className={labelText}>{t.shopName}</span>
         <input className={field} name="shopName" required maxLength={80} autoComplete="organization" />
@@ -91,13 +103,18 @@ export function LeadForm({ locale }: { locale: Locale }) {
         </label>
         <label className="flex flex-col gap-1.5">
           <span className={labelText}>{t.barbers}{optional}</span>
-          <select className={field} name="barberCount" defaultValue="">
-            <option value="">{t.barbersPick}</option>
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-            <option value="7">{t.barbersMore}</option>
-          </select>
+          <span className="relative">
+            <select className={`${field} appearance-none pr-11`} name="barberCount" defaultValue="">
+              <option value="">{t.barbersPick}</option>
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+              <option value="7">{t.barbersMore}</option>
+            </select>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </span>
         </label>
       </div>
       <label className="flex flex-col gap-1.5">
@@ -106,15 +123,22 @@ export function LeadForm({ locale }: { locale: Locale }) {
       </label>
 
       {/* The bot check draws a light widget; Turnstile keeps a 65px slot for it so the form doesn't jump. */}
-      <Turnstile onToken={setToken} lang={locale} />
+      {nearForm ? <Turnstile onToken={setToken} lang={locale} /> : botCheckOn && <div className="min-h-[65px]" />}
 
       {error && (
-        <p ref={errorRef} role="alert" className="rounded-xl border border-pole-red/40 border-l-2 border-l-pole-red bg-pole-red/10 px-4 py-3 text-[15px] leading-[1.6] text-night-ink">
+        <p ref={errorRef} role="alert" className="flex items-start gap-3 rounded-md border border-white/25 bg-raised px-4 py-3 text-[15px] leading-relaxed text-foreground">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 h-5 w-5 shrink-0">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7.75v5M12 16.25v.01" />
+          </svg>
           {error}
         </p>
       )}
-      <button type="submit" className={`${primaryBtn} w-full disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-night-raised disabled:text-night-muted disabled:shadow-none`} disabled={pending || !botCheckDone}>
-        <Pole />
+      <button
+        type="submit"
+        className={`${whitePill} min-h-12 w-full px-6 disabled:cursor-not-allowed disabled:bg-raised disabled:text-muted-foreground sm:w-auto sm:self-start`}
+        disabled={pending || !botCheckDone}
+      >
         {pending ? t.sending : botCheckDone ? t.send : t.verifying}
       </button>
     </form>

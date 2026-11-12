@@ -47,19 +47,15 @@
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
   /* Landing page only: these resolve inside .landing (below). */
-  --color-night: var(--l-bg);
-  --color-night-panel: var(--l-panel);
-  --color-night-raised: var(--l-raised);
-  --color-night-line: var(--l-line);
-  --color-night-ink: var(--l-ink);
-  --color-night-muted: var(--l-muted);
-  --color-pole-red: var(--l-red);
-  --color-pole-blue: var(--l-blue);
+  --color-background: var(--l-bg);
+  --color-foreground: var(--l-fg);
+  --color-panel: var(--l-panel);
+  --color-raised: var(--l-raised);
+  --color-border: var(--l-border);
+  --color-muted-foreground: var(--l-muted-fg);
+  --color-barber: var(--l-red);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  /* Landing page only: loaded by src/app/page.tsx. */
-  --font-display: var(--ff-display);
-  --font-body: var(--ff-body);
 }
 
 body {
@@ -84,35 +80,45 @@ body {
   @apply min-h-12 w-full rounded-xl border border-line bg-surface px-4 text-base text-ink outline-none focus:border-ink;
 }
 
+
 /*
- * The landing page for Shop Owners is always dark, like a shop after closing:
- * deep navy, shaving-cream type, and the barber pole's red and blue.
+ * The landing page for Shop Owners: a calm near-black page (the Cocoon template's
+ * grayscale theme) with one barber red, used only for live and status signals.
+ * Geist for everything; Geist Mono only for times and prices.
  */
 .landing {
-  --l-bg: #0a1020;
-  --l-panel: #111a2e;
-  --l-raised: #18233b;
-  --l-line: #263252;
-  --l-ink: #f4eee3;
-  --l-muted: #a7afc3;
-  --l-red: #e5483d;
-  --l-blue: #5b86f0;
+  --l-bg: oklch(6% 0 0);
+  --l-fg: oklch(93% 0 0);
+  --l-panel: oklch(11% 0 0);
+  --l-raised: oklch(14% 0 0);
+  --l-border: oklch(18% 0 0);
+  /* The template's 60% gray, lifted to 64% so it stays ≥6:1 on every dark surface. */
+  --l-muted-fg: oklch(64% 0 0);
+  /* Barber red: 5.2:1 on the ground, so it would hold even as text. */
+  --l-red: oklch(62% 0.2 27);
   background: var(--l-bg);
-  color: var(--l-ink);
+  color: var(--l-fg);
   color-scheme: dark;
-  font-family: var(--ff-body), system-ui, sans-serif;
-  font-feature-settings: "ss01";
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  caret-color: var(--l-fg);
+  accent-color: var(--l-fg);
   /* Lets the FAQ answers transition to height: auto. */
   interpolate-size: allow-keywords;
 }
+@layer base {
+  .landing :where(*, ::before, ::after) {
+    border-color: var(--l-border);
+  }
+}
 .landing ::selection {
-  background: rgb(229 72 61 / 0.45);
-  color: var(--l-ink);
+  background: var(--l-fg);
+  color: var(--l-bg);
 }
 /* Keep the page behind the landing dark too, so overscroll and sub-pixel edges never flash paper. */
 html:has(.landing),
 body:has(.landing) {
-  background: #0a1020;
+  background: oklch(6% 0 0);
+  scrollbar-color: oklch(30% 0 0) oklch(6% 0 0);
 }
 @media (prefers-reduced-motion: no-preference) {
   html:has(.landing) {
@@ -120,54 +126,8 @@ body:has(.landing) {
   }
 }
 
-/*
- * Motion on the landing page. One load sequence (the headline rises word by word),
- * everything else answers the visitor: scrolling or hovering. With reduced motion
- * every element simply sits in its final state.
- */
-
-/* A barber pole in miniature. Its stripes turn when the button or link around it (.group) is hovered or focused. */
-.bm-pole {
-  position: relative;
-  display: inline-block;
-  flex-shrink: 0;
-  width: 8px;
-  height: 20px;
-  overflow: hidden;
-  border-radius: 999px;
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.18);
-}
-.bm-pole::before {
-  content: "";
-  position: absolute;
-  inset: -15px 0 0;
-  /* 10px period along the 135deg axis = 14.142px vertically, so the loop below is seamless. */
-  background: repeating-linear-gradient(135deg, var(--l-red) 0 3px, var(--l-ink) 3px 5px, var(--l-blue) 5px 8px, var(--l-ink) 8px 10px);
-}
-@keyframes bm-pole-turn {
-  to {
-    transform: translateY(14.142px);
-  }
-}
-
-/* The hero headline: each word rises out of its own line box. */
-.bm-word {
-  display: inline-block;
-  overflow: clip;
-  padding-bottom: 0.12em;
-  margin-bottom: -0.12em;
-  vertical-align: top;
-}
-.bm-word > span {
-  display: inline-block;
-}
-@keyframes bm-rise {
-  from {
-    transform: translateY(112%);
-  }
-}
-/* A booking just landed: a quick pop. */
-@keyframes bm-ping {
+/* The hero phone: the booked check pops in. */
+@keyframes landing-pop {
   0% {
     scale: 0.85;
     opacity: 0.3;
@@ -176,261 +136,56 @@ body:has(.landing) {
     scale: 1.06;
   }
 }
-@media (prefers-reduced-motion: no-preference) {
-  .bm-ping {
-    animation: bm-ping 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-}
-@keyframes bm-fade {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-}
-
-@keyframes bm-recede {
-  to {
-    transform: scale(0.93);
-    border-radius: 44px;
-  }
-}
-@keyframes bm-shade {
-  to {
-    opacity: 0.55;
-  }
-}
-@keyframes bm-lift {
-  to {
-    transform: translateY(-10%);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .group:hover .bm-pole::before,
-  .group:focus-visible .bm-pole::before {
-    animation: bm-pole-turn 0.45s linear infinite;
-  }
-  .bm-word > span {
-    animation: bm-rise 0.95s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-    animation-delay: calc(var(--i, 0) * 55ms + 150ms);
-  }
-  .bm-fade {
-    animation: bm-fade 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-    animation-delay: var(--d, 0ms);
-  }
-
-  @supports (animation-timeline: view()) {
-    /* The hero pulls back like a mirror as the page scrolls past it. */
-    .bm-recede {
-      animation: bm-recede linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 100vh;
-    }
-    .bm-shade {
-      animation: bm-shade linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 100vh;
-    }
-    /* Wide screens only: on phones the interactive phone sits below the fold and must stay solid. */
-    @media (min-width: 1024px) {
-      .bm-lift {
-        animation: bm-lift linear both;
-        animation-timeline: scroll(root);
-        animation-range: 0 80vh;
-      }
-    }
-  }
-}
-
 /*
- * Cards: a soft inset key border; on hover the card lifts, its top edge catches the
- * light and its icon circle turns cream. `.bm-card--still` skips the lift (the sticky stage).
+ * Live dots (the timeline's "starts here" dot, the phone's "try it" hint): a ring
+ * expands and fades from the dot. Only transform and opacity animate, and only while
+ * the dot is on screen (.is-on, set by live-dot.tsx). Reduced motion: no ring.
  */
-@layer components {
-.bm-card {
+.landing-live {
   position: relative;
-  border-radius: 20px;
-  background: var(--l-panel);
-  box-shadow:
-    rgb(255 255 255 / 0.05) 0 1px 0 0 inset,
-    rgb(255 255 255 / 0.1) 0 0 0 1px,
-    rgb(0 0 0 / 0.2) 0 -1px 0 0 inset;
-  transition:
-    box-shadow 0.25s ease,
-    background-color 0.25s ease,
-    transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-.bm-card::before {
+.landing-live::after {
   content: "";
-  position: absolute;
-  inset: 0 24px auto;
-  height: 1px;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgb(244 238 227 / 0.75), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-.bm-card:hover {
-  background: #142037;
-  box-shadow:
-    rgb(255 255 255 / 0.05) 0 1px 0 0 inset,
-    rgb(255 255 255 / 0.22) 0 0 0 1px,
-    rgb(0 0 0 / 0.2) 0 -1px 0 0 inset;
-}
-.bm-card:hover::before {
-  opacity: 1;
-}
-.bm-icon {
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 999px;
-  background: var(--l-bg);
-  color: var(--l-ink);
-  box-shadow:
-    rgb(255 255 255 / 0.1) 0 1px 0 0 inset,
-    rgb(255 255 255 / 0.06) 0 0 0 1px inset;
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
-}
-.bm-card:hover .bm-icon {
-  background: var(--l-ink);
-  color: var(--l-bg);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .bm-card:not(.bm-card--still):hover {
-    transform: translateY(-4px);
-  }
-}
-}
-
-/*
- * Reveal on scroll, staggered by --i within a group (reveal.tsx adds `.in`).
- * Hidden only when scripts run and motion is welcome, so nothing is ever stuck invisible.
- */
-.bm-reveal {
-  --delay: calc(var(--i, 0) * 80ms);
-  transition:
-    opacity 0.8s ease var(--delay),
-    translate 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay),
-    transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1),
-    box-shadow 0.25s ease,
-    background-color 0.25s ease;
-}
-@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
-  .bm-reveal:not(.in) {
-    opacity: 0;
-    translate: 0 32px;
-  }
-}
-
-/* The pinned lesson stage: one scene at a time, its rows popping in one after another. */
-.bm-scene {
   position: absolute;
   inset: 0;
-  padding: 24px;
+  border-radius: inherit;
+  background: var(--l-red);
   opacity: 0;
-  translate: 0 16px;
-  pointer-events: none;
-  transition:
-    opacity 0.45s ease,
-    translate 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: transform, opacity;
 }
-.bm-scene.is-on {
-  opacity: 1;
-  translate: 0 0;
-  pointer-events: auto;
-}
-.bm-pop {
-  opacity: 0;
-  translate: 0 10px;
-  transition:
-    opacity 0.5s ease,
-    translate 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-.bm-scene.is-on .bm-pop {
-  opacity: 1;
-  translate: 0 0;
-  transition-delay: calc(var(--i, 0) * 130ms + 250ms);
-}
-@media (prefers-reduced-motion: reduce) {
-  .bm-scene,
-  .bm-pop {
-    transition: none;
-    translate: none;
+@keyframes landing-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
   }
-}
-
-/* The nav: drops in once on load; a hairline along its bottom edge fills with scroll progress. */
-@keyframes bm-nav-in {
-  from {
+  80%,
+  100% {
+    transform: scale(2.6);
     opacity: 0;
-    transform: translateY(-16px);
   }
-}
-.bm-nav::after {
-  content: "";
-  position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: -1px;
-  height: 1px;
-  background: linear-gradient(90deg, rgb(229 72 61 / 0), var(--l-red) 55%, var(--l-ink));
-  transform-origin: left;
-  transform: scaleX(var(--page, 0));
 }
 @media (prefers-reduced-motion: no-preference) {
-  .bm-nav {
-    animation: bm-nav-in 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  .landing-pop {
+    animation: landing-pop 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .landing-live.is-on::after {
+    animation: landing-ring 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
   }
 }
 
-/*
- * FAQ: one question open at a time (name="faq"). The answer unfolds to its height
- * and its text sharpens out of a blur; closing folds faster than opening.
- */
-.bm-faq::details-content {
+/* FAQ: one question open at a time (name="faq"); the answer unfolds to its height. */
+.faq-item::details-content {
   block-size: 0;
   overflow: clip;
   transition:
     block-size 0.3s cubic-bezier(0.16, 1, 0.3, 1),
     content-visibility 0.3s allow-discrete;
 }
-.bm-faq[open]::details-content {
+.faq-item[open]::details-content {
   block-size: auto;
-  transition-duration: 0.5s;
-}
-.bm-faq .bm-faq-a {
-  opacity: 0;
-  filter: blur(6px);
-  translate: 0 -6px;
-  transition:
-    opacity 0.2s ease,
-    filter 0.2s ease,
-    translate 0.2s ease;
-}
-.bm-faq[open] .bm-faq-a {
-  opacity: 1;
-  filter: blur(0);
-  translate: 0 0;
-  transition:
-    opacity 0.45s ease 0.08s,
-    filter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.08s,
-    translate 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.08s;
 }
 @media (prefers-reduced-motion: reduce) {
-  .bm-faq::details-content,
-  .bm-faq .bm-faq-a {
-    transition: opacity 0.2s ease;
-    filter: none;
-    translate: none;
+  .faq-item::details-content {
+    transition: none;
   }
-}
-
-/* Film grain for the glow frames: an inline SVG noise tile, no image file. */
-@utility grain {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
