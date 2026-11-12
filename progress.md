@@ -4,7 +4,7 @@ Last updated: 2026-11-12. Source of requirements: `Barbershop Booking System PRD
 
 ## Where we are
 
-**The backend (B1–B6) is built, tested and pushed. Stripe payments work end to end in Stripe test mode (2026-11-10). Resend login emails work. The landing page is being rebuilt on the Cocoon template (2026-11-11): M1 + M2 are done and committed (not pushed); M3 (motion) is next.** Twilio and Telegram are postponed (agreed 2026-11-10). Next: follow the **Mission plan** right below, starting at mission L3.
+**The backend (B1–B6) is built, tested and pushed. Stripe payments work end to end in Stripe test mode (2026-11-10). Resend login emails work. The landing page is being rebuilt on the Cocoon template (2026-11-11): M1 + M2 are done and committed (not pushed); M3 (motion) is done and committed (2026-11-12). L4 is next.** Twilio and Telegram are postponed (agreed 2026-11-10). Next: follow the **Mission plan** right below, starting at mission L4.
 
 ## Mission plan (START HERE next session)
 
@@ -49,6 +49,7 @@ This is the whole remaining job, in order. Each mission is one unit of work that
 8. **End of session:** stop every server and agent you started; leave nothing running.
 
 Rules for every mission:
+
 - No fake numbers, testimonials, logos or prices. The only price claim is "first month free".
 - Every user-facing string in EN and ES.
 - Phones first: 360 and 390 px, tap targets ≥ 44 px, no sideways scroll.
@@ -59,10 +60,10 @@ Rules for every mission:
 ### Missions, in order
 
 | # | Mission | Grill? | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | L1+L2 | Landing foundation + sections | none (decided) | **DONE 2026-11-11** (`d496896`, `158c7ca`) |
-| L3 | Landing motion | none (decided) | **NEXT** |
-| L4 | Landing ship-ready | short [grill] for the /privacy and /terms wording | after L3 |
+| L3 | Landing motion | none (decided) | **DONE 2026-11-12** |
+| L4 | Landing ship-ready | short [grill] for the /privacy and /terms wording | **NEXT** |
 | G | System UI grill | **[grill]** | after L4 |
 | U1 | Client booking `/b` + manage `/m` (with online payment) | covered by G | after G |
 | U3a | Barber day view `/app/day` | covered by G | after U1 |
@@ -72,11 +73,13 @@ Rules for every mission:
 | U5 | Hardening + launch | short [grill]: hosting, domain, payment provider | last |
 
 **L3 Landing motion.** The full brief is in "Landing page v3 → Build status → M3" below.
+
 - Build: the panels widen to full width, the photos fade in, the nav shrinks, and sections fade up.
 - `<ViewTransition>` goes in exactly 3 places: the phone's screens, the language toggle, and moving between pages. Load `/vercel-react-view-transitions` and read `node_modules/next/dist/docs/` first.
 - Validator: Performance ≥ 90 on an idle PC, CLS < 0.1, and nothing stuck hidden under reduced motion or with JS off.
 
 **L4 Landing ship-ready.** The full list is in "Build status → M4" below.
+
 - `/privacy` and `/terms` in EN/ES. The wording is written with the user; A2P 10DLC needs both pages.
 - A restyled 404.
 - SEO: metadataBase, canonical, sitemap, robots, structured data, and the fix for the description and title landing in `<body>`.
@@ -85,7 +88,17 @@ Rules for every mission:
 - Then the `impeccable-finish-reviewer` agent and the `impeccable-documenter` agent (which writes `DESIGN.md`).
 - Push to GitHub once the user approves.
 
+**L4 grill answers (2026-11-12):**
+
+- Operator: "Barber Master" (brand name only) for now. **Launch prerequisite:** a real legal name or LLC on both pages before SMS registration (A2P 10DLC reviewers check it).
+- Contact: a clearly marked placeholder (`support@[domain]`) until U5 sets up the domain and a verified Resend address. **Launch prerequisite.**
+- Data role: each Shop owns its Clients' data (name, phone, bookings); Barber Master stores and uses it only to run that Shop's bookings. Clients ask the Shop first; we help. Export + deletion 30 days after a Shop cancels (PRD).
+- Governing law: New York.
+- Defaults Claude uses (no question needed): SMS section with the program (booking confirmation + one reminder 2 hours before, so about 2 texts per Booking), "Msg & data rates may apply", STOP to opt out and HELP for help, carriers not liable, mobile numbers and consent never shared or sold for marketing; no ads or analytics trackers; cookies only for language, sign-in, bot checks (Cloudflare Turnstile) and payments (Stripe); service providers named: Supabase (database), Twilio (texts), Resend (email), Telegram (Barber alerts), Stripe (payments), Cloudflare (bot checks), our host; no service for children under 13; "last updated" date; EN and ES. The pages are a plain-language draft, not legal advice: have them reviewed before launch.
+- Also decided: the wide-panel clip-path (paint only) is the accepted approach (user, 2026-11-12).
+
 **G System UI grill.** One grill session for the whole app, before any screen is built. Decide:
+
 - How the landing's brand becomes the app's calmer Operate look: light or dark, density, type scale.
 - Navigation between the `/app` areas for each role.
 - The screen list for each mission below, and what each screen must show.
@@ -96,6 +109,7 @@ Rules for every mission:
 Output: the decisions recorded in this file, `DESIGN.md` extended to cover the app, and a surface brief per area.
 
 **U1 Client booking (`/b/<shop>`, `/m/<token>`).**
+
 - Restyle both pages to the G decisions.
 - Online payment choice and the Checkout redirect, plus "awaiting payment" and "payment expired" states.
 - Fix the "Book now" button and the "2 upcoming bookings to pay at the shop" wording.
@@ -105,6 +119,7 @@ Output: the decisions recorded in this file, `DESIGN.md` extended to cover the a
 **U3a Barber day view (`/app/day`).** The Barber's day on a phone: Bookings, Walk-ins, cancel and move, and the paid-online marker. It uses existing engine operations.
 
 **U2 Owner tools.**
+
 - Settings for everything in B5: Services, prices, specials, hours, closed days, cutoff, blocklist, inviting and removing Barbers.
 - The all-Barbers calendar.
 - The dashboard: weekly Bookings and time saved. Settle the no-show question first.
@@ -113,6 +128,7 @@ Output: the decisions recorded in this file, `DESIGN.md` extended to cover the a
 **U3b Barber profile.** Profile and gallery, weekly hours and days off, and Connect Telegram with a QR code (needs the Telegram keys).
 
 **U4 Platform admin.** The B6 data already exists. Screens:
+
 - Shops list and create Shop
 - client CSV import
 - SMS registration status
@@ -122,6 +138,7 @@ Output: the decisions recorded in this file, `DESIGN.md` extended to cover the a
 - 30-day deletion
 
 **U5 Hardening + launch.**
+
 - Sentry.
 - Playwright journey 2: the Barber gets an alert; the Client cancels from the text link and is refunded.
 - The Vercel project, env vars and crons.
@@ -145,6 +162,7 @@ Output: the decisions recorded in this file, `DESIGN.md` extended to cover the a
 The navy "barber-pole" landing below is being **replaced**. Template: `C:\Users\admin\Downloads\cocoon-template-1.0.3\cocoon-template-1.0.3` (templatedeck.com, MIT; Tailwind 4 + vanilla JS, static HTML). **Rebuilt as React + Tailwind v4 in our app**, never copied in as-is. The system UI gets its own grill session **after this ships** (order then: `/b` + `/m` → Barber day view → Owner tools → Platform admin).
 
 Decisions:
+
 - **Kept:** the content rules (only "first month free", no fake numbers/testimonials/logos, EN/ES) and most of `landing.ts`; new copy in EN and ES. The interactive hero phone stays, restyled.
 - **Deleted:** everything else of the old landing (WebGL gradient, pole buttons, stepper, price board, glass nav, Big Shoulders/Instrument Sans). The 3D-head leftovers go first, in their own commit.
 - **Look:** template grayscale + a small barber red (status dots, timeline dot, booked check). Geist + Geist Mono via `next/font`. New SVG wordmark with a scissor-ring mark (favicon + OG image too), user approves it first. This brand later carries into the app, in a calmer, denser form.
@@ -196,20 +214,26 @@ Decisions:
   - Validator round fixed: the pulsing dot (now `live-dot.tsx`, transform/opacity only, runs only on screen), Turnstile loads only near the form, ES metadata via `generateMetadata`, `<html lang>` set before paint by `html-lang.tsx` (the root layout can't read the cookie under cacheComponents), "Skin fade" → "Desvanecido", pricing labels, select chevron, timeline dots and labels.
   - Checks: typecheck, lint (0 errors), build, landing e2e 7/7, impeccable detector `[]`, no sideways scroll, a11y 100.
   - **Performance not settled:** the worker measured 92/96/99, Claude measured 69/69 while a game was running (CPU at 65%). Re-measure on an idle PC in M4. If still < 90, look at the client JS (the lead form imports the whole EN+ES `landing.ts`; the hero phone).
-- **M3 Motion: NEXT (start here).** Hooks are already in the markup:
-  1. Wide panels grow from 1152px to 100vw on scroll (border-radius 16→0): `data-widen` on `#hero-panel`, `#setup-panel`, `#pricing-panel`.
-  2. How-it-works photos fade in on scroll (opacity ~0.05 → 1): `data-fade-bg` + the `--photo-opacity` CSS variable (static 0.45 now).
-  3. Nav shrinks after the top (template: 85px → 69px; ours starts at 69px today, so add the taller starting state): `#main-header`, `#main-nav`.
-  4. Fade-up reveals: `data-reveal` on blocks (template uses `data-animate` + `data-delay`).
-  5. React `<ViewTransition>` in exactly 3 places: the phone's screen steps (replace the translate slide in `hero-phone.tsx`), the language toggle, and moving between pages. Load `/vercel-react-view-transitions` and check `node_modules/next/dist/docs/` first.
-  - Rules: prefer CSS `animation-timeline` (scroll/view) behind `@supports`, with a small JS fallback only where needed; animate transform/opacity only (the box-shadow pulse cost 600 ms of main thread, don't repeat it); everything still visible and in its final state under reduced motion and with JS off; no CLS.
-  - Then a validator agent checks M3 (Performance, CLS, reduced motion, no stuck-hidden content), screenshots to the user, commit.
-- **M4 Ship-ready: after M3.** `/privacy` + `/terms` placeholders (EN/ES), restyled `not-found.tsx`, SEO (`metadataBase`, canonical, sitemap, robots, structured data; also fix the meta description/title landing in `<body>` with `generateMetadata`, Lighthouse SEO 91), `THIRD_PARTY_NOTICES.md` (photo credits + Cocoon MIT), e2e review, full validator run against the pass criteria on an idle PC, then the impeccable finish reviewer and the documenter (`DESIGN.md`).
+- **M3 Motion: DONE 2026-11-12, committed.** All CSS on scroll timelines, inside `@supports (animation-timeline: view())` + `prefers-reduced-motion: no-preference`; everywhere else every element sits in its final state (no JS involved).
+  - Wide panels: `WidePanel` (ui.tsx) now takes a `background` prop. The background is a full-width layer (`.landing-widen`) clipped to the 1152px column with 16px corners; on scroll the clip opens to the full window. The hero runs on `scroll(root)` over the first 50vh, setup and pricing on `view()`. Content layout never moves. The photos' `sizes` are now `100vw`.
+  - How-it-works photos fade from 0.05 to their 0.45 (`[data-fade-bg] > img`).
+  - Nav: 84px at the top, 69px after 80px of scroll; the header slides up 15px and the bar slides down 7.5px (no layout change), and a hairline fades in.
+  - `[data-reveal]` blocks fade up over their first 180px in view. Removed from the hero (it's on screen at load anyway).
+  - `<ViewTransition>` in 3 places: the phone screens (keyed by step, `phone-forward`/`phone-back` types, 10px slide + fade; only the current screen is rendered now), the language switch (`language-toggle.tsx` adds the `lang-switch` type; the landing and the phone cross-fade), and page moves (the landing's links to `/b/demo-shop`, `/login`, `/privacy`, `/terms` carry `transitionTypes={["page"]}`). The CSS is in globals.css; reduced motion sets every view transition to 0s.
+  - Also: `data-scroll-behavior="smooth"` on `<html>` (Next warning), ESLint ignores `.claude/**` and `.impeccable/**` (vendored scripts; 98 warnings gone), and progress.md's markdownlint warnings were fixed.
+  - QA agent (separate, didn't write the code): 9/10 criteria pass (reduced motion, 5 widths in EN/ES, nav, panels with 0px content shift, view transitions, axe 0 violations, code review, typecheck/lint/e2e). Fixed after QA: the phone's transition snapshots drew over the sticky nav (the header now has its own view-transition layer on top), focus moved to BODY after a phone step (now goes to the new screen's title), and the nav's 1px transparent border (now exactly 84 → 69). **Failed, pre-existing, moved to L4: with JS off the landing is blank** (the whole page streams inside `<Suspense>` because the locale comes from the cookie). The `page-in` transition only fires once a link into `/` carries `transitionTypes={["page"]}` (the legal pages' back link in L4).
+  - Checks (Claude): typecheck, lint 0/0, build, landing e2e 7/7, impeccable detector `[]`, no sideways scroll at 390/1440, no reveal stuck partly hidden at 390/1440 with motion on or off, the 3 view transitions fire with their types and no console errors. Lighthouse (production build, idle PC at 14–20% CPU, phone profile): Performance 94/95/95, CLS 0, TBT 70–120 ms, a11y 100, best practices 100, SEO 91.
+  - **LCP is 2.8–3.0 s (target < 2.5 s), the same as the M2 commit on the same PC (2.8–2.9 s), so M3 didn't cause it.** The LCP element is the hero paragraph; ~84% is "render delay". For M4: look at why the hero text paints late (the page streams inside `<Suspense>` because the locale comes from the cookie; the client JS).
+  - Screenshots and scripts: `.impeccable/review/m3/` (gitignored).
+- **M4 Ship-ready: NEXT.** Includes fixing the LCP (above) and the JS-off blank page. Found 2026-11-12:
+  - The *observed* LCP is 0.5 s; Lighthouse's 2.8 s is its throttled simulation, which counts the landing's client JS. `/login` (same framework) gets 0.8 s, so trim the landing's JS: `lead-form.tsx` and `hero-phone.tsx` import the whole EN+ES `landing.ts` (~49 KB chunk); pass only the current locale's strings as props. The Turnstile code (~22 KB) is in the first load; load it with the form.
+  - SEO 91 = the meta description is missing from `<head>`: `generateMetadata` reads the cookie, so Next streams it into `<body>` (by design; Googlebot reads it, Lighthouse doesn't). Proposed fix (ask the user): a real `/es` URL for the Spanish landing, so both versions are static (metadata in `<head>`, hreflang, prerendered, works with JS off), with `/` redirecting Spanish visitors by cookie / Accept-Language.
+  - The `/privacy` and `/terms` copy (EN+ES) is drafted from the grill answers; it becomes `src/lib/i18n/legal.ts`. `/privacy` + `/terms` placeholders (EN/ES), restyled `not-found.tsx`, SEO (`metadataBase`, canonical, sitemap, robots, structured data; also fix the meta description/title landing in `<body>` with `generateMetadata`, Lighthouse SEO 91), `THIRD_PARTY_NOTICES.md` (photo credits + Cocoon MIT), e2e review, full validator run against the pass criteria on an idle PC, then the impeccable finish reviewer and the documenter (`DESIGN.md`).
 - **Open with the user:** the impeccable skill bans pill labels above headings; the user chose two (Q23). Kept; the finish review may flag them.
 
 ### Landing page for Shop Owners (2026-11-10, not committed yet)
 
-Plan: `C:\Users\admin\.claude\plans\we-can-set-up-breezy-starlight.md`. The user asked (2026-11-10) to run it as a "mission" with the Factory Missions framework (https://docs.factory.com/missions/overview.md): goal → milestones with pass criteria → one worker agent per feature → a separate validator agent that didn't write the code, failures go back to a worker. **Keep using it for what's left.** The milestones are below.
+Plan: `C:\Users\admin\.claude\plans\we-can-set-up-breezy-starlight.md`. The user asked (2026-11-10) to run it as a "mission" with the Factory Missions framework (<https://docs.factory.com/missions/overview.md>): goal → milestones with pass criteria → one worker agent per feature → a separate validator agent that didn't write the code, failures go back to a worker. **Keep using it for what's left.** The milestones are below.
 
 **Decisions:** audience = barbershop Owners in the Bronx and upper Manhattan; contact = a short form in the app (leads saved + emailed to Platform admins); price = only "first month free", no price shown; language = phone's language with the Español/English toggle; no fake testimonials or numbers. Look inspired by simeon.sh (adapted, not copied): always-dark charcoal page, Geist headlines with tight tracking, Geist Mono body, small pill section labels, grainy "glow frames" lit in barber-pole red/white/blue, floating tilted mini UI cards.
 
@@ -218,6 +242,7 @@ Plan: `C:\Users\admin\.claude\plans\we-can-set-up-breezy-starlight.md`. The user
 **M2 Leads reach a human — DONE.** The user's login is now a Platform admin in dev (`platform_admins`). A lead sent from the page was saved and the "New lead: …" email arrived in Gmail via Resend 15 s later. A test lead named "M2 Check Barbershop" is still in `public.leads` (the delete was declined; harmless). Leads that can't be emailed stay pending and `/api/cron/daily` retries them.
 
 **Update 2026-11-10 (later): M3 DROPPED, page redesigned. This replaces the M3 notes below (kept for history only).**
+
 - The user stopped the 3D heads after ~2 hours of trouble. The page is redesigned around a WebGL gradient the user supplied: `src/components/ui/animated-gradient.tsx`, hardened so it pauses off-screen or in a hidden tab, draws a still frame under reduced motion and renders at 1x resolution at most.
 - Removed: `gallery.tsx`, `head-viewer.tsx`, `heads.ts`, the gallery strings and every "Styles" link.
 - Still on disk, unused: `scripts/head-frames.mjs`, `heads_reference_images/`, `public/landing/heads/` (test frames, untracked), `C:\Users\admin\tools\head3d\`. Delete them if the 3D idea is dead for good.
@@ -269,6 +294,7 @@ Plan: `C:\Users\admin\.claude\plans\we-can-set-up-breezy-starlight.md`. The user
 - Screen-reader strings added (`galleryLoading`, `galleryPicker`, `galleryKeys`); the 6-button picker wraps to 2 columns at 360px (checked with injected markup, not with real heads yet).
 
 **M3 — NOT DONE, start here next session:**
+
 1. **Check the 3D worker's state.** At the end of the 2026-11-10 session a worker agent was setting up the model in `C:\Users\admin\tools\head3d\` and converting `01-curly-taper-fade` (its log: `C:\Users\admin\tools\head3d\LOG.md`; outputs `out\<id>.glb`, frames, a `run.py`/`run.ps1` pipeline script). It hadn't reported when the session ended, so verify what exists: venv, model weights, GLB, and whether `public/landing/heads/curly-taper-fade/{720,1440}/00..71.webp` exist (those frames were deliberately NOT committed).
 2. Brief for that work: remove the gray background; image → textured GLB (prefer Hunyuan3D-2mini if its texture stage fits 8 GB VRAM and builds on Windows; TripoSR as fallback; avoid gated Hugging Face models); render 72 frames orbiting the vertical axis in 5° steps, frame 00 = the photo's angle, transparent background, 1440×1440, same turning direction as the test sequence; convert with `node scripts/head-frames.mjs folder <dir> --id <id>`.
 3. **Show the user ONE head first** (contact sheet every 30° + photo vs frame 00) and wait for their OK before making the other five.
@@ -278,6 +304,7 @@ Plan: `C:\Users\admin\.claude\plans\we-can-set-up-breezy-starlight.md`. The user
 **M4 Ship-ready — done for everything except the heads.** Verified 2026-11-10: `npm test` 143 passed (11 files), `npm run e2e` 9 passed, typecheck and lint clean, `npm run build` clean (Next 16 dev writes to `.next/dev`, so build and dev can run at the same time). Committed and pushed 2026-11-10.
 
 **Leftovers (polish, no rush):**
+
 - Build warns that `metadataBase` isn't set (Open Graph image URLs fall back to localhost): set it at deploy (U5) once the domain exists.
 - Turnstile leaves an empty 65 px slot in dev; check with the real widget.
 - The gallery sits last, as the user asked; the validator noted most visitors pass the form before reaching it.
@@ -337,6 +364,7 @@ Verified on 2026-11-09 (after B6): `npm test` 106 passed (5 files), typecheck an
 Verified on 2026-11-09 (after B5): `npm test` 87 passed (4 files, run one file at a time; about 2 min), `npm run e2e` 4 passed, typecheck and lint clean. `/api/cron/dispatch` delivered the 7 waiting demo-shop alerts (to the log senders).
 
 Verified on 2026-11-07:
+
 - `npm test`: 2 files, 53 tests passed (89s; runs against the hosted dev database).
 - `npm run e2e`: the two-clients race test passed.
 - Manual: the booking form at `/b/demo-shop` works; magic-link login email works and lands on `/app/day`.
@@ -373,7 +401,7 @@ Shell: PowerShell, from the repo root.
 ## What exists (file map)
 
 | Area | Files |
-|---|---|
+| --- | --- |
 | Database | `supabase/migrations/*` (schema, RLS, split policies), `supabase/seed.sql` (demo shop "Fresh Cuts Barbershop": Carlos, Dre, Maya; 5 Services) |
 | Booking engine | `src/server/booking-engine/` (`index.ts` operations, `availability.ts` slot math, `time.ts`, `errors.ts`), `src/server/db.ts`, `src/server/engine.ts` |
 | Public booking | `src/app/b/[shopSlug]/`, `src/app/api/availability/route.ts`, `src/components/slot-picker.tsx`, `turnstile.tsx` |
@@ -410,7 +438,7 @@ Shell: PowerShell, from the repo root.
 ## Accounts to create (needs you; I can't sign up on your behalf)
 
 | Service | Used for | What to get | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Resend (resend.com) | Login emails, Barber email alerts, daily Owner email | API key; later a verified sending domain | **Key set** 2026-11-09; no email sent through it yet; login emails not moved yet |
 | Stripe (dashboard.stripe.com), **test mode** | Online payments while testing (Connect enabled) | Secret test key `sk_test_...`; webhook secret via Stripe CLI | **Done** 2026-11-09: test key and CLI webhook secret set, Connect on |
 | Telegram | Barber alerts | Message @BotFather > `/newbot` > bot token | Not created |
@@ -422,6 +450,7 @@ Paste keys only into `.env.local` (placeholders are in `.env.example`), never in
 ## Workflow (from /mattpocock-skills:ask-matt)
 
 Main flow, one cycle per phase:
+
 1. Once: `/setup-matt-pocock-skills`, with local markdown tickets under `.scratch/` (no GitHub CLI on this machine).
 2. `/grill-with-docs`: settle open questions; writes `GLOSSARY.md` and decision records.
 3. `/to-spec`, then `/to-tickets` (keep steps 2–3 in one session).
@@ -435,6 +464,7 @@ Backend tickets are checked by tests at the server boundary (engine, route or we
 Order: backend phases B1–B6 first, then UI phases U1–U5. "(needs X)" means phase X must be finished first.
 
 Backend first:
+
 - **B1 Sending worker + scheduled jobs.** Sends outbox rows with retries and a failure log; fake senders in tests; cron routes for sending and the 2-hour reminders. No accounts needed. Everything below depends on it.
 - **B2 Payments.** Provider-neutral Payments module with a Stripe test adapter: Connect onboarding, checkout with the 10-minute hold, webhook that ignores repeated events, full refunds, refund-failure alert to the Owner. (needs B1)
 - **B3 Client texts (Twilio).** Confirmation, reminder, cancelled and moved texts; STOP handling. (needs B1)
@@ -443,6 +473,7 @@ Backend first:
 - **B6 Admin operations.** Create Shop, import client CSV, SMS registration status, free/paid flag, support access log, failures view data, 30-day deletion. (needs B1, B5)
 
 Then UI:
+
 - **U1** Online payment in the booking flow, plus the "Book now" button fix (needs B2)
 - **U2** Owner settings and dashboard (needs B5)
 - **U3** Barber profile, hours, Connect Telegram (needs B4, B5)
@@ -456,6 +487,7 @@ Then UI:
 ### B1: Sending worker and scheduled jobs — DONE 2026-11-09
 
 What was built:
+
 - `src/server/dispatch/index.ts`: `createDispatcher({ sql, senders })`, which exposes `run({ now, shopIds? })` and `failures()`.
 - `Senders` port: `sms`, `barberAlert`, `refund`.
 - `src/server/senders.ts`: log-only senders, until the real providers are connected in B2–B4.
@@ -497,6 +529,7 @@ Goal: every row the engine writes to `outbox` and `scheduled_messages` actually 
 ### B2: Payments (Stripe test mode, provider-neutral) — DONE 2026-11-09 (keys set; waiting on the demo shop's Stripe setup to test a real payment)
 
 **What was built:**
+
 - Migration `20261110110000_payments.sql`: `shops.payment_account_id` (renamed) and `payments_enabled`; booking status `pending_payment` with `hold_expires_at`, `checkout_ref`, `payment_ref`; `cancelled_by = 'system'`; `payment_events` (server-only); outbox type `refund_failed`.
 - `src/server/payments/index.ts`: the provider-neutral module (`startOnboarding`, `finishOnboarding`, `startCheckout`, `handleWebhook`, `releaseExpiredHolds`, `refund`) behind the `PaymentProvider` port. `src/server/providers/stripe.ts` is the only file that knows Stripe (fetch, no SDK; Connect **Standard** accounts with direct charges; signature check with 5-minute tolerance).
 - Engine: an online Booking is created as `pending_payment` for 10 minutes and nobody is told; the paid webhook confirms it and sends the alert, text and reminder. A payment after the hold ran out is refunded in full. Held Bookings count toward the unpaid limit, block the time, can't be marked arrived, and aren't in the stats.
@@ -505,6 +538,7 @@ Goal: every row the engine writes to `outbox` and `scheduled_messages` actually 
 - UI: online payers go straight to checkout; the manage page shows "Waiting for payment" with a **Pay now** button and a thank-you after paying.
 
 **To try it (test mode):**
+
 1. Stripe dashboard in test mode: turn on Connect (done: direct payments, Stripe-hosted onboarding, Stripe Dashboard). Copy the test secret key (`sk_test_...`) into `STRIPE_SECRET_KEY` (done).
 2. The Stripe CLI lives in the project (`tools/stripe/`, gitignored; get it from github.com/stripe/stripe-cli/releases). Run `npm run stripe -- login` once, then `npm run stripe:listen`; put the `whsec_...` it prints in `STRIPE_WEBHOOK_SECRET`. Restart `npm run dev`.
 3. As an Owner, open `/api/payments/onboard?shop=<shop id>` and finish Stripe's test onboarding (use its test data).
@@ -542,6 +576,7 @@ Decisions already made: 10-minute hold; reschedule keeps payment only if paid on
 ### B3: Client texts (Twilio) — DONE 2026-11-09 (waiting on real keys)
 
 What was built:
+
 - **`src/server/texting`**: `createTexting({ sql, provider, config, clock })`.
   - `send` writes the text in the Client's language (`bookings.locale`, set by the booking form), with their manage link, sends it and logs it in `sms_log`.
   - Templates (`templates.ts`): confirmation, reminder, cancelled by the shop, time changed; English and Spanish. All carry STOP wording and fit in 2 segments. Spanish dates drop accents ("sab"), because one accent would switch the whole text to the 70-character alphabet.
@@ -575,9 +610,10 @@ Original plan:
 ### B4: Barber and Owner alerts (Telegram + Resend) — DONE 2026-11-09 (waiting on real keys)
 
 What was built:
+
 - **`src/server/alerts`**: `createAlerts({ sql, chat, email, config, clock })`.
   - `send`: new, cancelled, moved and paid alerts to the Barber's Telegram, with a link to `/app/day?date=...`. If Telegram isn't linked or fails: email to the Barber's login, or to the Owner when the Barber has no login.
-  - `createTelegramLink` (single-use, 24 hours; a Barber for themselves, the Owner for anyone in the Shop), `unlinkTelegram`, `handleTelegramUpdate` ("/start <token>").
+  - `createTelegramLink` (single-use, 24 hours; a Barber for themselves, the Owner for anyone in the Shop), `unlinkTelegram`, `handleTelegramUpdate` (`/start <token>`).
   - `sendDailySummaries`: yesterday's online bookings, walk-ins, no-shows and minutes saved to each Shop's Owners, from 7:00 Shop time, once per day. A failing Shop is retried next run and doesn't stop the others.
 - **Telegram adapter** + **`POST /api/telegram/webhook`** (checks `TELEGRAM_WEBHOOK_SECRET`, always answers 200). `npm run telegram:webhook -- https://public-address` registers it and prints the bot's username.
 - **Resend adapter** (fetch). Without a verified domain, Resend only delivers to the account's own email.
@@ -589,7 +625,7 @@ What was built:
 - **Still to do (needs you):** move Supabase login emails to Resend SMTP. Supabase dashboard > project `barber-booking-dev` > Authentication > Emails > SMTP Settings > turn on **Enable custom SMTP**:
 
   | Field | Value |
-  |---|---|
+  | --- | --- |
   | Sender email | `onboarding@resend.dev` for now (only delivers to the Resend account's own email); later an address on your verified domain, e.g. `login@yourdomain.com` |
   | Sender name | `Barber Master` |
   | Host | `smtp.resend.com` |
@@ -619,11 +655,13 @@ Original plan:
 ### B5: Owner operations and reporting — DONE 2026-11-09
 
 New rule from the user (2026-11-09): **a Shop has at most 6 active Barbers** for Clients to choose from.
+
 - Enforced by the trigger `guard_barber_limit` (SQLSTATE BB002, per-Shop lock so two adds at once can't both get through), in migration `20261109190000_barber_limit.sql`.
 - `MAX_ACTIVE_BARBERS` in `src/server/shop-admin`.
 - The demo shop now has 6 Barbers: Carlos, Dre, Maya, Luis, Jay, Nia. `supabase/seed.sql` is updated, and the 3 new ones were inserted into the dev DB.
 
 What was built:
+
 - **`src/server/shop-admin`**: `createShopAdmin(sql)`. Every operation checks the caller's role.
   - **Barbers:** `addBarber`, `removeBarber` (refused while they have upcoming Bookings; the Barber is deactivated, their login loses access and history is kept), `linkBarberLogin` (connecting a new login removes the old one's access).
   - **Services and prices:** `saveService`, `archiveService`, `setBarberPrice`, `removeBarberPrice`, `setSpecialPrice` (owner only).
@@ -640,6 +678,7 @@ What was built:
 - Tests: `tests/engine/shop-admin.test.ts` (27). `vitest.config.mts` now runs DB test files one at a time: they share the 15-client pooler, and the heavy-race test failed about 1 in 4 runs when they ran in parallel.
 
 Reviewed with `/code-review` (two axes: standards and spec). Fixed:
+
 - a leftover login keeping access after a Barber's login was replaced
 - named SQLSTATE constants and error factories
 - date checks on the remove-day operations
@@ -647,6 +686,7 @@ Reviewed with `/code-review` (two axes: standards and spec). Fixed:
 - reporting split into its own module (it is a separate module in the PRD)
 
 Open after review (decide or do later):
+
 - **Photo uploads (Supabase Storage)** are not built: the profile takes https links for now. To do with the profile screen (U3).
 - **Gallery minimum:** the PRD says 3–6 photos. The backend allows 0–6 so a Barber can build it up; the screen will ask for at least 3.
 - **"All Barbers' calendar" and "paid online" views** (stories 39, 40, 67):
@@ -658,7 +698,6 @@ Open after review (decide or do later):
 - **`inviteBarber`** itself has no automated test (it calls Supabase Auth); `linkBarberLogin` is tested.
 
 Original plan:
-
 
 All are server functions with permission checks; screens come in U2/U3.
 
@@ -683,6 +722,7 @@ All are server functions with permission checks; screens come in U2/U3.
 ### B6: Platform admin operations
 
 **DONE 2026-11-09.** What was built:
+
 - **`src/server/platform-admin`**: `createPlatformAdmin(sql)`. Every operation requires a Platform admin, except the scheduled `purgeCancelledShops`.
   - `createShop`: one transaction (Shop, Owner membership, up to 6 Barbers with the Owner first when they cut hair, Services with the same starting price for every Barber, the same starting hours for every Barber). `checkNewShop` validates a form without touching the database.
   - `listShops`: status, texting registration, billing, minutes per booking, active Barbers, online Bookings in the last 7 days.
@@ -704,6 +744,7 @@ All are server functions with permission checks; screens come in U2/U3.
   - The daily job still needs a scheduler at deploy (same note as the dispatcher).
 
 Original plan:
+
 - **Create a Shop** in one step: Owner, Barbers, Services and hours (it replaces the `staff:add` script).
 - **Client import:** import from CSV, with phone normalization and duplicate merging.
 - **SMS registration:** record the Shop's registration status. Approval flips `sms_enabled`.
@@ -738,7 +779,7 @@ Original plan:
 ## Open questions (from the PRD, still to confirm)
 
 | # | Question | Status |
-|---|---|---|
+| --- | --- | --- |
 | 1 | Rescheduling keeps the original payment | **Decided:** yes, when paid online upfront |
 | 2 | "Any available Barber" rule | **Decided:** fewest Bookings that day |
 | 3 | Cutoff longer than 2h makes the reminder arrive after the cutoff | Plan: warn the Owner when saving (B5) |
@@ -772,18 +813,20 @@ Questions for the Shop visits: share of walk-ins, minutes per manual booking, Te
 Cost of a $30 haircut paid online (published rates; confirm on each official pricing page before deciding):
 
 | Option | Fee | On $30 | Can we automate it? |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Stripe (cards) | 2.9% + $0.30 | ≈ $1.17 | Yes: checkout, webhooks, refunds |
 | Square (online cards) | not confirmed in this research (in person: 2.6% + $0.10) | about the same as Stripe | Yes: checkout API, webhooks, refunds |
 | PayPal checkout (also how Venmo is offered) | ≈ 3.49% + $0.49 | ≈ $1.54 | Yes, but costs more; chargebacks and disputes cost about $15–30 each |
 | Zelle | free | $0 | **No.** There is no merchant checkout API: we can't confirm a payment, hold a Slot or refund automatically. Only usable as a manual "pay the Shop by Zelle" note |
 
 Findings:
+
 - **Stripe is not the expensive one.** For online card payments it is among the cheapest. PayPal and Venmo cost more per payment.
 - **Zelle is free but can't power online booking.** It has no way to tell our system a payment arrived and no automatic refunds. Those two pieces are what the 10-minute hold and the full-refund rule depend on.
 - **Square is the strongest alternative to Stripe** for barbershops. Many already use Square card readers in the shop, so online and in-person money would land in one place.
 
 Recommendation:
+
 - Card payments: Square, if the pilot Shops already use it, otherwise Stripe.
 - PayPal/Venmo: an optional extra button later.
 - Zelle: shown only as an "in person / Zelle" note, with no automation.
@@ -799,29 +842,35 @@ Marketplace, deposits, online tips, WhatsApp, walk-in queue/QR, Google Calendar 
 ## Next steps (start here next session)
 
 **First thing next session (Claude does this before anything else):** start the app and the Stripe listener, both in the background, then check them:
-1. `npm run dev` (the app, http://localhost:3000)
+
+1. `npm run dev` (the app, <http://localhost:3000>)
 2. `npm run stripe:listen` (forwards Stripe test events to the app; payments don't reach the app without it)
 3. Check: `/login` loads and doesn't reload in a loop, and the listener prints "Ready!". Its webhook secret must still match `STRIPE_WEBHOOK_SECRET` in `.env.local`. It stays the same until the Stripe CLI login expires, about 90 days after 2026-11-09; then run `npm run stripe -- login` and update the secret.
 
 Both were stopped at the end of the 2026-11-09 session on purpose. If pages reload in a loop, stop `npm run dev`, delete `.next`, start again.
 
 **Checks to do first (quick):**
+
 - [ ] In Brave's console on any page, the `<body>` "attributes didn't match" error should be gone (it couldn't be checked headless).
 
 **Real-service tests (in this order):**
+
 1. ~~**Stripe payment.**~~ **Done 2026-11-10** (pay, confirm, cancel, full refund, hold release; see "Done on 2026-11-10").
 2. ~~**Resend.**~~ **Done 2026-11-10** (login email through Resend; any-browser link).
 3. **Twilio and Telegram.** Create the accounts, put the 5 keys in `.env.local`, restart. Their webhooks need a public address (a tunnel now, or the deploy). Then test a confirmation text, STOP, and linking a Barber's Telegram.
 
 **Then:**
-4. **Follow the Mission plan at the top** (L3 → L4 → G → U1 → U3a → U2 → U3b → U4 → U5). The old landing and its 3D heads are gone.
+
+- **Follow the Mission plan at the top** (L3 → L4 → G → U1 → U3a → U2 → U3b → U4 → U5). The old landing and its 3D heads are gone.
 
 **Left for the deploy (U5):**
+
 - Every-minute scheduler for `/api/cron/dispatch` (Vercel Pro, or Supabase `pg_cron` + `pg_net`); `/api/cron/daily` at 11:00 and 12:00 UTC.
 - Production Stripe webhook (Events from: Connected accounts; see B2 step 5), production Turnstile keys, a verified Resend domain, Sentry.
 - Choose the payment provider that replaces Stripe (Square or Stripe; see the research notes).
 
 **Small open items (no rush):**
+
 - Confirm: a no-show still counts as an online Booking and as time saved in the numbers (B5 "Open after review").
 - Photo uploads for Barber profiles (U3); `inviteBarber` has no automated test; alerts are English only.
 
@@ -829,4 +878,4 @@ Both were stopped at the end of the 2026-11-09 session on purpose. If pages relo
 
 - Local repo on branch `main`. Pushed up to 2026-11-10; the 2026-11-11 commits (3D cleanup, PRODUCT.md, photos + mark, landing v3 M1+M2) are **local only, not pushed**. `CLAUDE.md` is untracked on purpose.
 - Remote already added: `origin` → `https://github.com/OmarflorexAI/Barber-booking-system.git`.
-- Pushed: https://github.com/OmarflorexAI/Barber-booking-system (`main` tracks `origin/main`).
+- Pushed: <https://github.com/OmarflorexAI/Barber-booking-system> (`main` tracks `origin/main`).
