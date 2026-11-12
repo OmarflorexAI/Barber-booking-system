@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Turnstile } from "@/components/turnstile";
+import type { Turnstile as TurnstileWidget } from "@/components/turnstile";
 import type { Locale } from "@/lib/i18n/dictionaries";
-import { landingDictionaries } from "@/lib/i18n/landing";
+import type { LandingDictionary } from "@/lib/i18n/landing";
 import { focusRing, whitePill } from "./_landing/ui";
 import { submitLeadAction } from "./actions";
 
@@ -12,27 +12,73 @@ const field =
   "min-h-12 w-full rounded-md border border-border bg-background px-4 py-3 text-[16px] text-foreground outline-none transition-colors placeholder:text-muted-foreground hover:border-white/25 focus-visible:border-foreground focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-foreground";
 const labelText = "text-sm font-medium text-foreground";
 
+/** The form's strings in the visitor's language. Passed in by the server, so the browser never downloads both languages. */
+export type LeadFormText = Pick<
+  LandingDictionary,
+  | "shopName" | "ownerName" | "phone" | "neighborhood" | "optional" | "barbers" | "barbersPick" | "barbersMore"
+  | "message" | "messageHint" | "send" | "sending" | "verifying" | "thanksTitle" | "thanksBody" | "errors"
+>;
+
 /** "Get your free month": a Shop Owner leaves their details and we call them back. */
-export function LeadForm({ locale }: { locale: Locale }) {
-  const t = landingDictionaries[locale];
+export function LeadForm({ locale, t }: { locale: Locale; t: LeadFormText }) {
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [pending, start] = useTransition();
   // The bot check's script is heavy; load it only once the form comes near the screen or a field gets focus.
   const [nearForm, setNearForm] = useState(false);
+  // The bot check's own code is fetched only then too (a plain import(): next/dynamic would preload it with the page).
+  const [Turnstile, setTurnstile] = useState<typeof TurnstileWidget | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
   const doneRef = useRef<HTMLDivElement>(null);
   const botCheckOn = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const botCheckDone = !botCheckOn || !!token;
+  // Send stays a live button: pressed before the bot check has finished, the form waits
+  // for it here and sends on its own as soon as the token arrives.
+  const [queued, setQueued] = useState<FormData | null>(null);
 
+  const deliver = (form: FormData, turnstileToken: string | null) => {
+    const text = (k: string) => String(form.get(k) ?? "");
+    const barbers = Number(text("barberCount"));
+    start(async () => {
+      const r = await submitLeadAction({
+        shopName: text("shopName"),
+        ownerName: text("ownerName"),
+        phone: text("phone"),
+        neighborhood: text("neighborhood") || undefined,
+        barberCount: barbers > 0 ? barbers : undefined,
+        message: text("message") || undefined,
+        locale,
+        turnstileToken: turnstileToken ?? undefined,
+      });
+      if (r.ok) setDone(true);
+      else setError(t.errors[r.code] ?? t.errors.UNKNOWN);
+    });
+  };
+
+  // A token arriving for a form that's waiting sends it right away.
+  const onToken = (fresh: string | null) => {
+    setToken(fresh);
+    if (fresh && queued) {
+      setQueued(null);
+      deliver(queued, fresh);
+    }
+  };
   useEffect(() => {
     if (error) errorRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [error]);
   useEffect(() => {
     if (done) doneRef.current?.focus();
   }, [done]);
+  useEffect(() => {
+    if (!nearForm || Turnstile) return;
+    let live = true;
+    import("@/components/turnstile").then((m) => live && setTurnstile(() => m.Turnstile));
+    return () => {
+      live = false;
+    };
+  }, [nearForm, Turnstile]);
   useEffect(() => {
     const el = formRef.current;
     if (!el || nearForm) return;
@@ -62,22 +108,13 @@ export function LeadForm({ locale }: { locale: Locale }) {
 
   function submit(form: FormData) {
     setError(null);
-    const text = (k: string) => String(form.get(k) ?? "");
-    const barbers = Number(text("barberCount"));
-    start(async () => {
-      const r = await submitLeadAction({
-        shopName: text("shopName"),
-        ownerName: text("ownerName"),
-        phone: text("phone"),
-        neighborhood: text("neighborhood") || undefined,
-        barberCount: barbers > 0 ? barbers : undefined,
-        message: text("message") || undefined,
-        locale,
-        turnstileToken: token ?? undefined,
-      });
-      if (r.ok) setDone(true);
-      else setError(t.errors[r.code] ?? t.errors.UNKNOWN);
-    });
+    if (!botCheckDone) {
+      // React clears the fields after the action; the FormData keeps what was typed.
+      setQueued(form);
+      setNearForm(true);
+      return;
+    }
+    deliver(form, token);
   }
 
   const optional = <span className="text-[13px] font-normal text-muted-foreground"> ({t.optional})</span>;
@@ -122,8 +159,8 @@ export function LeadForm({ locale }: { locale: Locale }) {
         <textarea className={`${field} min-h-24 resize-y py-3 leading-[1.5]`} name="message" maxLength={1000} rows={3} placeholder={t.messageHint} />
       </label>
 
-      {/* The bot check draws a light widget; Turnstile keeps a 65px slot for it so the form doesn't jump. */}
-      {nearForm ? <Turnstile onToken={setToken} lang={locale} /> : botCheckOn && <div className="min-h-[65px]" />}
+      {/* The bot check is dark and invisible unless Cloudflare needs the visitor to act. */}
+      {Turnstile && <Turnstile onToken={onToken} lang={locale} />}
 
       {error && (
         <p ref={errorRef} role="alert" className="flex items-start gap-3 rounded-md border border-white/25 bg-raised px-4 py-3 text-[15px] leading-relaxed text-foreground">
@@ -136,10 +173,11 @@ export function LeadForm({ locale }: { locale: Locale }) {
       )}
       <button
         type="submit"
-        className={`${whitePill} min-h-12 w-full px-6 disabled:cursor-not-allowed disabled:bg-raised disabled:text-muted-foreground sm:w-auto sm:self-start`}
-        disabled={pending || !botCheckDone}
+        className={`${whitePill} min-h-12 w-full px-6 disabled:cursor-wait disabled:opacity-80 sm:w-auto sm:self-start`}
+        disabled={pending || !!queued}
+        aria-busy={pending || !!queued}
       >
-        {pending ? t.sending : botCheckDone ? t.send : t.verifying}
+        {pending ? t.sending : queued ? t.verifying : t.send}
       </button>
     </form>
   );

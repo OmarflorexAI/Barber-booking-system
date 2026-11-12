@@ -28,6 +28,9 @@ export function Turnstile({ onToken, lang }: { onToken: (token: string | null) =
     const id = window.turnstile.render(ref.current, {
       sitekey: siteKey,
       language: lang,
+      theme: "dark",
+      // Invisible unless Cloudflare needs the visitor to do something.
+      appearance: "interaction-only",
       callback: (t: string) => cb.current(t),
       "expired-callback": () => cb.current(null),
       "error-callback": () => cb.current(null),
@@ -43,7 +46,7 @@ export function Turnstile({ onToken, lang }: { onToken: (token: string | null) =
         strategy="afterInteractive"
         onReady={() => setReady(true)}
       />
-      <div ref={ref} className="min-h-[65px]" />
+      <div ref={ref} />
     </>
   );
 }

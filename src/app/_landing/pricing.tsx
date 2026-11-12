@@ -36,7 +36,7 @@ export function Pricing({ t }: SectionProps) {
                   style={{ backgroundImage: "radial-gradient(80% 50% at 50% 0%, rgb(26,26,26) 0%, transparent 70%)" }}
                 >
                   <div className="border-b border-white/10 p-8 md:p-10">
-                    <h3 className="text-balance text-4xl font-semibold tracking-[-0.03em] text-foreground">{plan.price}</h3>
+                    <h3 className="text-balance text-4xl font-semibold tracking-[-0.03em] text-foreground md:min-h-[2lh]">{plan.price}</h3>
                     <p className="mt-3 text-sm text-muted-foreground">{plan.name}</p>
                   </div>
                   <div className="px-8 py-8 md:px-10">
