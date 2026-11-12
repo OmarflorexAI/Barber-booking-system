@@ -4,7 +4,7 @@ Last updated: 2026-11-12. Source of requirements: `Barbershop Booking System PRD
 
 ## Where we are
 
-**The backend (B1–B6) is built, tested and pushed. Stripe payments work end to end in Stripe test mode (2026-11-10). Resend login emails work. The landing page is being rebuilt on the Cocoon template (2026-11-11): M1 + M2 are done and committed (not pushed); M3 (motion) and L4 (ship-ready) are done and committed (2026-11-12), not pushed. Left in L4: an idle-PC Lighthouse run and the push.** Twilio and Telegram are postponed (agreed 2026-11-10). Next: follow the **Mission plan** right below, starting with the rest of L4 (below), then G.
+**The backend (B1–B6) is built, tested and pushed. Stripe payments work end to end in Stripe test mode (2026-11-10). Resend login emails work. The landing page is being rebuilt on the Cocoon template (2026-11-11): M1 + M2 are done and committed (not pushed); M3 (motion) and L4 (ship-ready) are done and committed (2026-11-12), not pushed. Pushed to GitHub 2026-11-12.** Twilio and Telegram are postponed (agreed 2026-11-10). Next: follow the **Mission plan** right below, starting with the rest of L4 (below), then G.
 
 ## Mission plan (START HERE next session)
 
@@ -63,7 +63,7 @@ Rules for every mission:
 | --- | --- | --- | --- |
 | L1+L2 | Landing foundation + sections | none (decided) | **DONE 2026-11-11** (`d496896`, `158c7ca`) |
 | L3 | Landing motion | none (decided) | **DONE 2026-11-12** |
-| L4 | Landing ship-ready | short [grill] for the /privacy and /terms wording | **DONE 2026-11-12** except the idle-PC Lighthouse run, `DESIGN.md` and the push |
+| L4 | Landing ship-ready | short [grill] for the /privacy and /terms wording | **DONE 2026-11-12**, pushed |
 | G | System UI grill | **[grill]** | **NEXT** |
 | U1 | Client booking `/b` + manage `/m` (with online payment) | covered by G | after G |
 | U3a | Barber day view `/app/day` | covered by G | after U1 |
@@ -155,7 +155,6 @@ Output: the decisions recorded in this file, `DESIGN.md` extended to cover the a
 - The payment provider for production (U5).
 - The no-show question: does a no-show count as an online Booking and as time saved? This comes from B5; settle it before the U2 dashboard.
 - The craft-rule conflict: the two pill labels on the landing are kept by the user's choice, but the finish review may flag them.
-- Pushing to GitHub: the commits from 2026-11-11 and 2026-11-12 are local only.
 - Before launch: a legal name/LLC for `OPERATOR`, a real `CONTACT_EMAIL`, and `NEXT_PUBLIC_SITE_URL` set at build time.
 - Pre-existing, for U1: on `/b/demo-shop`, `<html lang>` stays `en` after switching to Spanish.
 
@@ -236,9 +235,10 @@ Decisions:
   - QA: 22/22 e2e (landing + legal), axe 0 violations on all pages at 390/1440, no sideways scroll at 360–1440 EN/ES, redirects and JS-off all pass, view transitions all fire, no console errors.
   - **Accepted (Claude's call, 2026-11-12):** the raw server HTML of `/es/*` says `<html lang="en">`; the inline script sets `es` before paint, and every page root carries the right `lang`. The fix (a second root layout for `/es`) would turn every language switch into a full page load. Revisit only if a crawler or screen reader shows a real problem.
   - **Deploy note:** `/` is cached as static but redirected by the proxy per cookie/language. Correct on Vercel (the proxy runs before the cache); a URL-only CDN in front would serve English to everyone.
-  - **Still open in L4:** Lighthouse Performance on an idle PC. On 2026-11-12 the PC was under a game's load (CPU 48–90%): landing 54–66, `/login` 93 under the same load. The trace shows the landing's long tasks are the main thread waiting on the GPU process (software raster of the full-width photos and the blurred sticky header in headless Chrome), not our JS. Before L4, idle runs gave 94/95/95. Re-measure idle; if it's under 90, try dropping `backdrop-blur` on the header and smaller photo `sizes` first.
+  - **Lighthouse on an idle PC (CPU 2–10%), production build, phone profile, 2026-11-12:** `/` 95/95/95, `/es` 94/95/94, `/privacy` 98; CLS 0; TBT 60–150 ms; accessibility, best practices and SEO 100 everywhere. (Under a game's load the day before, the landing fell to 54–66: the GPU process starves while drawing the full-width photos and the blurred header in software.)
+  - **Accepted: simulated LCP 2.9 s (target < 2.5 s).** The observed LCP is 0.46 s. Lighthouse's simulation charges every file requested before that paint, mostly Next's framework scripts (~140 KB); the near-empty `/privacy` already simulates 2.4 s, so 2.5 s is roughly the framework floor. Not worth cutting the design for; check real-user LCP after launch (Vercel Speed Insights).
   - `DESIGN.md` + `.impeccable/design.json` written by the documenter from the shipped code ("The Shop After Hours": gray-only dark, one barber red for live signals, Geist; named rules such as Live Signal, Still Layout, Final State). The app's "Operate" mode is marked as future (G). Small drift it recorded, to fix when convenient: the hero phone hard-codes its paper and red colors instead of tokens; `logo.tsx`'s fallback red `#d0312d` differs from `--l-red`; CLAUDE.md's "Landing page" paragraph still describes the old navy theme (Big Shoulders / Instrument Sans / WebGL gradient).
-  - Push to GitHub after the user's OK.
+  - Pushed to GitHub after the user's OK (2026-11-12). `CLAUDE.md` (untracked) updated for the current landing.
 - **(Old M4 plan, kept for reference.)** Includes fixing the LCP (above) and the JS-off blank page. Found 2026-11-12:
   - The *observed* LCP is 0.5 s; Lighthouse's 2.8 s is its throttled simulation, which counts the landing's client JS. `/login` (same framework) gets 0.8 s, so trim the landing's JS: `lead-form.tsx` and `hero-phone.tsx` import the whole EN+ES `landing.ts` (~49 KB chunk); pass only the current locale's strings as props. The Turnstile code (~22 KB) is in the first load; load it with the form.
   - SEO 91 = the meta description is missing from `<head>`: `generateMetadata` reads the cookie, so Next streams it into `<body>` (by design; Googlebot reads it, Lighthouse doesn't). Proposed fix (ask the user): a real `/es` URL for the Spanish landing, so both versions are static (metadata in `<head>`, hreflang, prerendered, works with JS off), with `/` redirecting Spanish visitors by cookie / Accept-Language.
@@ -890,6 +890,6 @@ Both were stopped at the end of the 2026-11-09 session on purpose. If pages relo
 
 ## Git
 
-- Local repo on branch `main`. Pushed up to 2026-11-10; the 2026-11-11 commits (3D cleanup, PRODUCT.md, photos + mark, landing v3 M1+M2) are **local only, not pushed**. `CLAUDE.md` is untracked on purpose.
+- Local repo on branch `main`. Pushed up to 2026-11-12 (landing v3 through L4 and DESIGN.md). `CLAUDE.md` is untracked on purpose.
 - Remote already added: `origin` → `https://github.com/OmarflorexAI/Barber-booking-system.git`.
 - Pushed: <https://github.com/OmarflorexAI/Barber-booking-system> (`main` tracks `origin/main`).
