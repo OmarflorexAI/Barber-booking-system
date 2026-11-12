@@ -875,7 +875,7 @@ Both were stopped at the end of the 2026-11-09 session on purpose. If pages relo
 
 **Then:**
 
-- **Follow the Mission plan at the top** (L3 → L4 → G → U1 → U3a → U2 → U3b → U4 → U5). The old landing and its 3D heads are gone.
+- **Follow the Mission plan at the top.** L1–L4 are done and pushed (2026-11-12). **Start with G, the system UI grill** (the user asked to begin it next session), then U1 → U3a → U2 → U3b → U4 → U5.
 
 **Left for the deploy (U5):**
 
