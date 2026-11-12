@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
+import { ViewTransition, addTransitionType, startTransition, useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import type { LandingDictionary } from "@/lib/i18n/landing";
 import { LiveDot } from "./live-dot";
 
@@ -17,7 +17,8 @@ const c = {
 
 /**
  * The hero phone, live: a pretend booking at the demo shop. Service, then barber,
- * then a time, then "You're booked", with each screen sliding in like the real page.
+ * then a time, then "You're booked". Each step is a view transition: the next screen
+ * slides in from the right, Back slides the previous one in from the left.
  * Nothing is saved. With a mouse, the phone leans a little toward the pointer.
  */
 export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
@@ -28,6 +29,25 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
   const [booked, setBooked] = useState(0); // counts bookings, so the check mark replays each time
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const box = useRef<HTMLDivElement>(null);
+  const screen = useRef<HTMLDivElement>(null);
+  const moved = useRef(false);
+
+  // The tapped button leaves with the old screen, so after a step hand focus to the new
+  // screen's title (screen readers hear where they are; Tab continues from there).
+  useEffect(() => {
+    if (!moved.current) return;
+    screen.current?.querySelector<HTMLElement>("[data-screen-title]")?.focus({ preventScroll: true });
+  }, [step]);
+
+  /** Moves to another screen inside a transition, tagged with its direction. */
+  function go(next: number) {
+    startTransition(() => {
+      // "Book again" (3 → 0) starts over, so it moves forward too.
+      addTransitionType(next > step || (next === 0 && step === 3) ? "phone-forward" : "phone-back");
+      setStep(next);
+    });
+    moved.current = true;
+  }
 
   const barberName = barber === null ? p.barbers[1] : p.barbers[barber];
   const svc = p.services[service];
@@ -47,7 +67,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
             <Tap
               onClick={() => {
                 setService(i);
-                setStep(1);
+                go(1);
               }}
               className="flex items-start justify-between gap-2 px-3 py-2.5"
             >
@@ -71,14 +91,14 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
     </Screen>,
 
     // 1. Barbers
-    <Screen key="b" title={p.chooseBarber} p={p} lang={lang} onBack={() => setStep(0)}>
+    <Screen key="b" title={p.chooseBarber} p={p} lang={lang} onBack={() => go(0)}>
       <ul className="flex flex-col gap-2">
         {[null, 0, 1, 2, 3].map((b) => (
           <li key={b ?? "any"}>
             <Tap
               onClick={() => {
                 setBarber(b);
-                setStep(2);
+                go(2);
               }}
               className="flex items-center gap-2.5 px-3 py-2.5"
             >
@@ -107,7 +127,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
     </Screen>,
 
     // 2. Times
-    <Screen key="t" title={p.pickTime} p={p} lang={lang} onBack={() => setStep(1)}>
+    <Screen key="t" title={p.pickTime} p={p} lang={lang} onBack={() => go(1)}>
       <p className="mb-2 inline-block rounded-[10px] bg-[#1d1b18] px-2.5 py-1.5 text-[11px] text-white">{p.day}</p>
       <div className="grid grid-cols-3 gap-1.5">
         {p.times.map((t, i) => {
@@ -120,7 +140,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
               onClick={() => {
                 setTime(i);
                 setBooked((n) => n + 1);
-                setStep(3);
+                go(3);
               }}
               className={`${c.card} min-h-11 px-1 text-[11px] tabular-nums transition-[background-color,border-color,transform] duration-150 hover:border-[#1d1b18] active:scale-95 disabled:border-transparent disabled:bg-transparent disabled:text-[#b9b2a7] disabled:line-through focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#1d1b18]`}
             >
@@ -139,7 +159,9 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
             <path d="M20 6 9 17l-5-5" />
           </svg>
         </span>
-        <p className="mt-4 text-[17px] font-semibold tracking-[-0.01em]">{p.bookedTitle}</p>
+        <p data-screen-title tabIndex={-1} className="mt-4 text-[17px] font-semibold tracking-[-0.01em] outline-none">
+          {p.bookedTitle}
+        </p>
         <div className={`${c.card} mt-4 w-full px-3 py-3 text-left`}>
           <p className="text-[13px] font-medium">{svc.name}</p>
           <p className={`text-[11px] ${c.muted}`}>
@@ -150,7 +172,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
         <p className={`mt-3 text-[11px] leading-[1.45] ${c.muted}`}>{p.bookedNote}</p>
         <button
           type="button"
-          onClick={() => setStep(0)}
+          onClick={() => go(0)}
           className="mt-auto mb-2 min-h-11 w-full rounded-[12px] bg-[#1d1b18] text-[13px] font-medium text-white transition-transform active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d1b18]"
         >
           {p.again}
@@ -179,17 +201,17 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
             className={`relative h-[440px] overflow-hidden rounded-[2rem] ${c.paper} ${c.ink} sm:h-[500px]`}
           >
             <span aria-hidden className="absolute left-1/2 top-2 z-10 h-[15px] w-[64px] -translate-x-1/2 rounded-full bg-black" />
-            {screens.map((s, i) => (
-              <div
-                key={i}
-                inert={i !== step}
-                className={`absolute inset-0 pt-7 transition-[transform,opacity] duration-500 ease-[cubic-bezier(.2,.8,.2,1)] motion-reduce:transition-none ${
-                  i === step ? "translate-x-0 opacity-100" : i < step ? "-translate-x-1/3 opacity-0" : "translate-x-full opacity-0"
-                }`}
-              >
-                {s}
+            <ViewTransition
+              key={step}
+              default="none"
+              enter={{ "phone-forward": "phone-in-fwd", "phone-back": "phone-in-back", default: "none" }}
+              exit={{ "phone-forward": "phone-out-fwd", "phone-back": "phone-out-back", default: "none" }}
+              update={{ "lang-switch": "lang-swap", default: "none" }}
+            >
+              <div ref={screen} className="absolute inset-0 pt-7">
+                {screens[step]}
               </div>
-            ))}
+            </ViewTransition>
           </div>
         </div>
       </div>
@@ -197,7 +219,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
       <p className="mx-auto mt-6 flex w-max max-w-full items-center gap-2 rounded-full border border-white/15 bg-background/70 px-3.5 py-1.5 text-[13px] font-medium text-foreground">
         <LiveDot />
         {step === 3 ? (
-          <Link href="/b/demo-shop" className="underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white">
+          <Link href="/b/demo-shop" transitionTypes={["page"]} className="underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white">
             {p.label}
           </Link>
         ) : (
@@ -231,7 +253,11 @@ function Screen({ title, p, lang, onBack, children }: { title?: string; p: Phone
           {p.back}
         </button>
       )}
-      {title && <p className={`${onBack ? "mt-1.5" : "mt-4"} mb-2.5 text-[14px] font-medium`}>{title}</p>}
+      {title && (
+        <p data-screen-title tabIndex={-1} className={`${onBack ? "mt-1.5" : "mt-4"} mb-2.5 text-[14px] font-medium outline-none`}>
+          {title}
+        </p>
+      )}
       <div className="flex-1">{children}</div>
     </div>
   );

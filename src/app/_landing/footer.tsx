@@ -17,17 +17,17 @@ export function Footer({ t }: SectionProps) {
         <nav aria-label={t.footerLinks}>
           <ul className="flex flex-wrap items-center gap-x-6">
             <li>
-              <Link href="/privacy" className={link}>
+              <Link href="/privacy" transitionTypes={["page"]} className={link}>
                 {t.privacy}
               </Link>
             </li>
             <li>
-              <Link href="/terms" className={link}>
+              <Link href="/terms" transitionTypes={["page"]} className={link}>
                 {t.terms}
               </Link>
             </li>
             <li>
-              <Link href="/login" className={link}>
+              <Link href="/login" transitionTypes={["page"]} className={link}>
                 {t.staffSignIn}
               </Link>
             </li>

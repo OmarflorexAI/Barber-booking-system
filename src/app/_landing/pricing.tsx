@@ -9,9 +9,16 @@ import { CONTACT_ID, Check, WidePanel, outlinePill, type, whitePill } from "./ui
 export function Pricing({ t }: SectionProps) {
   return (
     <section id="pricing" aria-labelledby="pricing-title" className="scroll-mt-20">
-      <WidePanel id="pricing-panel" className="px-4 py-[calc(48px+8vh)] sm:px-6">
-        <Image src="/landing/photos/pricing-red-chairs.webp" alt="" fill sizes="(min-width: 1152px) 1152px, 100vw" className="-z-20 object-cover object-center" />
-        <div aria-hidden className="absolute inset-0 -z-10" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.65), transparent)" }} />
+      <WidePanel
+        id="pricing-panel"
+        className="px-4 py-[calc(48px+8vh)] sm:px-6"
+        background={
+          <>
+            <Image src="/landing/photos/pricing-red-chairs.webp" alt="" fill sizes="100vw" className="object-cover object-center" />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.65), transparent)" }} />
+          </>
+        }
+      >
 
         <div className="mx-auto max-w-5xl md:px-10">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3" data-reveal>

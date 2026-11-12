@@ -49,7 +49,7 @@ export function Nav({ locale, t }: SectionProps) {
     <header
       ref={header}
       id="main-header"
-      className="sticky top-0 z-40 w-full border-b border-transparent bg-background/80 backdrop-blur-md"
+      className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md [view-transition-name:landing-header]"
     >
       <div id="main-nav" className="relative mx-auto flex max-w-5xl items-center justify-between gap-2 px-6 py-3">
         <Link href="/" className={`-ml-1 flex min-h-11 items-center rounded-md px-1 ${focusRing}`}>

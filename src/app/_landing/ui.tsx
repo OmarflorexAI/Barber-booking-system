@@ -46,11 +46,31 @@ export const outlinePill = `${pillBase} border border-white/30 text-white hover:
 export const toggleSkin =
   "[&_button]:inline-flex [&_button]:min-h-11 [&_button]:items-center [&_button]:rounded-full [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:text-sm [&_button]:text-muted-foreground [&_button]:transition-colors [&_button:hover]:text-foreground [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-solid [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-foreground [&_button:disabled]:opacity-60";
 
-/** A wide panel that starts at 1152px; M3 widens it to the full window on scroll (data-widen). */
-export function WidePanel({ id, children, className = "" }: { id: string; children: ReactNode; className?: string }) {
+/**
+ * A wide panel. Its content sits in a 1152px column; its background (photo, gradient)
+ * is a full-width layer clipped to that column with rounded corners. On scroll the clip
+ * opens to the full window (see `.landing-widen` in globals.css). Only the clip moves,
+ * so the layout never shifts. Without scroll-driven animations it stays a rounded panel.
+ */
+export function WidePanel({
+  id,
+  background,
+  children,
+  className = "",
+}: {
+  id: string;
+  background: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <div id={id} data-widen className="mx-auto w-full max-w-[1152px] px-4 sm:px-6">
-      <div className={`relative isolate overflow-hidden rounded-2xl ${className}`}>{children}</div>
+    <div id={id} className="relative isolate [--pad:1rem] sm:[--pad:1.5rem]">
+      <div aria-hidden className="landing-widen absolute inset-0 isolate overflow-hidden">
+        {background}
+      </div>
+      <div className="relative mx-auto w-full max-w-[1152px] px-(--pad)">
+        <div className={className}>{children}</div>
+      </div>
     </div>
   );
 }

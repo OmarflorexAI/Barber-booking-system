@@ -12,9 +12,16 @@ const CARD_ICONS = [ShopIcon, QrIcon];
 export function Setup({ t }: SectionProps) {
   return (
     <section id="setup" aria-labelledby="setup-title" className="scroll-mt-20">
-      <WidePanel id="setup-panel" className="px-4 py-[calc(48px+8vh)] sm:px-6">
-        <Image src="/landing/photos/setup-street-pole.webp" alt="" fill sizes="(min-width: 1152px) 1152px, 100vw" className="-z-20 object-cover object-center" />
-        <div aria-hidden className="absolute inset-0 -z-10" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.85), transparent)" }} />
+      <WidePanel
+        id="setup-panel"
+        className="px-4 py-[calc(48px+8vh)] sm:px-6"
+        background={
+          <>
+            <Image src="/landing/photos/setup-street-pole.webp" alt="" fill sizes="100vw" className="object-cover object-center" />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.85), transparent)" }} />
+          </>
+        }
+      >
 
         <div className="mx-auto max-w-5xl md:px-10">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3" data-reveal>

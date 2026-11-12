@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 import { landingDictionaries } from "@/lib/i18n/landing";
 import { getLocale } from "@/lib/i18n/server";
 import { Contact } from "./_landing/contact";
@@ -41,27 +41,36 @@ async function Landing() {
   const t = landingDictionaries[locale];
   const props = { locale, t };
   return (
-    <div lang={locale} className="landing min-h-screen overflow-x-clip antialiased">
-      <HtmlLang lang={locale} />
-      <a
-        href="#main"
-        className={`sr-only rounded-full bg-white px-4 py-2 text-sm font-medium text-black focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 ${focusRing}`}
-      >
-        {t.skipLink}
-      </a>
-      <Nav {...props} />
-      <main id="main">
-        <Hero {...props} />
-        <Why {...props} />
-        <Facts {...props} />
-        <HowItWorks {...props} />
-        <Setup {...props} />
-        <FirstMonth {...props} />
-        <Pricing {...props} />
-        <Faq {...props} />
-        <Contact {...props} />
-      </main>
-      <Footer {...props} />
-    </div>
+    // Page-level transitions: links tagged "page" fade this page out (and back in);
+    // the language switch cross-fades the text. Nested ones (the phone) handle their own.
+    <ViewTransition
+      default="none"
+      enter={{ page: "page-in", default: "none" }}
+      exit={{ page: "page-out", default: "none" }}
+      update={{ "lang-switch": "lang-swap", default: "none" }}
+    >
+      <div lang={locale} className="landing min-h-screen overflow-x-clip antialiased">
+        <HtmlLang lang={locale} />
+        <a
+          href="#main"
+          className={`sr-only rounded-full bg-white px-4 py-2 text-sm font-medium text-black focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 ${focusRing}`}
+        >
+          {t.skipLink}
+        </a>
+        <Nav {...props} />
+        <main id="main">
+          <Hero {...props} />
+          <Why {...props} />
+          <Facts {...props} />
+          <HowItWorks {...props} />
+          <Setup {...props} />
+          <FirstMonth {...props} />
+          <Pricing {...props} />
+          <Faq {...props} />
+          <Contact {...props} />
+        </main>
+        <Footer {...props} />
+      </div>
+    </ViewTransition>
   );
 }

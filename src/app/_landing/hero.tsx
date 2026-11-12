@@ -11,7 +11,7 @@ export function Hero({ t }: SectionProps) {
   return (
     <section id="top" aria-labelledby="hero-title" className="pt-[calc(32px+5vh)]">
       <Container>
-        <div className="grid grid-cols-1 lg:grid-cols-3" data-reveal>
+        <div className="grid grid-cols-1 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <Pill>{t.heroPill}</Pill>
             <h1 id="hero-title" className={type.h1}>
@@ -20,6 +20,7 @@ export function Hero({ t }: SectionProps) {
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">{t.heroBody}</p>
             <Link
               href="/b/demo-shop"
+              transitionTypes={["page"]}
               className={`mt-5 inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-medium text-foreground underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white ${focusRing}`}
             >
               {t.heroDemo}
@@ -31,9 +32,12 @@ export function Hero({ t }: SectionProps) {
         </div>
       </Container>
 
-      <div className="mt-10 md:mt-14" data-reveal>
-        <WidePanel id="hero-panel" className="flex items-center justify-center px-4 py-10 md:p-16">
-          <div aria-hidden className="absolute inset-0 -z-10" style={{ background: "linear-gradient(to top, rgba(128,134,145,0.3), transparent)" }} />
+      <div className="mt-10 md:mt-14">
+        <WidePanel
+          id="hero-panel"
+          className="flex items-center justify-center px-4 py-10 md:p-16"
+          background={<div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(128,134,145,0.3), transparent)" }} />}
+        >
           <HeroPhone p={t.heroPhone} lang={t.heroPhone.lang} />
         </WidePanel>
       </div>

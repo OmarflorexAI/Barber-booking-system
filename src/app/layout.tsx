@@ -22,7 +22,8 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // lang="en" is the static default; the landing page corrects it to the visitor's language before paint (_landing/html-lang.tsx).
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
+    // data-scroll-behavior: the landing scrolls smoothly; this tells Next to turn it off during route changes.
+    <html lang="en" data-scroll-behavior="smooth" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
       {/* Browser extensions add attributes to <body> (e.g. location="localhost") before React
           starts; ignore those on this tag only. Mismatches inside the page still show. */}
       <body className="min-h-full font-sans" suppressHydrationWarning>
