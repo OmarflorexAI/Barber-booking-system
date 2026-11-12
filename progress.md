@@ -1,10 +1,10 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-10. Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-11. Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-**The backend (B1–B6) is built, tested and pushed. Stripe payments now work end to end with real Stripe test mode (2026-11-10). Resend login emails work. The landing page for Shop Owners is built, validated and pushed (2026-11-10); only its 3D head gallery still waits on real frames (M3).** Twilio and Telegram are postponed (agreed 2026-11-10). Next: finish the 3D heads, commit the landing page, then the UI.
+**The backend (B1–B6) is built, tested and pushed. Stripe payments work end to end in Stripe test mode (2026-11-10). Resend login emails work. The landing page is being rebuilt on the Cocoon template (2026-11-11): M1 + M2 are done and committed (not pushed); M3 (motion) is next.** Twilio and Telegram are postponed (agreed 2026-11-10). Next: landing M3, then M4, then the system-UI grill.
 
 ### Landing page v3: Cocoon template (decided 2026-11-11, grill session; START HERE)
 
@@ -53,6 +53,25 @@ Decisions:
   - The lead form still saves, emails and passes Turnstile; landing e2e tests rewritten
   - No fake numbers, testimonials, logos or prices
 - **Process:** milestones + a separate validator agent (Factory Missions style); `/impeccable init` first (writes `DESIGN.md`); small commits, each shown to the user first.
+
+#### Build status (2026-11-11, end of session)
+
+- **M1 Foundation + M2 Sections: DONE, committed** (`d496896` brand, `158c7ca` landing, `4c279e4` progress; not pushed yet).
+  - Logo components in `src/components/brand/logo.tsx`, `src/app/icon.svg`, `src/app/opengraph-image.tsx`; all 11 sections in `src/app/_landing/`; tokens `--l-*` in `globals.css` (muted text oklch(64%), barber red oklch(62% 0.2 27), both lifted for contrast).
+  - Direction contract: `.impeccable/surfaces/src-app-page-tsx.md`. Review screenshots (gitignored): `.impeccable/review/`.
+  - Validator round fixed: the pulsing dot (now `live-dot.tsx`, transform/opacity only, runs only on screen), Turnstile loads only near the form, ES metadata via `generateMetadata`, `<html lang>` set before paint by `html-lang.tsx` (the root layout can't read the cookie under cacheComponents), "Skin fade" → "Desvanecido", pricing labels, select chevron, timeline dots and labels.
+  - Checks: typecheck, lint (0 errors), build, landing e2e 7/7, impeccable detector `[]`, no sideways scroll, a11y 100.
+  - **Performance not settled:** the worker measured 92/96/99, Claude measured 69/69 while a game was running (CPU at 65%). Re-measure on an idle PC in M4. If still < 90, look at the client JS (the lead form imports the whole EN+ES `landing.ts`; the hero phone).
+- **M3 Motion: NEXT (start here).** Hooks are already in the markup:
+  1. Wide panels grow from 1152px to 100vw on scroll (border-radius 16→0): `data-widen` on `#hero-panel`, `#setup-panel`, `#pricing-panel`.
+  2. How-it-works photos fade in on scroll (opacity ~0.05 → 1): `data-fade-bg` + the `--photo-opacity` CSS variable (static 0.45 now).
+  3. Nav shrinks after the top (template: 85px → 69px; ours starts at 69px today, so add the taller starting state): `#main-header`, `#main-nav`.
+  4. Fade-up reveals: `data-reveal` on blocks (template uses `data-animate` + `data-delay`).
+  5. React `<ViewTransition>` in exactly 3 places: the phone's screen steps (replace the translate slide in `hero-phone.tsx`), the language toggle, and moving between pages. Load `/vercel-react-view-transitions` and check `node_modules/next/dist/docs/` first.
+  - Rules: prefer CSS `animation-timeline` (scroll/view) behind `@supports`, with a small JS fallback only where needed; animate transform/opacity only (the box-shadow pulse cost 600 ms of main thread, don't repeat it); everything still visible and in its final state under reduced motion and with JS off; no CLS.
+  - Then a validator agent checks M3 (Performance, CLS, reduced motion, no stuck-hidden content), screenshots to the user, commit.
+- **M4 Ship-ready: after M3.** `/privacy` + `/terms` placeholders (EN/ES), restyled `not-found.tsx`, SEO (`metadataBase`, canonical, sitemap, robots, structured data; also fix the meta description/title landing in `<body>` with `generateMetadata`, Lighthouse SEO 91), `THIRD_PARTY_NOTICES.md` (photo credits + Cocoon MIT), e2e review, full validator run against the pass criteria on an idle PC, then the impeccable finish reviewer and the documenter (`DESIGN.md`).
+- **Open with the user:** the impeccable skill bans pill labels above headings; the user chose two (Q23). Kept; the finish review may flag them.
 
 ### Landing page for Shop Owners (2026-11-10, not committed yet)
 
@@ -661,7 +680,7 @@ Both were stopped at the end of the 2026-11-09 session on purpose. If pages relo
 3. **Twilio and Telegram.** Create the accounts, put the 5 keys in `.env.local`, restart. Their webhooks need a public address (a tunnel now, or the deploy). Then test a confirmation text, STOP, and linking a Barber's Telegram.
 
 **Then:**
-4. ~~Landing page.~~ **Built and pushed 2026-11-10** (see "Landing page for Shop Owners"). **Left: the 3D heads (M3 — "start here next session" list in that section).**
+4. **Landing page v3 (Cocoon):** M1 + M2 done 2026-11-11. **Next: M3 motion**, then M4 (see "Landing page v3 → Build status" at the top). The old landing and its 3D heads are gone.
 5. UI phases U1–U5 (see "Remaining plan").
 
 **Left for the deploy (U5):**
@@ -675,6 +694,6 @@ Both were stopped at the end of the 2026-11-09 session on purpose. If pages relo
 
 ## Git
 
-- Local repo on branch `main`, all work committed and pushed (2026-11-10, end of day), except the 3D head frames, which are still being made (see M3).
+- Local repo on branch `main`. Pushed up to 2026-11-10; the 2026-11-11 commits (3D cleanup, PRODUCT.md, photos + mark, landing v3 M1+M2) are **local only, not pushed**. `CLAUDE.md` is untracked on purpose.
 - Remote already added: `origin` → `https://github.com/OmarflorexAI/Barber-booking-system.git`.
 - Pushed: https://github.com/OmarflorexAI/Barber-booking-system (`main` tracks `origin/main`).
