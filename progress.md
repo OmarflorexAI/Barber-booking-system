@@ -1,10 +1,144 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-11. Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-12. Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-**The backend (B1–B6) is built, tested and pushed. Stripe payments work end to end in Stripe test mode (2026-11-10). Resend login emails work. The landing page is being rebuilt on the Cocoon template (2026-11-11): M1 + M2 are done and committed (not pushed); M3 (motion) is next.** Twilio and Telegram are postponed (agreed 2026-11-10). Next: landing M3, then M4, then the system-UI grill.
+**The backend (B1–B6) is built, tested and pushed. Stripe payments work end to end in Stripe test mode (2026-11-10). Resend login emails work. The landing page is being rebuilt on the Cocoon template (2026-11-11): M1 + M2 are done and committed (not pushed); M3 (motion) is next.** Twilio and Telegram are postponed (agreed 2026-11-10). Next: follow the **Mission plan** right below, starting at mission L3.
+
+## Mission plan (START HERE next session)
+
+This is the whole remaining job, in order. Each mission is one unit of work that ends with commits. The next agent works through the missions top to bottom with the workflow below, the same one used on 2026-11-11.
+
+### The workflow (same as 2026-11-11)
+
+1. **Start of session:**
+   - Read `CLAUDE.md`, `AGENTS.md`, this file and `PRODUCT.md`.
+   - Check that nothing stale is running. Last time, old `next start` servers on ports 3100, 3200 and 3417 skewed the measurements.
+   - Start `npm run dev` in the background, plus `npm run stripe:listen` for anything that touches payments.
+2. **Grill first when a mission has open decisions** (`/mattpocock-skills:grill-me`):
+   - Ask in rounds of numbered questions. Give a recommended answer for each, worded so "yes" accepts it.
+   - Ask the whole frontier at once.
+   - Look facts up yourself or with a sub-agent; never ask the user for facts.
+   - Record every answer in this file before building.
+   - Missions marked **[grill]** need one; the others are already decided.
+3. **Use `/impeccable` for design work:**
+   - Run its `context` once per session.
+   - For a new surface, write a direction contract with `impeccable surface-brief write`: THESIS, OWN-WORLD, STORY, FIRST VIEWPORT, FORM, FINISH.
+   - Read `craft-floor.md` before any UI edit.
+   - Modes: the landing is Persuade. The app screens are Operate: calmer and denser, but the same brand (grayscale, barber red, Geist).
+4. **Build with a worker agent** (`general-purpose`, in the background). Its brief covers:
+   - the files to read
+   - the exact scope and the rules
+   - the checks to run: typecheck, lint, build, the relevant e2e and engine tests, and `impeccable detect --json`
+   - screenshots in `.impeccable/review/`, at 390 and 1440 px, in EN and ES
+   - "do not commit"
+5. **Check with a separate validator agent.** It didn't write the code and doesn't edit it.
+   - It reports PASS/FAIL per criterion with evidence, and defects ordered by severity.
+   - Send the defects back to the worker; SendMessage keeps its context.
+   - Then re-check the key numbers yourself. For example, run Lighthouse on a production build, on a free port, with the PC idle.
+6. **Show the user:**
+   - screenshots and what changed
+   - every copy claim the product might not back (the user confirms it or softens it)
+   - anything the craft rules flag against a user decision
+7. **Commit only after the user says so:**
+   - Small conventional commits, staged by path (never `git add .`).
+   - Show the proposed list first and scan for secrets.
+   - End each message with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+   - Update this file (status and next steps) and commit it too.
+8. **End of session:** stop every server and agent you started; leave nothing running.
+
+Rules for every mission:
+- No fake numbers, testimonials, logos or prices. The only price claim is "first month free".
+- Every user-facing string in EN and ES.
+- Phones first: 360 and 390 px, tap targets ≥ 44 px, no sideways scroll.
+- Respect reduced motion. Animate only transform and opacity.
+- Never call a provider directly from a booking operation; write an outbox row.
+- Stripe `sk_test_` keys only.
+
+### Missions, in order
+
+| # | Mission | Grill? | Status |
+|---|---|---|---|
+| L1+L2 | Landing foundation + sections | none (decided) | **DONE 2026-11-11** (`d496896`, `158c7ca`) |
+| L3 | Landing motion | none (decided) | **NEXT** |
+| L4 | Landing ship-ready | short [grill] for the /privacy and /terms wording | after L3 |
+| G | System UI grill | **[grill]** | after L4 |
+| U1 | Client booking `/b` + manage `/m` (with online payment) | covered by G | after G |
+| U3a | Barber day view `/app/day` | covered by G | after U1 |
+| U2 | Owner tools | covered by G, plus a short [grill] for the dashboard numbers | after U3a |
+| U3b | Barber profile, hours, Connect Telegram | covered by G | with or after U2 |
+| U4 | Platform admin panel | short [grill] | after U2 |
+| U5 | Hardening + launch | short [grill]: hosting, domain, payment provider | last |
+
+**L3 Landing motion.** The full brief is in "Landing page v3 → Build status → M3" below.
+- Build: the panels widen to full width, the photos fade in, the nav shrinks, and sections fade up.
+- `<ViewTransition>` goes in exactly 3 places: the phone's screens, the language toggle, and moving between pages. Load `/vercel-react-view-transitions` and read `node_modules/next/dist/docs/` first.
+- Validator: Performance ≥ 90 on an idle PC, CLS < 0.1, and nothing stuck hidden under reduced motion or with JS off.
+
+**L4 Landing ship-ready.** The full list is in "Build status → M4" below.
+- `/privacy` and `/terms` in EN/ES. The wording is written with the user; A2P 10DLC needs both pages.
+- A restyled 404.
+- SEO: metadataBase, canonical, sitemap, robots, structured data, and the fix for the description and title landing in `<body>`.
+- `THIRD_PARTY_NOTICES.md`: the 5 photo credits and the Cocoon MIT notice.
+- The full validator run against the pass criteria.
+- Then the `impeccable-finish-reviewer` agent and the `impeccable-documenter` agent (which writes `DESIGN.md`).
+- Push to GitHub once the user approves.
+
+**G System UI grill.** One grill session for the whole app, before any screen is built. Decide:
+- How the landing's brand becomes the app's calmer Operate look: light or dark, density, type scale.
+- Navigation between the `/app` areas for each role.
+- The screen list for each mission below, and what each screen must show.
+- Phone or desktop first for each role: Barbers are on phones; Owners may use both.
+- Empty, error and loading states.
+- Which existing screens (`/b`, `/m`, `/app/day`, `/login`) get restyled and which get rebuilt.
+
+Output: the decisions recorded in this file, `DESIGN.md` extended to cover the app, and a surface brief per area.
+
+**U1 Client booking (`/b/<shop>`, `/m/<token>`).**
+- Restyle both pages to the G decisions.
+- Online payment choice and the Checkout redirect, plus "awaiting payment" and "payment expired" states.
+- Fix the "Book now" button and the "2 upcoming bookings to pay at the shop" wording.
+- Cards-only Checkout (open from earlier).
+- Tests: engine tests, plus a Playwright journey "book and pay online" on the phone profile.
+
+**U3a Barber day view (`/app/day`).** The Barber's day on a phone: Bookings, Walk-ins, cancel and move, and the paid-online marker. It uses existing engine operations.
+
+**U2 Owner tools.**
+- Settings for everything in B5: Services, prices, specials, hours, closed days, cutoff, blocklist, inviting and removing Barbers.
+- The all-Barbers calendar.
+- The dashboard: weekly Bookings and time saved. Settle the no-show question first.
+- The client CSV export button, which the landing page's copy depends on before launch.
+
+**U3b Barber profile.** Profile and gallery, weekly hours and days off, and Connect Telegram with a QR code (needs the Telegram keys).
+
+**U4 Platform admin.** The B6 data already exists. Screens:
+- Shops list and create Shop
+- client CSV import
+- SMS registration status
+- the free/paid flag
+- the failures view
+- the support access log
+- 30-day deletion
+
+**U5 Hardening + launch.**
+- Sentry.
+- Playwright journey 2: the Barber gets an alert; the Client cancels from the text link and is refunded.
+- The Vercel project, env vars and crons.
+- Production Turnstile keys and a verified Resend domain.
+- Twilio and Telegram live.
+- The payment provider decision, Square or Stripe (see the research notes).
+- Every landing launch prerequisite under "Copy approved" below is true.
+- Each Shop's go-live list.
+
+### Needs the user (collected)
+
+- Twilio and Telegram accounts and keys. These block U3b's Telegram screen and the launch claims.
+- The `/privacy` and `/terms` wording (L4).
+- The payment provider for production (U5).
+- The no-show question: does a no-show count as an online Booking and as time saved? This comes from B5; settle it before the U2 dashboard.
+- The craft-rule conflict: the two pill labels on the landing are kept by the user's choice, but the finish review may flag them.
+- Pushing to GitHub: the commits from 2026-11-11 are local only.
 
 ### Landing page v3: Cocoon template (decided 2026-11-11, grill session; START HERE)
 
@@ -680,8 +814,7 @@ Both were stopped at the end of the 2026-11-09 session on purpose. If pages relo
 3. **Twilio and Telegram.** Create the accounts, put the 5 keys in `.env.local`, restart. Their webhooks need a public address (a tunnel now, or the deploy). Then test a confirmation text, STOP, and linking a Barber's Telegram.
 
 **Then:**
-4. **Landing page v3 (Cocoon):** M1 + M2 done 2026-11-11. **Next: M3 motion**, then M4 (see "Landing page v3 → Build status" at the top). The old landing and its 3D heads are gone.
-5. UI phases U1–U5 (see "Remaining plan").
+4. **Follow the Mission plan at the top** (L3 → L4 → G → U1 → U3a → U2 → U3b → U4 → U5). The old landing and its 3D heads are gone.
 
 **Left for the deploy (U5):**
 - Every-minute scheduler for `/api/cron/dispatch` (Vercel Pro, or Supabase `pg_cron` + `pg_net`); `/api/cron/daily` at 11:00 and 12:00 UTC.
