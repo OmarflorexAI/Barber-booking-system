@@ -4,48 +4,61 @@ Last updated: 2026-11-12. Source of requirements: `Barbershop Booking System PRD
 
 ## Where we are
 
-**The backend (B1–B6) is built, tested and pushed. Stripe payments work end to end in Stripe test mode (2026-11-10). Resend login emails work. The landing page is being rebuilt on the Cocoon template (2026-11-11): M1 + M2 are done and committed (not pushed); M3 (motion) and L4 (ship-ready) are done and committed (2026-11-12), not pushed. Pushed to GitHub 2026-11-12.** Twilio and Telegram are postponed (agreed 2026-11-10). Next: follow the **Mission plan** right below, starting with the rest of L4 (below), then G.
+**The backend (B1–B6) is built, tested and pushed. Stripe payments work end to end in Stripe test mode (2026-11-10). Resend login emails work. The landing page (Cocoon template, missions L1–L4) is done and pushed (2026-11-12): `/` English and `/es` Spanish (static), legal pages, bilingual 404, SEO, motion, and `DESIGN.md`.** Twilio and Telegram are postponed (agreed 2026-11-10). **Next: mission G, the system UI grill. The user asked to start it at the beginning of the next session.**
+
+### Session log 2026-11-12 (what this session did)
+
+- Fixed the 77 VS Code "problems" (all markdownlint warnings in this file) and 98 ESLint warnings (vendored `.claude/**` and `.impeccable/**` scripts, now ignored in `eslint.config.mjs`).
+- **L3 motion** (commits `b3a0bf6`, `9583ce2`, `d99661a`): CSS scroll-timeline motion plus 3 `<ViewTransition>`s. QA: 9/10 pass; its defects fixed. The user accepted the clip-path panels.
+- **L4 ship-ready** (`bc96cb0`, `1a5aae8`, `4445634`, `a44d925`, `9e09429`, `7249be6`): the `/es` URL (user's choice), SEO, trimmed client JS, legal pages with the user's grill answers, the 404, `THIRD_PARTY_NOTICES.md`, the finish-review fixes and `DESIGN.md`. Idle Lighthouse: 94–98 everywhere, SEO/a11y/best practices 100. Simulated LCP 2.9 s was accepted (real LCP is 0.46 s; see L4 below).
+- `CLAUDE.md` (untracked) updated for the current landing. Everything pushed to `origin/main`; no servers or agents left running.
+- **Lessons for next time:**
+  - Run Lighthouse only on an idle PC (check CPU first), and measure `/login` as a control; under load the landing's numbers are meaningless.
+  - Parallel workers must not run `npm run build` (they share `.next`); the orchestrator builds.
+  - The `impeccable-finish-reviewer` works only from saved full-page captures: take them first (`.impeccable/review/finish/shots.mjs`, reduced motion so panels show their final state).
+  - Don't run prettier on whole files (the repo isn't formatted with it).
+  - A `next start` left on a port makes the next one fail with EADDRINUSE and you end up measuring the old build: free the port first.
 
 ## Mission plan (START HERE next session)
 
-This is the whole remaining job, in order. Each mission is one unit of work that ends with commits. The next agent works through the missions top to bottom with the workflow below, the same one used on 2026-11-11.
+This is the whole remaining job, in order. Each mission is one unit of work that ends with commits. Work through the missions top to bottom with the team and workflow below (used on 2026-11-12).
 
-### The workflow (same as 2026-11-11)
+### The team (agreed with the user, 2026-11-12)
+
+- **Orchestrator = the head builder** (the main Claude session). It follows this plan, runs the grill with the user, splits each mission into small jobs, hands them out, merges the results, runs the build and the final numbers, shows the user, commits and updates this file. It doesn't hand off decisions that belong to the user.
+- **Workers = the builders** (`general-purpose` agents in the background). Each one does **one small job** with its own list of files. Jobs that don't share files run in parallel. Every brief says: the files to read, which files it owns and which it must not touch, the rules, the checks to run, "do not build, do not commit", and what to report back.
+- **QA = the inspector** (a separate `general-purpose` agent that didn't write the code and doesn't edit it). It tests the work against the mission's pass criteria and reports **PASS or FAIL per criterion** with evidence, plus defects ordered by severity. Failures go back to the worker that owns the files (SendMessage keeps its context) or the orchestrator fixes them; QA re-checks when it matters.
+- Design missions also use the impeccable agents: `impeccable-finish-reviewer` (needs saved captures) and `impeccable-documenter` (updates `DESIGN.md`).
+
+### The workflow
 
 1. **Start of session:**
-   - Read `CLAUDE.md`, `AGENTS.md`, this file and `PRODUCT.md`.
-   - Check that nothing stale is running. Last time, old `next start` servers on ports 3100, 3200 and 3417 skewed the measurements.
+   - Read `CLAUDE.md`, `AGENTS.md`, this file, `PRODUCT.md` and `DESIGN.md`.
+   - Check that nothing stale is running (ports 3000, 3100, 3200, 3417, 3600, 3700).
    - Start `npm run dev` in the background, plus `npm run stripe:listen` for anything that touches payments.
 2. **Grill first when a mission has open decisions** (`/mattpocock-skills:grill-me`):
    - Ask in rounds of numbered questions. Give a recommended answer for each, worded so "yes" accepts it.
    - Ask the whole frontier at once.
-   - Look facts up yourself or with a sub-agent; never ask the user for facts.
+   - Look facts up yourself or with a worker; never ask the user for facts.
    - Record every answer in this file before building.
    - Missions marked **[grill]** need one; the others are already decided.
 3. **Use `/impeccable` for design work:**
    - Run its `context` once per session.
    - For a new surface, write a direction contract with `impeccable surface-brief write`: THESIS, OWN-WORLD, STORY, FIRST VIEWPORT, FORM, FINISH.
    - Read `craft-floor.md` before any UI edit.
-   - Modes: the landing is Persuade. The app screens are Operate: calmer and denser, but the same brand (grayscale, barber red, Geist).
-4. **Build with a worker agent** (`general-purpose`, in the background). Its brief covers:
-   - the files to read
-   - the exact scope and the rules
-   - the checks to run: typecheck, lint, build, the relevant e2e and engine tests, and `impeccable detect --json`
-   - screenshots in `.impeccable/review/`, at 390 and 1440 px, in EN and ES
-   - "do not commit"
-5. **Check with a separate validator agent.** It didn't write the code and doesn't edit it.
-   - It reports PASS/FAIL per criterion with evidence, and defects ordered by severity.
-   - Send the defects back to the worker; SendMessage keeps its context.
-   - Then re-check the key numbers yourself. For example, run Lighthouse on a production build, on a free port, with the PC idle.
+   - Modes: the landing is Persuade. The app screens are Operate: calmer and denser, but the same brand (`DESIGN.md`: grayscale, barber red for live signals, Geist).
+4. **Build with workers** (see "The team"). Their checks: typecheck, lint, the relevant e2e and engine tests, `impeccable detect --json`, and screenshots in `.impeccable/review/` at 390 and 1440 px in EN and ES.
+5. **Inspect with QA.** Then the orchestrator builds and re-checks the key numbers itself (for example Lighthouse on a production build, on a free port, with the PC idle).
 6. **Show the user:**
    - screenshots and what changed
    - every copy claim the product might not back (the user confirms it or softens it)
    - anything the craft rules flag against a user decision
-7. **Commit only after the user says so:**
+   - anything that needs the user (accounts, keys, choices)
+7. **Commit when the user says so** (on 2026-11-12 the user said "fix what's needed, then commit"):
    - Small conventional commits, staged by path (never `git add .`).
-   - Show the proposed list first and scan for secrets.
+   - Scan for secrets first.
    - End each message with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
-   - Update this file (status and next steps) and commit it too.
+   - Update this file (status and next steps) and commit it too. Push only after the user's OK.
 8. **End of session:** stop every server and agent you started; leave nothing running.
 
 Rules for every mission:
@@ -151,14 +164,13 @@ Output: the decisions recorded in this file, `DESIGN.md` extended to cover the a
 ### Needs the user (collected)
 
 - Twilio and Telegram accounts and keys. These block U3b's Telegram screen and the launch claims.
-- The `/privacy` and `/terms` wording (L4).
 - The payment provider for production (U5).
 - The no-show question: does a no-show count as an online Booking and as time saved? This comes from B5; settle it before the U2 dashboard.
-- The craft-rule conflict: the two pill labels on the landing are kept by the user's choice, but the finish review may flag them.
+- The two pill labels on the landing are kept by the user's choice (the finish review and `DESIGN.md` record them as a "don't add more" exception).
 - Before launch: a legal name/LLC for `OPERATOR`, a real `CONTACT_EMAIL`, and `NEXT_PUBLIC_SITE_URL` set at build time.
 - Pre-existing, for U1: on `/b/demo-shop`, `<html lang>` stays `en` after switching to Spanish.
 
-### Landing page v3: Cocoon template (decided 2026-11-11, grill session; START HERE)
+### Landing page v3: Cocoon template (decided 2026-11-11; DONE and pushed 2026-11-12, kept for reference)
 
 The navy "barber-pole" landing below is being **replaced**. Template: `C:\Users\admin\Downloads\cocoon-template-1.0.3\cocoon-template-1.0.3` (templatedeck.com, MIT; Tailwind 4 + vanilla JS, static HTML). **Rebuilt as React + Tailwind v4 in our app**, never copied in as-is. The system UI gets its own grill session **after this ships** (order then: `/b` + `/m` → Barber day view → Owner tools → Platform admin).
 
@@ -245,7 +257,7 @@ Decisions:
   - The `/privacy` and `/terms` copy (EN+ES) is drafted from the grill answers; it becomes `src/lib/i18n/legal.ts`. `/privacy` + `/terms` placeholders (EN/ES), restyled `not-found.tsx`, SEO (`metadataBase`, canonical, sitemap, robots, structured data; also fix the meta description/title landing in `<body>` with `generateMetadata`, Lighthouse SEO 91), `THIRD_PARTY_NOTICES.md` (photo credits + Cocoon MIT), e2e review, full validator run against the pass criteria on an idle PC, then the impeccable finish reviewer and the documenter (`DESIGN.md`).
 - **Open with the user:** the impeccable skill bans pill labels above headings; the user chose two (Q23). Kept; the finish review may flag them.
 
-### Landing page for Shop Owners (2026-11-10, not committed yet)
+### Landing page for Shop Owners, v2 navy (2026-11-10; REPLACED by v3, kept for history)
 
 Plan: `C:\Users\admin\.claude\plans\we-can-set-up-breezy-starlight.md`. The user asked (2026-11-10) to run it as a "mission" with the Factory Missions framework (<https://docs.factory.com/missions/overview.md>): goal → milestones with pass criteria → one worker agent per feature → a separate validator agent that didn't write the code, failures go back to a worker. **Keep using it for what's left.** The milestones are below.
 
@@ -428,10 +440,11 @@ Shell: PowerShell, from the repo root.
 | Alerts (B4) | `src/server/alerts/` (Telegram, email fallback, daily Owner email), `src/server/providers/{telegram,resend}.ts`, `src/app/api/telegram/webhook` |
 | Owner tools (B5) | `src/server/shop-admin/`, `src/server/reporting/`, `src/server/invites.ts` |
 | Platform admin (B6) | `src/server/platform-admin/`, `src/server/logins.ts`, `src/lib/csv.ts` |
-| Landing page | `src/app/page.tsx`, `src/app/_landing/` (one file per section; `ui.tsx` shared pieces; `nav-menu.tsx`, `features-list.tsx`, `head-viewer.tsx` client parts; `heads.ts` gallery manifest), `src/lib/i18n/landing.ts` (all EN/ES copy), `src/app/lead-form.tsx`, `src/app/actions.ts`, `public/landing/` (booking screenshots, head frames), `heads_reference_images/` |
+| Landing page | `src/app/page.tsx` (EN) and `src/app/es/page.tsx` (ES) render `src/app/_landing/landing.tsx`; one file per section in `src/app/_landing/` (`ui.tsx` shared pieces and `WidePanel`, `nav.tsx` with the landing's language link, `hero-phone.tsx` the live demo phone, `live-dot.tsx`, `html-lang.tsx`, `og-card.tsx`); `src/lib/i18n/landing.ts` (all EN/ES copy), `src/app/lead-form.tsx`, `src/app/actions.ts`, `public/landing/photos/` (5 Unsplash WebPs), `src/components/brand/logo.tsx`, `src/app/icon.svg`, `src/app/opengraph-image.tsx` + `src/app/es/opengraph-image.tsx`. Design system: `DESIGN.md`, `.impeccable/design.json`, direction contract `.impeccable/surfaces/src-app-page-tsx.md` |
+| Legal + SEO | `src/lib/i18n/legal.ts` (privacy/terms copy EN/ES; `OPERATOR`, `CONTACT_EMAIL` are launch placeholders), `src/app/_legal/legal-page.tsx`, `src/app/{privacy,terms}/`, `src/app/es/{privacy,terms}/`, `src/app/not-found.tsx` (bilingual), `src/app/sitemap.ts`, `src/app/robots.ts`, `src/lib/site.ts` (`SITE_URL`), `THIRD_PARTY_NOTICES.md` |
 | Leads | `supabase/migrations/20261111090000_leads.sql`, `src/server/leads/` (save, 24h repeat guard, email Platform admins, retry from the daily job), `leads()` in `src/server/senders.ts` |
-| Scripts | `scripts/landing-shots.mjs` (`npm run landing:shots`, booking screenshots for the landing), `scripts/head-frames.mjs` (orbit video or frame folder → WebP turntable frames), `scripts/add-staff.mjs` (`npm run staff:add`), `scripts/telegram-webhook.mjs` (`npm run telegram:webhook`), `scripts/stripe.mjs` (`npm run stripe`, `npm run stripe:listen`; the CLI itself is in `tools/stripe/`, gitignored) |
-| Tests | `tests/unit/` (availability, Twilio and Stripe signatures), `tests/engine/` (booking engine, dispatcher, texting, alerts, payments, shop admin, platform admin, leads; real database), `tests/e2e/` (race, Book now, landing). 143 + 9 in total. |
+| Scripts | `scripts/landing-shots.mjs` (`npm run landing:shots`, booking screenshots for the landing), `scripts/add-staff.mjs` (`npm run staff:add`), `scripts/telegram-webhook.mjs` (`npm run telegram:webhook`), `scripts/stripe.mjs` (`npm run stripe`, `npm run stripe:listen`; the CLI itself is in `tools/stripe/`, gitignored) |
+| Tests | `tests/unit/` (availability, Twilio and Stripe signatures), `tests/engine/` (booking engine, dispatcher, texting, alerts, payments, shop admin, platform admin, leads; real database), `tests/e2e/` (race, Book now, landing 12, legal 10). |
 
 ## Known issues to fix later
 
