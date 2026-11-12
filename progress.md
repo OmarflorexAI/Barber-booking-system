@@ -4,7 +4,7 @@ Last updated: 2026-11-12. Source of requirements: `Barbershop Booking System PRD
 
 ## Where we are
 
-**The backend (B1–B6) is built, tested and pushed. Stripe payments work end to end in Stripe test mode (2026-11-10). Resend login emails work. The landing page is being rebuilt on the Cocoon template (2026-11-11): M1 + M2 are done and committed (not pushed); M3 (motion) is done and committed (2026-11-12). L4 is next.** Twilio and Telegram are postponed (agreed 2026-11-10). Next: follow the **Mission plan** right below, starting at mission L4.
+**The backend (B1–B6) is built, tested and pushed. Stripe payments work end to end in Stripe test mode (2026-11-10). Resend login emails work. The landing page is being rebuilt on the Cocoon template (2026-11-11): M1 + M2 are done and committed (not pushed); M3 (motion) and L4 (ship-ready) are done and committed (2026-11-12), not pushed. Left in L4: an idle-PC Lighthouse run, then `DESIGN.md` (documenter) and the push.** Twilio and Telegram are postponed (agreed 2026-11-10). Next: follow the **Mission plan** right below, starting with the rest of L4 (below), then G.
 
 ## Mission plan (START HERE next session)
 
@@ -63,8 +63,8 @@ Rules for every mission:
 | --- | --- | --- | --- |
 | L1+L2 | Landing foundation + sections | none (decided) | **DONE 2026-11-11** (`d496896`, `158c7ca`) |
 | L3 | Landing motion | none (decided) | **DONE 2026-11-12** |
-| L4 | Landing ship-ready | short [grill] for the /privacy and /terms wording | **NEXT** |
-| G | System UI grill | **[grill]** | after L4 |
+| L4 | Landing ship-ready | short [grill] for the /privacy and /terms wording | **DONE 2026-11-12** except the idle-PC Lighthouse run, `DESIGN.md` and the push |
+| G | System UI grill | **[grill]** | **NEXT** |
 | U1 | Client booking `/b` + manage `/m` (with online payment) | covered by G | after G |
 | U3a | Barber day view `/app/day` | covered by G | after U1 |
 | U2 | Owner tools | covered by G, plus a short [grill] for the dashboard numbers | after U3a |
@@ -155,7 +155,9 @@ Output: the decisions recorded in this file, `DESIGN.md` extended to cover the a
 - The payment provider for production (U5).
 - The no-show question: does a no-show count as an online Booking and as time saved? This comes from B5; settle it before the U2 dashboard.
 - The craft-rule conflict: the two pill labels on the landing are kept by the user's choice, but the finish review may flag them.
-- Pushing to GitHub: the commits from 2026-11-11 are local only.
+- Pushing to GitHub: the commits from 2026-11-11 and 2026-11-12 are local only.
+- Before launch: a legal name/LLC for `OPERATOR`, a real `CONTACT_EMAIL`, and `NEXT_PUBLIC_SITE_URL` set at build time.
+- Pre-existing, for U1: on `/b/demo-shop`, `<html lang>` stays `en` after switching to Spanish.
 
 ### Landing page v3: Cocoon template (decided 2026-11-11, grill session; START HERE)
 
@@ -225,7 +227,18 @@ Decisions:
   - Checks (Claude): typecheck, lint 0/0, build, landing e2e 7/7, impeccable detector `[]`, no sideways scroll at 390/1440, no reveal stuck partly hidden at 390/1440 with motion on or off, the 3 view transitions fire with their types and no console errors. Lighthouse (production build, idle PC at 14–20% CPU, phone profile): Performance 94/95/95, CLS 0, TBT 70–120 ms, a11y 100, best practices 100, SEO 91.
   - **LCP is 2.8–3.0 s (target < 2.5 s), the same as the M2 commit on the same PC (2.8–2.9 s), so M3 didn't cause it.** The LCP element is the hero paragraph; ~84% is "render delay". For M4: look at why the hero text paints late (the page streams inside `<Suspense>` because the locale comes from the cookie; the client JS).
   - Screenshots and scripts: `.impeccable/review/m3/` (gitignored).
-- **M4 Ship-ready: NEXT.** Includes fixing the LCP (above) and the JS-off blank page. Found 2026-11-12:
+- **M4 Ship-ready: DONE 2026-11-12, committed.** Built by 2 worker agents in parallel (A: `/es` + SEO + JS trim; B: legal pages, 404, notices), then a QA agent and the impeccable finish reviewer; their fixes applied.
+  - `/` English and `/es` Spanish, both fully static (prerendered; work with JS off; metadata in `<head>`). `src/proxy.ts` sends `/` to `/es` (307, query kept) when the `lang` cookie is es, or with no cookie when Accept-Language prefers Spanish; `/?lang=en|es` saves the cookie and drops the parameter (the no-JS way to switch). The landing toggle sets the cookie and `router.push`es the clean URL in a `lang-switch` transition. Shared `Landing` component in `_landing/landing.tsx`.
+  - SEO: `metadataBase` from `src/lib/site.ts` (`NEXT_PUBLIC_SITE_URL`, else Vercel's production URL, else localhost; **launch prerequisite: set it at build time**, the URLs are baked into static pages), canonical, hreflang en/es/x-default, OG images per locale (`og-card.tsx`), `sitemap.ts` (6 URLs + alternates), `robots.ts` (blocks /app, /api, /auth, /m/, /login), JSON-LD Organization/WebSite/WebPage (no ratings or prices). Lighthouse SEO 100, a11y 100, best practices 100.
+  - Legal: `/privacy`, `/terms`, `/es/privacy`, `/es/terms` from `src/lib/i18n/legal.ts` (copy from the grill; `OPERATOR` and `CONTACT_EMAIL` are launch prerequisites), `_legal/legal-page.tsx`; bilingual `not-found.tsx`; `THIRD_PARTY_NOTICES.md` (Cocoon MIT, 5 Unsplash credits, Geist OFL).
+  - Client JS: the lead form and nav get only their strings (no EN+ES dictionary in any chunk); Turnstile's code loads only near the form; Turnstile is dark and `interaction-only`; Send stays live and, pressed before the bot check finishes, waits and sends itself.
+  - Finish-review fixes: the form above; the 404's two languages at equal weight with aligned buttons (both stay white: same action, two languages); pricing headers reserve 2 lines so the dividers line up. Demo special "until November 21" → "Weekday special" / "Oferta entre semana" (it would have gone stale).
+  - QA: 22/22 e2e (landing + legal), axe 0 violations on all pages at 390/1440, no sideways scroll at 360–1440 EN/ES, redirects and JS-off all pass, view transitions all fire, no console errors.
+  - **Accepted (Claude's call, 2026-11-12):** the raw server HTML of `/es/*` says `<html lang="en">`; the inline script sets `es` before paint, and every page root carries the right `lang`. The fix (a second root layout for `/es`) would turn every language switch into a full page load. Revisit only if a crawler or screen reader shows a real problem.
+  - **Deploy note:** `/` is cached as static but redirected by the proxy per cookie/language. Correct on Vercel (the proxy runs before the cache); a URL-only CDN in front would serve English to everyone.
+  - **Still open in L4:** Lighthouse Performance on an idle PC. On 2026-11-12 the PC was under a game's load (CPU 48–90%): landing 54–66, `/login` 93 under the same load. The trace shows the landing's long tasks are the main thread waiting on the GPU process (software raster of the full-width photos and the blurred sticky header in headless Chrome), not our JS. Before L4, idle runs gave 94/95/95. Re-measure idle; if it's under 90, try dropping `backdrop-blur` on the header and smaller photo `sizes` first.
+  - Then the `impeccable-documenter` agent writes `DESIGN.md`, and push to GitHub after the user's OK.
+- **(Old M4 plan, kept for reference.)** Includes fixing the LCP (above) and the JS-off blank page. Found 2026-11-12:
   - The *observed* LCP is 0.5 s; Lighthouse's 2.8 s is its throttled simulation, which counts the landing's client JS. `/login` (same framework) gets 0.8 s, so trim the landing's JS: `lead-form.tsx` and `hero-phone.tsx` import the whole EN+ES `landing.ts` (~49 KB chunk); pass only the current locale's strings as props. The Turnstile code (~22 KB) is in the first load; load it with the form.
   - SEO 91 = the meta description is missing from `<head>`: `generateMetadata` reads the cookie, so Next streams it into `<body>` (by design; Googlebot reads it, Lighthouse doesn't). Proposed fix (ask the user): a real `/es` URL for the Spanish landing, so both versions are static (metadata in `<head>`, hreflang, prerendered, works with JS off), with `/` redirecting Spanish visitors by cookie / Accept-Language.
   - The `/privacy` and `/terms` copy (EN+ES) is drafted from the grill answers; it becomes `src/lib/i18n/legal.ts`. `/privacy` + `/terms` placeholders (EN/ES), restyled `not-found.tsx`, SEO (`metadataBase`, canonical, sitemap, robots, structured data; also fix the meta description/title landing in `<body>` with `generateMetadata`, Lighthouse SEO 91), `THIRD_PARTY_NOTICES.md` (photo credits + Cocoon MIT), e2e review, full validator run against the pass criteria on an idle PC, then the impeccable finish reviewer and the documenter (`DESIGN.md`).
