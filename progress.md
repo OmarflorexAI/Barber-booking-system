@@ -37,6 +37,12 @@ Decisions:
   - Pricing: `pricing-red-chairs.webp` (JJ Shev, VrxWLZnCcBA)
   - Rejected: two photos whose subject is a face (one read as "our team").
   - Credits and the template's MIT notice go in `THIRD_PARTY_NOTICES.md`; no "Made by templatedeck" on the page.
+- **Copy approved as written (2026-11-11)**, including claims that are **launch prerequisites** (the page must not go public before they're true):
+  - Owner client export: backend only today; the button comes with U2.
+  - Real (not test-mode) online payments.
+  - The setup-visit promise "your link works the same day".
+  - The morning Owner email needs a verified Resend domain.
+  - Twilio texts and Telegram alerts live (How it works, the phone's "We'll text you a reminder").
 - **Logo: CHOSEN 2026-11-11, option A "open scissors"**: two finger rings, tapered blades crossing at a red pivot. Source: `public/brand/mark.svg` (32×32; the light version for dark backgrounds). The build turns it into a `currentColor` React component plus the favicon and OG image. Wordmark: "Barber Master" in Geist semibold, tracking −0.02em.
 - **404:** restyled `not-found.tsx`, EN/ES.
 - **Pass criteria** (validator agent, production build, Lighthouse phone profile):
