@@ -6,7 +6,9 @@ import { Container, focusRing } from "./ui";
 const link = `inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-sm text-muted-foreground transition-colors hover:text-foreground ${focusRing}`;
 
 /** Footer: the name, what it is, the legal pages and the staff door. */
-export function Footer({ t }: SectionProps) {
+export function Footer({ locale, t }: SectionProps) {
+  // The legal pages come in both languages: Spanish pages link to /es/privacy and /es/terms.
+  const prefix = locale === "es" ? "/es" : "";
   return (
     <footer className="border-t border-border py-12">
       <Container className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
@@ -17,12 +19,12 @@ export function Footer({ t }: SectionProps) {
         <nav aria-label={t.footerLinks}>
           <ul className="flex flex-wrap items-center gap-x-6">
             <li>
-              <Link href="/privacy" transitionTypes={["page"]} className={link}>
+              <Link href={`${prefix}/privacy`} transitionTypes={["page"]} className={link}>
                 {t.privacy}
               </Link>
             </li>
             <li>
-              <Link href="/terms" transitionTypes={["page"]} className={link}>
+              <Link href={`${prefix}/terms`} transitionTypes={["page"]} className={link}>
                 {t.terms}
               </Link>
             </li>

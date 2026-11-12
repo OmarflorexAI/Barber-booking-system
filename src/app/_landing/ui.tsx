@@ -40,13 +40,6 @@ export const whitePill = `${pillBase} bg-white text-black hover:bg-white/85`;
 export const outlinePill = `${pillBase} border border-white/30 text-white hover:bg-white/10`;
 
 /**
- * Restyles the shared language toggle (a light-theme pill) as plain text for the
- * dark page. Used by the nav.
- */
-export const toggleSkin =
-  "[&_button]:inline-flex [&_button]:min-h-11 [&_button]:items-center [&_button]:rounded-full [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-3 [&_button]:text-sm [&_button]:text-muted-foreground [&_button]:transition-colors [&_button:hover]:text-foreground [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-solid [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-foreground [&_button:disabled]:opacity-60";
-
-/**
  * A wide panel. Its content sits in a 1152px column; its background (photo, gradient)
  * is a full-width layer clipped to that column with rounded corners. On scroll the clip
  * opens to the full window (see `.landing-widen` in globals.css). Only the clip moves,

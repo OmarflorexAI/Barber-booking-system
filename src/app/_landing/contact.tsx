@@ -1,6 +1,12 @@
-import { LeadForm } from "../lead-form";
+import { LeadForm, type LeadFormText } from "../lead-form";
 import type { SectionProps } from "./types";
 import { CONTACT_ID, FORM_ID, type } from "./ui";
+
+/** Only the form's own strings go to the browser (LeadForm is a client component). */
+function leadFormText(t: SectionProps["t"]): LeadFormText {
+  const { shopName, ownerName, phone, neighborhood, optional, barbers, barbersPick, barbersMore, message, messageHint, send, sending, verifying, thanksTitle, thanksBody, errors } = t;
+  return { shopName, ownerName, phone, neighborhood, optional, barbers, barbersPick, barbersMore, message, messageHint, send, sending, verifying, thanksTitle, thanksBody, errors };
+}
 
 /** The template's centered contact card, holding our lead form (with the Turnstile bot check). */
 export function Contact({ locale, t }: SectionProps) {
@@ -21,7 +27,7 @@ export function Contact({ locale, t }: SectionProps) {
           <p className="mx-auto mt-4 max-w-[46ch] text-lg leading-relaxed text-muted-foreground">{t.formBody}</p>
         </div>
         <div id={FORM_ID} className="mt-10">
-          <LeadForm locale={locale} />
+          <LeadForm locale={locale} t={leadFormText(t)} />
         </div>
       </div>
     </section>
