@@ -1,6 +1,6 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-13 (G, U1, U3a done; next U2, waiting on the user's dashboard reference image). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-13 (G, U1, U3a done and pushed; the day-view undo is done; next U2: Settings first, the Dashboard after the user's reference image). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
@@ -158,7 +158,14 @@ Output: the decisions recorded in this file, `DESIGN.md` extended to cover the a
 - Shell `src/app/app/layout.tsx` + `_shell/` (`getStaff()` once per request; `--tabbar-h`, `--shell-bottom`); stub pages `/app/me` (name, language, sign out, temporary "our team sets this up" line), `/app/settings` (8 sections as plain rows, admin link, sign out), `/app/dashboard` (one line). Landing after sign-in is `/app/day` for everyone (U4: one line marked `// U4: "/admin"` in `_shell/staff.ts`). Callback blocks `//`, `/\` and absolute `next=`.
 - Day view `src/app/app/day/`: `day-board.tsx` (rows, now line by translateY, new dot = online Booking confirmed in the last 2 h, row sheet, cancel confirm with refund copy that depends on `sms_enabled`/payment, move via new `moveAsStaffAction` → `rescheduleBooking`, walk-in sheet), Owner chips on phones and per-Barber columns ≥1024px. Telegram button removed (comes back in Me, U3b; its actions stay in `day/actions.ts`).
 - QA: typecheck/lint, e2e 13/13 (`day.spec.ts` 6), a Barber's tampered server actions on another Barber's booking refused, redirects safe, axe 0 on Day/sheets/Me/Settings/Dashboard, no sideways scroll at 360, walk-in pill doesn't cover the last row, red only on now line + dot. Fixed after QA: h1 on the not-linked view, `viewportFit: "cover"` (safe-area insets work), Owner title says "Day" on other dates.
-- **Open (small):** no swipe-down to close sheets; walk-in start time not editable and no "next free" offer; "new" dot is a fixed 2 h window (DESIGN.md says "since the Barber last looked"); unused keys `day.noServices`, `notMember`; Spanish tab names "Perfil" (Me) and "Resumen" (Dashboard) to confirm; page `<title>`s English only. **Decision for the user:** the engine can't undo Arrived/No-show or remove a mistaken walk-in. Add an undo?
+- **Open (small):** no swipe-down to close sheets; walk-in start time not editable and no "next free" offer; "new" dot is a fixed 2 h window (DESIGN.md says "since the Barber last looked"); unused keys `day.noServices`, `notMember`; page `<title>`s English only.
+- **User answers (2026-11-13, after U3a):**
+  - **Undo: yes.** Arrived/No-show → back to Confirmed, and a mistaken Walk-in can be removed. **DONE**: engine `undoAttendance` + `removeWalkIn` (walk-in becomes cancelled, no outbox rows, leaves the stats), 3 engine tests + 1 e2e step, gray "Undo" chip and "Remove walk-in" with a confirm in the row sheet.
+  - Spanish tab names **"Perfil" (Me) and "Resumen" (Dashboard) approved.**
+  - The 37 orphan pending `barber_alert` rows (booking_id null, from old test runs) were **deleted** with the user's OK; the 11 done and 20 skipped ones are kept as history.
+  - **Pushed** to GitHub (`509ab8a..79bb3c6`) with the user's OK.
+  - Payments confirmed working end to end in Stripe test mode. The Link/Klarna-via-Link button on Checkout is a Stripe Dashboard setting on the connected account (user to turn it off).
+  - **Dashboard reference image:** the user will paste it in chat or save it to `.impeccable/review/refs/` (gitignored). U2's Dashboard waits for it; U2's Settings pages don't.
 - **Token note (user, 2026-11-13):** the session hit the 5-hour usage limit mid-QA. From now on every mission is split into **small agent jobs** (one screen or concern each, short reports, narrow QA).
 
 **U1 Client booking (`/b/<shop>`, `/m/<token>`).**
@@ -928,7 +935,7 @@ Both were stopped at the end of the 2026-11-09 session on purpose. If pages relo
 
 **Then:**
 
-- **Follow the Mission plan at the top.** L1–L4 are done and pushed (2026-11-12). **Start with G, the system UI grill** (the user asked to begin it next session), then U1 → U3a → U2 → U3b → U4 → U5.
+- **Follow the Mission plan at the top.** L1–L4, G, U1 and U3a are done and pushed (2026-11-13). Next: **U2 Settings pages** (small agent jobs, one page each), then the **U2 Dashboard** once the user's reference image is in, then U3b → U4 → U5. Keep agent jobs small (user's rule, 2026-11-13).
 
 **Left for the deploy (U5):**
 
