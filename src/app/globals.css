@@ -25,6 +25,10 @@
   --ok-soft: var(--raised);
   --warn: var(--ink);
   --warn-soft: var(--raised);
+  /* The one data color: Dashboard bars only (today / per-Barber, and the other days).
+     6.0:1 and 3.5:1 on --surface. Never for text, status or anything else. */
+  --data: oklch(50% 0.085 255);
+  --data-soft: oklch(63% 0.06 255);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -36,6 +40,8 @@
     --muted: oklch(64% 0 0);
     --ink: oklch(93% 0 0);
     --red: oklch(62% 0.2 27);
+    --data: oklch(70% 0.08 255); /* 7.7:1 on --surface */
+    --data-soft: oklch(52% 0.055 255); /* 3.7:1 on --surface */
   }
 }
 /* The saved dark choice; and inside the always-dark landing look (.landing, also /login),
@@ -50,6 +56,8 @@
   --muted: oklch(64% 0 0);
   --ink: oklch(93% 0 0);
   --red: oklch(62% 0.2 27);
+  --data: oklch(70% 0.08 255);
+  --data-soft: oklch(52% 0.055 255);
 }
 
 @theme inline {
@@ -59,6 +67,8 @@
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-red: var(--red);
+  --color-data: var(--data);
+  --color-data-soft: var(--data-soft);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
