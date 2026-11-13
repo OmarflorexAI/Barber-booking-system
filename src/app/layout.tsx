@@ -31,7 +31,8 @@ export const viewport: Viewport = {
  * (cacheComponents keeps <html> in the static shell), so an inline script in <head> reads it
  * (Next's "preventing flash" pattern). No cookie: no attribute, and the CSS follows the phone.
  */
-const themeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )theme=(light|dark)(?:;|$)/);if(m)document.documentElement.setAttribute("data-theme",m[1])}catch(e){}})()`;
+// It also points the browser bar color (meta theme-color) at the saved theme once the head is parsed.
+const themeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )theme=(light|dark)(?:;|$)/);if(!m)return;var t=m[1];document.documentElement.setAttribute("data-theme",t);var c=t==="dark"?"#010101":"#fafafa";var f=function(){document.querySelectorAll('meta[name="theme-color"]').forEach(function(e){e.setAttribute("content",c)})};f();document.addEventListener("DOMContentLoaded",f)}catch(e){}})()`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

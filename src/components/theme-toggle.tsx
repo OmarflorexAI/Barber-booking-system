@@ -65,6 +65,8 @@ export function ThemeToggle({ label }: { label: string }) {
         const next: Theme = currentTheme() === "dark" ? "light" : "dark";
         document.documentElement.setAttribute("data-theme", next);
         document.cookie = `${THEME_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
+        // Browser bar color follows the chosen ground (same values as layout.tsx viewport.themeColor).
+        document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", next === "dark" ? "#010101" : "#fafafa"));
         window.dispatchEvent(new Event(CHANGE_EVENT));
       }}
       className="theme-toggle inline-grid h-11 w-11 shrink-0 place-items-center rounded-full border border-line text-muted transition-colors hover:border-ink/40 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"

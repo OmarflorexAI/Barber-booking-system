@@ -119,7 +119,7 @@ body {
   @apply rounded-2xl border border-line bg-surface;
 }
 @utility field {
-  @apply min-h-12 w-full rounded-xl border border-line bg-surface px-4 text-base text-ink outline-none focus:border-ink;
+  @apply min-h-12 w-full rounded-xl border border-line bg-surface px-4 text-base text-ink focus:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink;
 }
 
 

@@ -313,7 +313,7 @@ Six tokens, defined on `:root` in `src/app/globals.css` for light and redefined 
 ### Theme switching
 
 - **Default:** follow the phone (`prefers-color-scheme`). With no saved choice, a phone in light mode gets light and a phone in dark mode gets dark.
-- **Switch:** a sun/moon icon button in the header of every app screen, **right next to the language toggle**, at least 44px. It shows the theme you would switch to (moon in light, sun in dark), has an EN/ES accessible name ("Dark mode" / "Modo oscuro", "Light mode" / "Modo claro"), and tapping it flips the theme and saves the choice.
+- **Switch:** a sun/moon icon button in the header of every app screen, **right next to the language toggle**, at least 44px. It shows the theme you would switch to (moon in light, sun in dark), is a toggle button with one fixed EN/ES name ("Dark mode" / "Modo oscuro") and `aria-pressed` = dark (a toggle's name must not change with its state), and tapping it flips the theme and saves the choice.
 - **Saved** in a cookie, the same way `lang` is, so the server renders the right theme.
 - **No flash.** The first paint is already in the right theme: the saved choice is rendered on `<html>` by the server, and with no cookie the CSS media query decides, so no script has to run first. The browser `theme-color` follows the theme.
 - **Always dark, no switch:** `/login` (the bridge from the landing, in the landing's look), the landing, the legal pages and the 404.

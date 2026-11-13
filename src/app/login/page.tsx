@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Wordmark } from "@/components/brand/logo";
 import { LanguageToggle } from "@/components/language-toggle";
+import { HtmlLang } from "@/app/_landing/html-lang";
 import { getDictionary } from "@/lib/i18n/server";
 import { LoginForm } from "./login-form";
 
@@ -37,7 +38,12 @@ export default function LoginPage() {
 
 async function Toggle() {
   const { locale, t } = await getDictionary();
-  return <LanguageToggle locale={locale} label={t.otherLang} />;
+  return (
+    <>
+      <HtmlLang lang={locale} />
+      <LanguageToggle locale={locale} label={t.otherLang} />
+    </>
+  );
 }
 
 async function Login() {
