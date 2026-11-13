@@ -13,6 +13,11 @@ const sql = postgres(process.env.DATABASE_URL!, { prepare: false, max: 1 });
 const TAG = `E2E Race ${Date.now()}`;
 
 test.afterAll(async () => {
+  // Outbox rows point at the Booking with "on delete set null": remove them first, or they
+  // would be left behind with no Booking and could never be processed.
+  await sql`
+    delete from public.outbox where booking_id in (
+      select b.id from public.bookings b join public.clients c on c.id = b.client_id where c.name like ${`${TAG}%`})`;
   await sql`delete from public.clients where name like ${`${TAG}%`}`;
   await sql.end();
 });
@@ -51,7 +56,7 @@ test("two Clients race for one Slot: exactly one gets it", async ({ browser }) =
 
   await Promise.all([a.getByRole("button", { name: "Book now" }).click(), b.getByRole("button", { name: "Book now" }).click()]);
 
-  const booked = (p: Page) => p.getByText("You're booked!");
+  const booked = (p: Page) => p.getByRole("heading", { name: "You're booked" });
   const taken = (p: Page) => p.getByText("That time was just taken. Please pick another.");
   await expect(booked(a).or(taken(a))).toBeVisible();
   await expect(booked(b).or(taken(b))).toBeVisible();
