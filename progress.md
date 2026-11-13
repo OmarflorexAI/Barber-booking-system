@@ -1,6 +1,6 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-13 (G, U1, U3a done and pushed; the day-view undo is done; next U2: Settings first, the Dashboard after the user's reference image). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-13, end of session (G, U1, U3a done; U2 partly done; next: finish P1, then the premium pass P2–P5. See "U2 status → Milestones left"). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
@@ -80,7 +80,7 @@ Rules for every mission:
 | G | System UI grill | **[grill]** | **DONE 2026-11-13** (`d57426d`: answers below, DESIGN.md "App (Operate mode)", 6 surface briefs) |
 | U1 | Client booking `/b` + manage `/m` (with online payment) | covered by G | **DONE 2026-11-13** (`322f56f` … `48dbd8b`, see "U1 status") |
 | U3a | Barber day view `/app/day` | covered by G | **DONE 2026-11-13** (`559301f` shell, `9d16eec` day view; see "U3a status") |
-| U2 | Owner tools | covered by G, plus a short [grill] for the dashboard numbers | after U3a |
+| U2 | Owner tools | covered by G + Dashboard grill Q38–Q42 | **PARTLY DONE 2026-11-13** (Dashboard, link+QR, export, rules, blocklist); premium pass P1–P5 + 4 Settings pages left (see "U2 status") |
 | U3b | Barber profile, hours, Connect Telegram | covered by G | with or after U2 |
 | U4 | Platform admin panel | short [grill] | after U2 |
 | U5 | Hardening + launch | short [grill]: hosting, domain, payment provider | last |
@@ -153,6 +153,26 @@ Output: the decisions recorded in this file, `DESIGN.md` extended to cover the a
   - Day chips don't grey out closed days/days off yet (needs a month of availability). Demo Barber specialties are English only.
   - Copy that makes claims (check before launch): `smsConsent` (confirmation + reminder texts), "We hold your time for 10 minutes", refund lines ("on its way to your card", no timing promised).
 
+**U2 status (2026-11-13, end of session; START HERE next session).**
+
+Done and committed (not pushed after `3dc7572`): `8d93623` Settings list + `/app/settings/link` (URL, copy/share, printable QR sign; adds `qrcode`) + `/app/settings/export` (CSV route `export/download/route.ts`, 403 for non-Owners) · `de75497` `/app/settings/rules` (cutoff + over-2h warning) and `/app/settings/blocklist` · `36cf5e4` + `ec33ae0` `reporting().dashboardWeek` (totals, previous week, 7 days with `byBarber`/`byHour`/`noShows`/`timeSavedMin`, `hours` span, Barbers with a Mon–Sun `days` series) · `4f69d20` `/app/dashboard` (hero Bookings + gray deltas, Walk-ins/No-shows/Time saved cards, Mon–Sun bars, Bookings per Barber, week stepper; `--data`/`--data-soft` slate-blue tokens) · `81bf842` agents `bm-worker`, `bm-qa`. Settings guard `settings/_owner.ts`; e2e `settings-link`, `settings-rules`, `dashboard` specs.
+
+**The user's verdict on the Dashboard (2026-11-13):** "good but very simple"; no animations, everything static. Wants: **hide/show sidebar**; **more life**; **at least one interactive section** (tap/click to see in-depth data); cards less plain; **smooth, clean, high-quality animations**; **the calendar section designed much better** (read as the Today/Day view; also upgrade the Dashboard's week chart); **Settings also needs animation and life**; "super premium and cutting edge". Use **taste-skill** (`design-taste-frontend` 2.5.1, updated this session via `npx skills add Leonxlnx/taste-skill -g`; guidance only, don't run its Chrome scripts; one scanner rated it "Critical Risk", the files were checked: markdown + optional checker scripts) **and `/impeccable`**. All earlier rules still hold: one data color only for charts, red only for live signals, gray deltas (no red/green), no goals/search/bells, EN/ES, transform/opacity animation only, reduced motion respected, ≥44px targets.
+
+Demo data: 23 sample Bookings were added to **demo-shop** for the weeks of Nov 2 and Nov 9 (Clients named "Demo Rafa", "Demo Luz", … phones +1212555910x) so the user could see the Dashboard. Delete them when the user says so.
+
+**Milestones left (in order, each one small `bm-worker` job, then commit):**
+
+1. **P1 Motion system + collapsible sidebar. IN PROGRESS at session end, uncommitted.** Brief: motion tokens/utilities in globals.css (`.enter`, stagger via `--i`, `.press`, `.lift`, all inside `prefers-reduced-motion: no-preference`), `src/components/motion/count-up.tsx` (+ `reveal.tsx`), sidebar collapse to an icon rail ≥1024px (toggle with `aria-expanded`, cookie `sidebar=collapsed|expanded` applied before paint by the root inline script → `<html data-sidebar>`, `[` shortcut), sliding active-tab indicator + press feedback on the phone tab bar, subtle page entrance, `tests/e2e/sidebar.spec.ts`. Partial files in the tree: `src/app/layout.tsx` (inline script already reads the sidebar cookie), `src/app/globals.css`, `src/app/app/_shell/sidebar.tsx`, `dictionaries.ts`. **Next session: check `git status`; finish or re-run P1 (typecheck, lint, day/dashboard/sidebar e2e), then commit.**
+2. **P2 Dashboard redesign** (after P1; uses P2a data, already committed): richer cards (soft depth, inner hairline, a 7-day sparkline in each stat card from `days`), CountUp numbers, bars that grow in on load with stagger, today's bar highlighted with a count bubble (ref 4), hover/press states. **Interactive drill-down:** tap a day bar → a panel/sheet with that day's by-hour chart, by-Barber split, no-shows and time saved; tap a Barber → their week sparkline + numbers. A better week picker. Use the 4 references in `.impeccable/review/refs/` for layout and finish only (not their colors or goals).
+3. **P3 Calendar (Day/Today view) redesign** (after P1): a real time grid (blocks sized by duration, hour gridlines, the now line on the grid), a swipeable week strip date picker, smooth sheet open/close (and swipe-down to close), animated row state changes (arrived/no-show/undo), Owner desktop columns as a proper multi-column calendar.
+4. **P4 Settings life** (after P1): staggered list entrance, row press/hover, smooth page transitions between Settings pages, animated success states (Saved, Copied, Unblocked), QR reveal.
+5. **P5 QA** with `bm-qa` (P2–P4 criteria: motion smooth at 60fps, reduced-motion final states, axe 0, no sideways scroll at 360, red/data-color rules, e2e green), then the orchestrator: build + one Lighthouse run on an idle PC, show the user in the browser (open a signed-in session for the user's email via a service-role magic link, as done this session), commit, push after OK.
+6. **U2 remaining Settings pages** (one job each): Services & prices (with specials) · Hours & closed days · Barbers (invite/remove, max 6) · Online payments (Stripe status + connect button). Turn their "Soon" rows into links.
+7. **U3b Me:** Profile (photo upload to Supabase Storage, resized on the phone), Gallery (3–6), Hours & days off, Alerts (Connect Telegram link/QR; the actions already exist in `day/actions.ts`). Replace the temporary Me copy.
+8. **U4 `/admin`:** Shops list, Create Shop, Shop detail, Failures + retry, Access log; then flip the `// U4: "/admin"` landing line in `_shell/staff.ts`.
+9. **U5 Hardening + launch** (needs the user: hosting, domain, payment provider, Twilio/Telegram keys, Link off in Stripe).
+
 **U3a status (DONE 2026-11-13, committed, not pushed).** Two workers (shell; day view) + a QA agent (narrowed after the usage limit hit: 5/5 checked criteria pass).
 
 - Shell `src/app/app/layout.tsx` + `_shell/` (`getStaff()` once per request; `--tabbar-h`, `--shell-bottom`); stub pages `/app/me` (name, language, sign out, temporary "our team sets this up" line), `/app/settings` (8 sections as plain rows, admin link, sign out), `/app/dashboard` (one line). Landing after sign-in is `/app/day` for everyone (U4: one line marked `// U4: "/admin"` in `_shell/staff.ts`). Callback blocks `//`, `/\` and absolute `next=`.
@@ -165,7 +185,8 @@ Output: the decisions recorded in this file, `DESIGN.md` extended to cover the a
   - The 37 orphan pending `barber_alert` rows (booking_id null, from old test runs) were **deleted** with the user's OK; the 11 done and 20 skipped ones are kept as history.
   - **Pushed** to GitHub (`509ab8a..79bb3c6`) with the user's OK.
   - Payments confirmed working end to end in Stripe test mode. The Link/Klarna-via-Link button on Checkout is a Stripe Dashboard setting on the connected account (user to turn it off).
-  - **Dashboard reference image:** the user will paste it in chat or save it to `.impeccable/review/refs/` (gitignored). U2's Dashboard waits for it; U2's Settings pages don't.
+  - **Dashboard references** received: 4 images in `.impeccable/review/refs/` (gitignored): ref1 big "98" hero number + stat row with deltas, ref2 quick-stat cards, ref3 profile card + "Developed areas" horizontal bars, ref4 Flusync per-person bars + Mon–Sun Activity bars. The user also likes the taste-skill (Leonxlnx); it is already installed as `~/.claude/skills/design-taste-frontend` (copy from April 2026); use it with `/impeccable` for polish.
+  - **Dashboard grill (Q38–Q42, 2026-11-13):** one soft **data color** (muted slate-blue, contrast-checked light/dark) **only for chart bars and per-Barber bars**; cards stay neutral, red stays live-only · week-over-week changes as **gray ↑/↓ + "+N vs last week"**, never green/red · layout: hero **Bookings this week** + delta; row **Walk-ins · No-shows · Time saved** with deltas; **Mon–Sun bar chart** (today highlighted, count on the bar); **Bookings per Barber** horizontal bars with photo/initials (right column on desktop); **‹ week ›** stepper · **no** goal bars, search, bells or upgrade buttons · **no money** on the Dashboard for v1 (Booking prices aren't takings).
 - **Token note (user, 2026-11-13):** the session hit the 5-hour usage limit mid-QA. From now on every mission is split into **small agent jobs** (one screen or concern each, short reports, narrow QA).
 
 **U1 Client booking (`/b/<shop>`, `/m/<token>`).**
@@ -935,7 +956,7 @@ Both were stopped at the end of the 2026-11-09 session on purpose. If pages relo
 
 **Then:**
 
-- **Follow the Mission plan at the top.** L1–L4, G, U1 and U3a are done and pushed (2026-11-13). Next: **U2 Settings pages** (small agent jobs, one page each), then the **U2 Dashboard** once the user's reference image is in, then U3b → U4 → U5. Keep agent jobs small (user's rule, 2026-11-13).
+- **Follow the Mission plan at the top, starting at "U2 status → Milestones left".** L1–L4, G, U1, U3a are done; U2 is partly done. Keep agent jobs small (user's rule, 2026-11-13): use the project agents `bm-worker` (builder, one job) and `bm-qa` (inspector, Sonnet), defined in `.claude/agents/`, so briefs only carry the task and the file list.
 
 **Left for the deploy (U5):**
 
