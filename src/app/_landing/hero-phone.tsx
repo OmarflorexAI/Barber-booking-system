@@ -7,12 +7,14 @@ import { LiveDot } from "./live-dot";
 
 type Phone = LandingDictionary["heroPhone"];
 
-/* The real booking page's palette (light, warm paper), so the demo looks like what clients get. */
+/* The real booking page's light palette (achromatic, globals.css :root), so the demo looks like
+   what clients get: ground #fafafa, white cards, hairline #dedede, ink #0f0f0f, muted #5d5d5d,
+   raised #f0f0f0, black pills, and the light red (#cc2827) only on the booked check. */
 const c = {
-  paper: "bg-[#f5f2ee]",
-  card: "rounded-[14px] border border-[#e3ddd3] bg-white",
-  ink: "text-[#1d1b18]",
-  muted: "text-[#6c665d]",
+  paper: "bg-[#fafafa]",
+  card: "rounded-[14px] border border-[#dedede] bg-white",
+  ink: "text-[#0f0f0f]",
+  muted: "text-[#5d5d5d]",
 } as const;
 
 /**
@@ -74,7 +76,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
               <span className="min-w-0">
                 <span className="block text-[13px] font-medium leading-tight">{s.name}</span>
                 <span className={`block text-[11px] ${c.muted}`}>{s.min} min</span>
-                {s.special && <span className="mt-1 inline-block rounded-full bg-[#f7e3df] px-1.5 py-px text-[9.5px] text-[#b3352a]">{s.special}</span>}
+                {s.special && <span className="mt-1 inline-block rounded-full bg-[#f0f0f0] px-1.5 py-px text-[9.5px] text-[#0f0f0f]">{s.special}</span>}
               </span>
               <span className="shrink-0 text-right">
                 {s.was ? (
@@ -104,7 +106,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
             >
               <span
                 className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12px] font-semibold ${
-                  b === null ? "bg-[#1d1b18] text-white" : "bg-[#efe9e0] text-[#1d1b18]"
+                  b === null ? "bg-[#0f0f0f] text-white" : "bg-[#f0f0f0] text-[#0f0f0f]"
                 }`}
               >
                 {b === null ? (
@@ -128,7 +130,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
 
     // 2. Times
     <Screen key="t" title={p.pickTime} p={p} lang={lang} onBack={() => go(1)}>
-      <p className="mb-2 inline-block rounded-[10px] bg-[#1d1b18] px-2.5 py-1.5 text-[11px] text-white">{p.day}</p>
+      <p className="mb-2 inline-block rounded-full bg-[#0f0f0f] px-2.5 py-1.5 text-[11px] text-white">{p.day}</p>
       <div className="grid grid-cols-3 gap-1.5">
         {p.times.map((t, i) => {
           const taken = p.taken.includes(i);
@@ -142,7 +144,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
                 setBooked((n) => n + 1);
                 go(3);
               }}
-              className={`${c.card} min-h-11 px-1 text-[11px] tabular-nums transition-[background-color,border-color,transform] duration-150 hover:border-[#1d1b18] active:scale-95 disabled:border-transparent disabled:bg-transparent disabled:text-[#b9b2a7] disabled:line-through focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#1d1b18]`}
+              className={`${c.card} min-h-11 px-1 text-[11px] tabular-nums transition-[background-color,border-color,transform] duration-150 hover:border-[#0f0f0f] active:scale-95 disabled:border-transparent disabled:bg-transparent disabled:text-[#a4a4a4] disabled:line-through focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f]`}
             >
               {t}
             </button>
@@ -154,7 +156,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
     // 3. Booked
     <Screen key="d" p={p} lang={lang}>
       <div className="flex h-full flex-col items-center pt-6 text-center">
-        <span key={booked} className="landing-pop grid h-12 w-12 place-items-center rounded-full bg-barber text-white">
+        <span key={booked} className="landing-pop grid h-12 w-12 place-items-center rounded-full bg-[#cc2827] text-white">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
             <path d="M20 6 9 17l-5-5" />
           </svg>
@@ -173,7 +175,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
         <button
           type="button"
           onClick={() => go(0)}
-          className="mt-auto mb-2 min-h-11 w-full rounded-[12px] bg-[#1d1b18] text-[13px] font-medium text-white transition-transform active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d1b18]"
+          className="mt-auto mb-2 min-h-11 w-full rounded-full bg-[#0f0f0f] text-[13px] font-medium text-white transition-transform active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f0f0f]"
         >
           {p.again}
         </button>
@@ -239,13 +241,13 @@ function Screen({ title, p, lang, onBack, children }: { title?: string; p: Phone
           <p className="text-[15px] font-semibold leading-tight tracking-[-0.02em]">{p.shop}</p>
           <p className={`truncate text-[10px] ${c.muted}`}>{p.address}</p>
         </div>
-        <span className={`shrink-0 rounded-full border border-[#e3ddd3] px-2 py-0.5 text-[10px] ${c.muted}`}>{lang}</span>
+        <span className={`shrink-0 rounded-full border border-[#dedede] px-2 py-0.5 text-[10px] ${c.muted}`}>{lang}</span>
       </div>
       {onBack && (
         <button
           type="button"
           onClick={onBack}
-          className={`-my-1 mt-1 -ml-1 flex min-h-11 w-max min-w-11 items-center gap-0.5 rounded px-1 text-[11px] ${c.muted} transition-colors hover:text-[#1d1b18] focus-visible:outline-2 focus-visible:outline-[#1d1b18]`}
+          className={`-my-1 mt-1 -ml-1 flex min-h-11 w-max min-w-11 items-center gap-0.5 rounded px-1 text-[11px] ${c.muted} transition-colors hover:text-[#0f0f0f] focus-visible:outline-2 focus-visible:outline-[#0f0f0f]`}
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
             <path d="M15 18l-6-6 6-6" />
@@ -270,7 +272,7 @@ function Tap({ onClick, className, children }: { onClick: () => void; className:
       type="button"
       onClick={onClick}
       style={{ WebkitTapHighlightColor: "transparent" } as CSSProperties}
-      className={`${c.card} w-full text-left transition-[border-color,transform,box-shadow] duration-150 hover:border-[#1d1b18]/60 hover:shadow-[0_6px_16px_-10px_rgba(29,27,24,.5)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#1d1b18] ${className}`}
+      className={`${c.card} w-full text-left transition-[border-color,transform,box-shadow] duration-150 hover:border-[#0f0f0f]/60 hover:shadow-[0_6px_16px_-10px_rgba(15,15,15,.5)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f] ${className}`}
     >
       {children}
     </button>

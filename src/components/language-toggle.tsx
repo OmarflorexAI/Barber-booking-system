@@ -22,7 +22,7 @@ export function LanguageToggle({ locale, label }: { locale: Locale; label: strin
           router.refresh();
         });
       }}
-      className="rounded-full border border-line px-3 py-1 text-sm text-muted hover:text-ink"
+      className="inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-line px-4 text-sm font-medium text-muted transition-colors hover:border-ink/40 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-60"
       lang={next}
     >
       {label}

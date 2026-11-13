@@ -5,6 +5,7 @@ import type { BookingEngine } from "@/server/booking-engine";
 import { SlotPicker, type Slot } from "@/components/slot-picker";
 import { Turnstile } from "@/components/turnstile";
 import { LanguageToggle } from "@/components/language-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   dictionaries,
   formatCutoff,
@@ -103,7 +104,10 @@ export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Loc
           <h1 className="text-2xl font-semibold tracking-tight">{shop.name}</h1>
           {shop.address && <p className="text-sm text-muted">{shop.address}</p>}
         </div>
-        <LanguageToggle locale={locale} label={t.otherLang} />
+        <div className="flex shrink-0 items-center gap-2">
+          <ThemeToggle label={t.themeDark} />
+          <LanguageToggle locale={locale} label={t.otherLang} />
+        </div>
       </header>
 
       {error && step !== "done" && step !== "details" && errorBox}

@@ -1,36 +1,55 @@
 @import "tailwindcss";
 
-/* Warm paper, dark ink, one barber-pole red for actions. */
+/*
+ * App theme (/b, /m, /app): an achromatic ramp (chroma 0, no tint), light by default.
+ * It follows the phone's setting until the person picks one with the theme toggle, which
+ * saves theme=light|dark in a cookie; the root layout puts it on <html data-theme> before
+ * paint. Dark is the landing's ramp. Buttons are ink pills (black on light, white on dark).
+ * Red (--red) is a live signal only: the now line, the new-Booking dot, the booked check.
+ * "ok"/"warn"/"accent" are kept as names so older pages still render, but they are neutral:
+ * status is shown by icon and text, never by color.
+ */
 :root {
-  --paper: #f6f3ee;
-  --surface: #ffffff;
-  --ink: #1d1b18;
-  --muted: #6c665d;
-  --line: #e3ddd3;
-  --accent: #b3352a;
-  --accent-ink: #ffffff;
-  --accent-soft: #f7e3df;
-  --ok: #2e6b4b;
-  --ok-soft: #e1efe7;
-  --warn: #8a5a00;
-  --warn-soft: #fbf0d9;
+  color-scheme: light;
+  --paper: oklch(98.5% 0 0); /* ground */
+  --surface: oklch(100% 0 0); /* cards, fields */
+  --raised: oklch(95.5% 0 0); /* highlighted rows, notices, chips */
+  --line: oklch(90% 0 0); /* hairline */
+  --muted: oklch(48% 0 0); /* secondary text: 6.3:1 on the ground, 5.7:1 on raised */
+  --ink: oklch(17% 0 0); /* text, primary pill */
+  --red: oklch(55% 0.2 27); /* live signal: 5.2:1 on the ground */
+  --accent: var(--ink);
+  --accent-ink: var(--paper);
+  --accent-soft: var(--raised);
+  --ok: var(--ink);
+  --ok-soft: var(--raised);
+  --warn: var(--ink);
+  --warn-soft: var(--raised);
 }
-
 @media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #141311;
-    --surface: #1d1b19;
-    --ink: #f1ede6;
-    --muted: #a59e93;
-    --line: #34302b;
-    --accent: #e0574a;
-    --accent-ink: #160b09;
-    --accent-soft: #3a1c18;
-    --ok: #7cc79f;
-    --ok-soft: #17291f;
-    --warn: #f0bf63;
-    --warn-soft: #2e2412;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: oklch(6% 0 0);
+    --surface: oklch(11% 0 0);
+    --raised: oklch(14% 0 0);
+    --line: oklch(18% 0 0);
+    --muted: oklch(64% 0 0);
+    --ink: oklch(93% 0 0);
+    --red: oklch(62% 0.2 27);
   }
+}
+/* The saved dark choice; and inside the always-dark landing look (.landing, also /login),
+   so app pieces placed there (language toggle, wordmark) render dark too. */
+:root[data-theme="dark"],
+.landing {
+  color-scheme: dark;
+  --paper: oklch(6% 0 0);
+  --surface: oklch(11% 0 0);
+  --raised: oklch(14% 0 0);
+  --line: oklch(18% 0 0);
+  --muted: oklch(64% 0 0);
+  --ink: oklch(93% 0 0);
+  --red: oklch(62% 0.2 27);
 }
 
 @theme inline {
@@ -39,6 +58,7 @@
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
+  --color-red: var(--red);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
@@ -46,29 +66,51 @@
   --color-ok-soft: var(--ok-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
-  /* Landing page only: these resolve inside .landing (below). */
+  /* Landing page: these resolve to the --l-* tokens inside .landing (below). Outside it,
+     raised and barber fall back to the app's own tokens. */
   --color-background: var(--l-bg);
   --color-foreground: var(--l-fg);
   --color-panel: var(--l-panel);
-  --color-raised: var(--l-raised);
+  --color-raised: var(--l-raised, var(--raised));
   --color-border: var(--l-border);
   --color-muted-foreground: var(--l-muted-fg);
-  --color-barber: var(--l-red);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-barber: var(--l-red, var(--red));
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 }
 
 body {
   background: var(--paper);
   color: var(--ink);
+  font-size: 1rem;
 }
 
-/* Large, thumb-friendly controls by default. */
-@utility btn {
-  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+/* The theme toggle's icon follows the theme on <html> (CSS, so it's right before hydration). */
+.theme-icon-sun {
+  display: none;
 }
+:root[data-theme="dark"] .theme-icon-sun {
+  display: block;
+}
+:root[data-theme="dark"] .theme-icon-moon {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-icon-sun {
+    display: block;
+  }
+  :root:not([data-theme="light"]) .theme-icon-moon {
+    display: none;
+  }
+}
+
+/* Large, thumb-friendly controls by default. Actions are pills; one focus ring. */
+@utility btn {
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-50;
+}
+/* Black pill on light, white pill on dark. */
 @utility btn-primary {
-  @apply btn bg-accent text-accent-ink hover:opacity-90;
+  @apply btn bg-ink text-paper hover:opacity-85;
 }
 @utility btn-ghost {
   @apply btn border border-line bg-surface text-ink hover:border-ink/40;
@@ -84,7 +126,7 @@ body {
 /*
  * The landing page for Shop Owners: a calm near-black page (the Cocoon template's
  * grayscale theme) with one barber red, used only for live and status signals.
- * Geist for everything; Geist Mono only for times and prices.
+ * Hanken Grotesk for everything; JetBrains Mono only for times and prices.
  */
 .landing {
   --l-bg: oklch(6% 0 0);
@@ -99,7 +141,7 @@ body {
   background: var(--l-bg);
   color: var(--l-fg);
   color-scheme: dark;
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
   caret-color: var(--l-fg);
   accent-color: var(--l-fg);
   /* Lets the FAQ answers transition to height: auto. */

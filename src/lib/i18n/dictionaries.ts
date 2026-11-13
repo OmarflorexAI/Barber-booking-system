@@ -5,6 +5,8 @@ export const LOCALE_COOKIE = "lang";
 const en = {
   langName: "English",
   otherLang: "Español",
+  // theme toggle (a toggle button: pressed = dark)
+  themeDark: "Dark mode",
   // booking flow
   stepService: "Choose a service",
   stepBarber: "Choose your barber",
@@ -113,6 +115,7 @@ export type Dictionary = typeof en;
 const es: Dictionary = {
   langName: "Español",
   otherLang: "English",
+  themeDark: "Modo oscuro",
   stepService: "Elige un servicio",
   stepBarber: "Elige tu barbero",
   stepTime: "Elige la hora",

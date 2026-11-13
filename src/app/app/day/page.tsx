@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { LanguageToggle } from "@/components/language-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { formatPhone } from "@/lib/phone";
 import { formatDay, formatMoney, formatTime } from "@/lib/i18n/dictionaries";
 import { getDictionary } from "@/lib/i18n/server";
@@ -106,9 +107,10 @@ async function Day({ searchParams }: { searchParams: Promise<Record<string, stri
           <h1 className="text-2xl font-semibold tracking-tight">{barber?.display_name ?? "—"}</h1>
         </div>
         <div className="flex items-center gap-2">
+          <ThemeToggle label={t.themeDark} />
           <LanguageToggle locale={locale} label={t.otherLang} />
           <form action="/auth/signout" method="post">
-            <button className="rounded-full border border-line px-3 py-1 text-sm text-muted hover:text-ink">{t.signOut}</button>
+            <button className="inline-flex min-h-11 items-center whitespace-nowrap rounded-full border border-line px-4 text-sm font-medium text-muted transition-colors hover:border-ink/40 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink">{t.signOut}</button>
           </form>
         </div>
       </header>

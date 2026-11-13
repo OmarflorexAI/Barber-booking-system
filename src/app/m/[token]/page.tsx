@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { LanguageToggle } from "@/components/language-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { formatPhone } from "@/lib/phone";
 import { formatDateTime, formatMoney } from "@/lib/i18n/dictionaries";
 import { getDictionary } from "@/lib/i18n/server";
@@ -42,7 +43,10 @@ async function Manage({ params, searchParams }: { params: Promise<{ token: strin
           <p className="text-sm text-muted">{shop.name}</p>
           <h1 className="text-2xl font-semibold tracking-tight">{t.yourBooking}</h1>
         </div>
-        <LanguageToggle locale={locale} label={t.otherLang} />
+        <div className="flex shrink-0 items-center gap-2">
+          <ThemeToggle label={t.themeDark} />
+          <LanguageToggle locale={locale} label={t.otherLang} />
+        </div>
       </header>
 
       <section className="card flex flex-col gap-1 p-5">
