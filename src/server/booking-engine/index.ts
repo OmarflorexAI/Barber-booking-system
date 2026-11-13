@@ -333,6 +333,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
         timezone: shop.timezone,
         cancelCutoffMinutes: shop.cancel_cutoff_minutes,
         onlinePayments: shop.payments_enabled,
+        smsEnabled: shop.sms_enabled,
       },
       services: services
         .map((s) => {
@@ -700,15 +701,19 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
         timezone: string;
         shop_name: string;
         shop_phone: string | null;
+        shop_address: string | null;
         shop_slug: string;
         barber_name: string;
+        barber_photo_url: string | null;
         name_en: string;
         name_es: string;
         client_name: string | null;
+        cancelled_by: "client" | "barber" | "owner" | "admin" | "system" | null;
+        hold_expires_at: Date | null;
       })[]
     >`
-      select b.*, s.cancel_cutoff_minutes, s.timezone, s.name as shop_name, s.phone as shop_phone, s.slug as shop_slug,
-             br.display_name as barber_name, sv.name_en, sv.name_es, c.name as client_name
+      select b.*, s.cancel_cutoff_minutes, s.timezone, s.name as shop_name, s.phone as shop_phone, s.address as shop_address, s.slug as shop_slug,
+             br.display_name as barber_name, br.photo_url as barber_photo_url, sv.name_en, sv.name_es, c.name as client_name
       from public.bookings b
       join public.shops s on s.id = b.shop_id
       join public.barbers br on br.id = b.barber_id
@@ -720,10 +725,15 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     const cutoff = new Date(b.starts_at.getTime() - b.cancel_cutoff_minutes * MINUTE);
     return {
       booking: toSummary(b),
-      shop: { name: b.shop_name, phone: b.shop_phone, slug: b.shop_slug, timezone: b.timezone, cancelCutoffMinutes: b.cancel_cutoff_minutes },
+      shop: { name: b.shop_name, phone: b.shop_phone, address: b.shop_address, slug: b.shop_slug, timezone: b.timezone, cancelCutoffMinutes: b.cancel_cutoff_minutes },
       barberName: b.barber_name,
+      barberPhotoUrl: b.barber_photo_url,
       serviceName: { en: b.name_en, es: b.name_es },
       clientName: b.client_name,
+      /** Who cancelled it; "system" = the payment hold ran out unpaid and the time was released. */
+      cancelledBy: b.cancelled_by,
+      /** While `pending_payment`: when the 10-minute hold ends. */
+      holdExpiresAt: b.hold_expires_at,
       canChange: b.status === "confirmed" && now <= cutoff,
       cutoffAt: cutoff,
     };
