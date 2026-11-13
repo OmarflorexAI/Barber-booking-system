@@ -430,3 +430,151 @@ body:has(.landing) {
     transition: none;
   }
 }
+
+/*
+ * ── Motion (the staff app and any app screen) ──────────────────────────────────────────
+ * Tokens, then four utilities. The final state is the default: every utility only adds
+ * motion inside `prefers-reduced-motion: no-preference`, so with reduced motion (or before
+ * any script runs) content simply sits where it ends up. Only transform-family properties
+ * (translate, scale) and opacity animate; .lift also changes a hairline ring (paint only).
+ *
+ *   .enter    fade + 8px rise on first paint (240ms). Stagger siblings with style="--i: n"
+ *             (40ms per step, capped at 10 steps).
+ *   .press    scales to .98 while pressed (buttons, tabs, tappable rows).
+ *   .lift     on a fine pointer, hover rises 2px and shows a hairline ring (linked cards).
+ *   CountUp   numbers count up: src/components/motion/count-up.tsx.
+ */
+:root {
+  /* Quick-out: entrances and arrivals (the landing's reveal curve). */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Gentle spring: presses and panels. A small overshoot (1.12), no bounce-back. */
+  --ease-spring: cubic-bezier(0.22, 1.12, 0.36, 1);
+  --dur-fast: 150ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
+}
+@keyframes enter {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .enter {
+    animation: enter var(--dur-base) var(--ease-out) both;
+    animation-delay: calc(min(var(--i, 0), 10) * 40ms);
+  }
+  /* Overrides Tailwind's transition-colors (layered) so color changes and the press both ease. */
+  .press {
+    transition-property: scale, translate, color, background-color, border-color, opacity, box-shadow;
+    transition-duration: var(--dur-fast);
+    transition-timing-function: var(--ease-spring);
+  }
+  .press:active:not(:disabled, [aria-disabled="true"]) {
+    scale: 0.98;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .lift {
+      transition-property: translate, box-shadow, color, background-color, border-color;
+      transition-duration: var(--dur-base);
+      transition-timing-function: var(--ease-out);
+    }
+    /* A hairline ring, not a drop shadow (DESIGN.md: tone, not shadow). */
+    .lift:hover {
+      translate: 0 -2px;
+      box-shadow: 0 0 0 1px color-mix(in oklch, var(--ink) 18%, transparent);
+    }
+  }
+}
+
+/*
+ * ── Staff app sidebar (≥ 1024px) ───────────────────────────────────────────────────────
+ * Expanded 16rem, collapsed a 72px icon rail. The state is <html data-sidebar="collapsed">,
+ * put there before paint by the root layout's inline script from the `sidebar` cookie.
+ *
+ * Why not transition grid-template-columns: that re-lays out the whole page every frame.
+ * Instead the sidebar is a fixed 16rem panel that is *clipped* to the rail (clip-path,
+ * paint only), its labels fade, and the content column moves to its new margin in one
+ * layout step and is slid there with a FLIP translate (sidebar-toggle.tsx). Both use the
+ * same duration and curve, so the panel edge and the content's hairline move together.
+ */
+.shell {
+  --rail: 16rem;
+}
+:root[data-sidebar="collapsed"] .shell {
+  --rail: 4.5rem;
+}
+@media (min-width: 1024px) {
+  /* The FLIP briefly pushes the content past the right edge; never let that scroll. */
+  .shell {
+    overflow-x: clip;
+  }
+  .shell-aside {
+    position: fixed;
+    inset-block: 0;
+    left: 0;
+    z-index: 20;
+    width: 16rem;
+    clip-path: inset(0 calc(16rem - var(--rail)) 0 0);
+  }
+  .shell-content {
+    margin-left: var(--rail);
+    border-left: 1px solid var(--line);
+  }
+  /* Rows in the rail: full width when open; the icon's 48px pill when collapsed. The width
+     jumps at the end of collapsing (hidden under the clip) and at once when opening. */
+  .rail-item {
+    width: 100%;
+    transition:
+      width 0s,
+      color var(--dur-fast),
+      background-color var(--dur-fast),
+      scale var(--dur-fast) var(--ease-spring);
+  }
+  :root[data-sidebar="collapsed"] .rail-item {
+    width: 3rem;
+    transition-delay: var(--dur-slow), 0s, 0s, 0s;
+  }
+  /* Labels, the Shop name and the person stay in the page for screen readers; they only fade. */
+  :root[data-sidebar="collapsed"] .rail-fade {
+    opacity: 0;
+  }
+  /* Controls too wide for the rail (the language pill) fade and leave the tab order. */
+  :root[data-sidebar="collapsed"] .rail-hide {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .shell-aside {
+    transition: clip-path var(--dur-slow) var(--ease-spring);
+  }
+  .rail-fade {
+    transition: opacity var(--dur-fast) var(--ease-out);
+  }
+  /* visibility stays "visible" until the fade ends (it interpolates that way). */
+  .rail-hide {
+    transition:
+      opacity var(--dur-fast) var(--ease-out),
+      visibility var(--dur-fast);
+  }
+  /* Opening: labels fade in once the panel is mostly open. */
+  :root:not([data-sidebar="collapsed"]) :is(.rail-fade, .rail-hide) {
+    transition-delay: 120ms, 0s;
+  }
+}
+
+/*
+ * The phone tab bar's active-tab indicator: one bar per tab bar that slides to the active
+ * tab (translate, by tab index). It appears without sliding on first paint.
+ */
+.tab-indicator {
+  translate: calc(var(--tab, 0) * 100%) 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tab-indicator {
+    transition:
+      translate var(--dur-base) var(--ease-spring),
+      opacity var(--dur-fast) var(--ease-out);
+  }
+}

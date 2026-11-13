@@ -22,17 +22,27 @@ export function RowsSkeleton({ rows = 5 }: { rows?: number }) {
 /** The whole shell while the signed-in person loads: header, sidebar, rows and the tab bar. */
 export function ShellSkeleton() {
   return (
-    <div aria-busy="true" className="min-h-dvh lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
-      <div aria-hidden="true" className="sticky top-0 hidden h-dvh flex-col gap-6 border-r border-line bg-surface px-7 py-6 lg:flex">
-        <div className={`${block} h-7 w-36`} />
-        <div className={`${block} h-4 w-28`} />
+    <div aria-busy="true" className="shell min-h-dvh">
+      {/* Same panel and clip as the real sidebar, so a collapsed rail stays a rail while loading. */}
+      <div aria-hidden="true" className="shell-aside hidden h-dvh flex-col gap-6 bg-surface px-3 py-5 lg:flex">
+        <div className="flex items-center gap-4 pl-0.5">
+          <div className={`${block} h-11 w-11 rounded-xl`} />
+          <div className="rail-fade">
+            <div className={`${block} h-7 w-36`} />
+          </div>
+        </div>
         <div className="flex flex-col gap-3 pt-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className={`${block} h-8 w-full`} />
+            <div key={i} className="flex min-h-12 items-center gap-3 px-3">
+              <div className={`${block} h-6 w-6`} />
+              <div className="rail-fade">
+                <div className={`${block} h-4 w-28`} />
+              </div>
+            </div>
           ))}
         </div>
       </div>
-      <div className="flex min-h-dvh flex-col">
+      <div className="shell-content flex min-h-dvh flex-col">
         <div aria-hidden="true" className="flex min-h-14 items-center justify-between gap-3 px-4 pt-2 pb-2 lg:hidden">
           <div className={`${block} h-5 w-36`} />
           <div className="flex gap-2">

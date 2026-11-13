@@ -33,8 +33,9 @@ export const viewport: Viewport = {
  * (cacheComponents keeps <html> in the static shell), so an inline script in <head> reads it
  * (Next's "preventing flash" pattern). No cookie: no attribute, and the CSS follows the phone.
  */
-// It also points the browser bar color (meta theme-color) at the saved theme once the head is parsed.
-const themeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )theme=(light|dark)(?:;|$)/);if(!m)return;var t=m[1];document.documentElement.setAttribute("data-theme",t);var c=t==="dark"?"#010101":"#fafafa";var f=function(){document.querySelectorAll('meta[name="theme-color"]').forEach(function(e){e.setAttribute("content",c)})};f();document.addEventListener("DOMContentLoaded",f)}catch(e){}})()`;
+// It also points the browser bar color (meta theme-color) at the saved theme once the head is parsed,
+// and puts the staff sidebar's saved state (cookie sidebar=collapsed|expanded) on <html data-sidebar>.
+const themeScript = `(function(){try{var d=document.documentElement,s=document.cookie.match(/(?:^|; )sidebar=(collapsed|expanded)(?:;|$)/);if(s)d.setAttribute("data-sidebar",s[1]);var m=document.cookie.match(/(?:^|; )theme=(light|dark)(?:;|$)/);if(!m)return;var t=m[1];document.documentElement.setAttribute("data-theme",t);var c=t==="dark"?"#010101":"#fafafa";var f=function(){document.querySelectorAll('meta[name="theme-color"]').forEach(function(e){e.setAttribute("content",c)})};f();document.addEventListener("DOMContentLoaded",f)}catch(e){}})()`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
