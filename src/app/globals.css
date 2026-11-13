@@ -29,6 +29,7 @@
      6.0:1 and 3.5:1 on --surface. Never for text, status or anything else. */
   --data: oklch(50% 0.085 255);
   --data-soft: oklch(63% 0.06 255);
+  --spark-fill: 0.18;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -42,6 +43,7 @@
     --red: oklch(62% 0.2 27);
     --data: oklch(70% 0.08 255); /* 7.7:1 on --surface */
     --data-soft: oklch(52% 0.055 255); /* 3.7:1 on --surface */
+    --spark-fill: 0.32;
   }
 }
 /* The saved dark choice; and inside the always-dark landing look (.landing, also /login),
@@ -58,6 +60,7 @@
   --red: oklch(62% 0.2 27);
   --data: oklch(70% 0.08 255);
   --data-soft: oklch(52% 0.055 255);
+  --spark-fill: 0.32;
 }
 
 @theme inline {
@@ -442,6 +445,8 @@ body:has(.landing) {
  *             (40ms per step, capped at 10 steps).
  *   .press    scales to .98 while pressed (buttons, tabs, tappable rows).
  *   .lift     on a fine pointer, hover rises 2px and shows a hairline ring (linked cards).
+ *   .spark    a sparkline grows up from its baseline after its card's entrance.
+ *   .card-depth (below) soft card depth, light mode only.
  *   CountUp   numbers count up: src/components/motion/count-up.tsx.
  */
 :root {
@@ -479,12 +484,50 @@ body:has(.landing) {
       transition-duration: var(--dur-base);
       transition-timing-function: var(--ease-out);
     }
-    /* A hairline ring, not a drop shadow (DESIGN.md: tone, not shadow). */
+    /* A hairline ring on top of the card's own depth (a soft shadow in light mode only). */
     .lift:hover {
       translate: 0 -2px;
-      box-shadow: 0 0 0 1px color-mix(in oklch, var(--ink) 18%, transparent);
+      box-shadow:
+        0 0 0 1px color-mix(in oklch, var(--ink) 18%, transparent),
+        var(--card-depth-lift);
     }
   }
+  /* Stat sparklines grow up from their baseline after the card has arrived. */
+  .spark {
+    transform-origin: bottom;
+    animation: spark-grow var(--dur-slow) var(--ease-out) both;
+    animation-delay: calc(min(var(--i, 0), 10) * 40ms + 120ms);
+  }
+}
+@keyframes spark-grow {
+  from {
+    opacity: 0;
+    scale: 1 0.2;
+  }
+}
+
+/*
+ * .card-depth — Dashboard and Settings cards only (DESIGN.md → App: the card exception to
+ * Tone Not Shadow). Light: one very soft, low shadow under the hairline. Dark: no shadow
+ * (the raised tone step and the hairline separate); a faint inner top highlight instead.
+ * Follows the theme the same way as the color tokens: data-theme, else the system setting.
+ */
+:root {
+  --card-depth: 0 1px 2px oklch(0% 0 0 / 0.04), 0 4px 14px -6px oklch(0% 0 0 / 0.07);
+  --card-depth-lift: 0 2px 4px oklch(0% 0 0 / 0.04), 0 10px 24px -10px oklch(0% 0 0 / 0.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --card-depth: inset 0 1px 0 oklch(100% 0 0 / 0.045);
+    --card-depth-lift: inset 0 1px 0 oklch(100% 0 0 / 0.07);
+  }
+}
+:root[data-theme="dark"] {
+  --card-depth: inset 0 1px 0 oklch(100% 0 0 / 0.045);
+  --card-depth-lift: inset 0 1px 0 oklch(100% 0 0 / 0.07);
+}
+.card-depth {
+  box-shadow: var(--card-depth);
 }
 
 /*

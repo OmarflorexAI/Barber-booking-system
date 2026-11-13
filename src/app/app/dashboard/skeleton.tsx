@@ -1,19 +1,19 @@
 /*
  * The Dashboard while its numbers load, in the real layout (DESIGN.md → "States": no
- * spinners): title + week stepper, the hero card, three stat cards, the chart and the
+ * spinners): title + the week pill, the hero card, three stat cards, the chart and the
  * per-Barber card. Blocks use the --line tone with a pulse that stops under reduced motion.
  */
 const block = "rounded-md bg-line motion-safe:animate-pulse";
-const card = "rounded-2xl border border-line bg-surface p-5 lg:p-6";
+const card = "card-depth rounded-2xl border border-line bg-surface p-5 lg:p-6";
 
 export function DashboardSkeleton() {
   return (
     <div aria-hidden="true" className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className={`${block} h-7 w-36`} />
-        <div className="flex items-center gap-3">
+        <div className="flex h-14 items-center gap-3 rounded-full border border-line bg-surface p-1 sm:min-w-72">
           <div className={`${block} h-12 w-12 rounded-full`} />
-          <div className={`${block} h-5 w-28`} />
+          <div className={`${block} mx-auto h-5 w-28`} />
           <div className={`${block} h-12 w-12 rounded-full`} />
         </div>
       </div>
@@ -29,6 +29,7 @@ export function DashboardSkeleton() {
               <div key={i} className={`${card} flex flex-col gap-3 ${i === 2 ? "col-span-2 sm:col-span-1" : ""}`}>
                 <div className={`${block} h-4 w-20`} />
                 <div className={`${block} h-7 w-14`} />
+                <div className={`${block} h-10 w-full`} />
                 <div className={`${block} h-3.5 w-24`} />
               </div>
             ))}

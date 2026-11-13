@@ -134,6 +134,35 @@ test("the Owner sees this week's numbers against last week", async ({ page }) =>
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
 });
 
+test("a day's bar and a Barber's row open their drill-down", async ({ page }) => {
+  await signIn(page, emails.owner);
+  await page.goto("/app/dashboard");
+
+  // Tuesday: Dario's 2 Bookings and 1 Walk-in; 2 × 45 min saved.
+  const tuesday = page.getByRole("button", { name: /^2 Tue, Tuesday\b.*: 2 bookings, show details$/ });
+  await tuesday.click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole("heading", { level: 2 })).toContainText("Tuesday");
+  await expect(sheet.getByTestId("drill-bookings")).toHaveText("2");
+  await expect(sheet.getByTestId("drill-walkins")).toHaveText("1");
+  await expect(sheet.getByTestId("drill-noshows")).toHaveText("0");
+  await expect(sheet.getByTestId("drill-timesaved")).toHaveText("1h 30m");
+  await expect(sheet.getByRole("table", { name: "By hour" })).toBeAttached();
+  await expect(sheet.getByTestId("drill-barber").filter({ hasText: "Dario Cruz" })).toContainText("2 bookings · 1 walk-in");
+  await page.keyboard.press("Escape");
+  await expect(sheet).toBeHidden();
+  await expect(tuesday).toBeFocused();
+
+  // A Barber's row: their week's numbers.
+  await page.getByTestId("barber-row").filter({ hasText: "Marisol Peña" }).getByRole("button").click();
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByTestId("drill-barber-bookings")).toHaveText("3");
+  await expect(sheet.getByTestId("drill-barber-noshows")).toHaveText("1");
+  await sheet.getByRole("button", { name: "Close" }).click();
+  await expect(sheet).toBeHidden();
+});
+
 test("the week stepper moves back a week and stops at this week", async ({ page }) => {
   await signIn(page, emails.owner);
   await page.goto("/app/dashboard");
@@ -171,9 +200,13 @@ test("a Barber is sent to their Day", async ({ page }) => {
   await expect(page).toHaveURL(/\/app\/day/);
 });
 
-/** Review screenshots, only on request: DASHBOARD_SHOTS=1 npx playwright test tests/e2e/dashboard.spec.ts */
+/**
+ * Review screenshots, only on request: DASHBOARD_SHOTS=1 npx playwright test tests/e2e/dashboard.spec.ts
+ * (or DASHBOARD_SHOTS=p2b to write into .impeccable/review/p2b instead of u2-d2).
+ */
 test("review screenshots", async ({ page, context }) => {
   test.skip(!process.env.DASHBOARD_SHOTS, "screenshots only on request");
+  const dir = `.impeccable/review/${process.env.DASHBOARD_SHOTS === "1" ? "u2-d2" : process.env.DASHBOARD_SHOTS}`;
   await signIn(page, emails.owner);
   for (const theme of ["light", "dark"] as const) {
     await context.addCookies([{ name: "theme", value: theme, url: "http://localhost:3000" }]);
@@ -181,7 +214,17 @@ test("review screenshots", async ({ page, context }) => {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
       await page.goto("/app/dashboard");
       await expect(page.getByTestId("barber-row").first()).toBeVisible();
-      await page.screenshot({ path: `.impeccable/review/u2-d2/dashboard-${width}-${theme}.png`, fullPage: true });
+      await page.waitForTimeout(1000); // let the bars finish growing in
+      await page.screenshot({ path: `${dir}/dashboard-${width}-${theme}.png`, fullPage: true });
+      // The drill-down sheets: Tuesday (the richest seeded day), then the first Barber.
+      await page.getByRole("button", { name: /^2 Tue, Tuesday\b/ }).click();
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: `${dir}/day-sheet-${width}-${theme}.png` });
+      await page.keyboard.press("Escape");
+      await page.getByTestId("barber-row").first().getByRole("button").click();
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: `${dir}/barber-sheet-${width}-${theme}.png` });
+      await page.keyboard.press("Escape");
     }
   }
 });
