@@ -40,6 +40,13 @@ export async function cancelAsStaffAction(bookingId: string): Promise<StaffResul
   return run((userId) => bookingEngine().cancelBooking({ actor: { kind: "staff", userId }, bookingId, now: new Date() }));
 }
 
+/** Move a Booking to a new time for the same Barber and Service (the payment stays with it). */
+export async function moveAsStaffAction(bookingId: string, newStartsAt: string): Promise<StaffResult> {
+  const when = new Date(newStartsAt);
+  if (!Id.safeParse(bookingId).success || Number.isNaN(when.getTime())) return { ok: false, code: "INVALID_INPUT" };
+  return run((userId) => bookingEngine().rescheduleBooking({ actor: { kind: "staff", userId }, bookingId, newStartsAt: when, now: new Date() }));
+}
+
 export async function walkInAction(shopId: string, barberId: string, serviceId: string): Promise<StaffResult> {
   if (![shopId, barberId, serviceId].every((v) => Id.safeParse(v).success)) return { ok: false, code: "INVALID_INPUT" };
   return run((userId) => bookingEngine().logWalkIn({ userId, shopId, barberId, serviceId, now: new Date() }));
