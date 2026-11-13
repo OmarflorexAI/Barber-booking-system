@@ -308,7 +308,7 @@ Six tokens, defined on `:root` in `src/app/globals.css` for light and redefined 
 
 - **Light** is the same six roles on a light, strictly achromatic ramp (chroma 0: no warm paper, no cool blue-gray). The exact light values live in `globals.css`; this file does not repeat them so the two can't drift. The pre-G warm tokens (`#f6f3ee` paper and friends, `--accent`) are retired.
 - **Dark is the landing's ramp, not a second dark palette.** If a screen needs a third surface step (a pressed row, a sheet over a surface), the landing's raised step `oklch(14% 0 0)` is the dark value: add it as a token in both themes in `globals.css` first, never hard-code it.
-- The No Tint Rule and the Tone Not Shadow Rule apply unchanged: separate layers by a tone step and a `--line` hairline. A bottom sheet may carry one soft shadow in light mode only if a tone step alone doesn't separate it; nothing else gets a shadow.
+- The No Tint Rule and the Tone Not Shadow Rule apply unchanged: separate layers by a tone step and a `--line` hairline. Two exceptions, both soft and both light mode only (dark separates by the raised tone step): a bottom sheet may carry one soft shadow if a tone step alone doesn't separate it, and **cards** (Dashboard and Settings cards) may carry one very soft, low shadow for depth (user, 2026-11-13). Nothing else gets a shadow.
 
 ### Theme switching
 
@@ -378,7 +378,7 @@ Tapping a Booking row opens a **bottom sheet** (a real `<dialog>`, not a custom 
 
 ### Shape, icons and motion in the app
 
-The landing's shapes carry over: 16px for cards and sheets' top corners, full pills for buttons and tags, 6px for inputs and small controls. Icons are 24px line drawings in one 1.5px round-capped stroke. Motion is state only, 150 to 250ms, transform and opacity, with the final state as the default and nothing hidden until a script runs. The wide-panel, scroll-timeline and live-ring effects are landing-only.
+The landing's shapes carry over: 16px for cards and sheets' top corners, full pills for buttons and tags, 6px for inputs and small controls. Icons are 24px line drawings in one 1.5px round-capped stroke. Motion is state only, transform and opacity, in three timings (tokens in `globals.css`): `--dur-fast` 150ms for press and hover, `--dur-base` 240ms for most moves and entrances, `--dur-slow` 420ms for large layout moves (the sidebar collapsing, sheets), with the final state as the default and nothing hidden until a script runs. The wide-panel, scroll-timeline and live-ring effects are landing-only.
 
 ### App Do's and Don'ts
 
