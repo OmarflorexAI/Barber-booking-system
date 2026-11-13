@@ -18,6 +18,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Lets env(safe-area-inset-*) work, so the app's tab bar clears the iPhone home indicator.
+  viewportFit: "cover",
   // The app's light and dark grounds (globals.css --paper): oklch(98.5% 0 0) = #fafafa and oklch(6% 0 0) = #010101.
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#fafafa" },
