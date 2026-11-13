@@ -35,6 +35,18 @@ export async function setAttendanceAction(bookingId: string, status: "arrived" |
   return run((userId) => bookingEngine().setAttendance({ userId, bookingId, status }));
 }
 
+/** Undo a mistaken arrived / no-show: the Booking goes back to confirmed. */
+export async function undoAttendanceAction(bookingId: string): Promise<StaffResult> {
+  if (!Id.safeParse(bookingId).success) return { ok: false, code: "INVALID_INPUT" };
+  return run((userId) => bookingEngine().undoAttendance({ userId, bookingId }));
+}
+
+/** Remove a Walk-in logged by mistake (frees the time; nobody is texted). */
+export async function removeWalkInAction(bookingId: string): Promise<StaffResult> {
+  if (!Id.safeParse(bookingId).success) return { ok: false, code: "INVALID_INPUT" };
+  return run((userId) => bookingEngine().removeWalkIn({ userId, bookingId, now: new Date() }));
+}
+
 export async function cancelAsStaffAction(bookingId: string): Promise<StaffResult> {
   if (!Id.safeParse(bookingId).success) return { ok: false, code: "INVALID_INPUT" };
   return run((userId) => bookingEngine().cancelBooking({ actor: { kind: "staff", userId }, bookingId, now: new Date() }));

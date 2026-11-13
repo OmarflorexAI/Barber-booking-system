@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { isBookingError } from "@/server/booking-engine";
+import { createReporting } from "@/server/reporting";
 import {
   at,
   book,
@@ -335,6 +336,73 @@ describe("Walk-ins and attendance", () => {
     await expect(engine.setAttendance({ userId: alexUser, bookingId: booking.id, status: "no_show" })).resolves.toMatchObject({ status: "no_show" });
     await expectCode(engine.setAttendance({ userId: blakeUser, bookingId: booking.id, status: "arrived" }), "FORBIDDEN");
     await expectCode(engine.cancelBooking({ actor: { kind: "staff", userId: blakeUser }, bookingId: booking.id, now: NOW }), "FORBIDDEN");
+  });
+});
+
+describe("undo on the day view", () => {
+  it("undoing arrived or no-show puts the Booking back to confirmed, own Bookings only", async () => {
+    const alexUser = await makeUser(shop.shopId, "barber", shop.alex);
+    const blakeUser = await makeUser(shop.shopId, "barber", shop.blake);
+    const owner = await makeUser(shop.shopId, "owner");
+    const { booking } = await book(shop);
+    await engine.setAttendance({ userId: alexUser, bookingId: booking.id, status: "arrived" });
+    await expectCode(engine.undoAttendance({ userId: blakeUser, bookingId: booking.id }), "FORBIDDEN");
+    await expect(engine.undoAttendance({ userId: alexUser, bookingId: booking.id })).resolves.toMatchObject({ status: "confirmed" });
+    await expectCode(engine.undoAttendance({ userId: alexUser, bookingId: booking.id }), "BOOKING_NOT_ACTIVE"); // nothing to undo
+    await engine.setAttendance({ userId: alexUser, bookingId: booking.id, status: "no_show" });
+    await expect(engine.undoAttendance({ userId: owner, bookingId: booking.id })).resolves.toMatchObject({ status: "confirmed" });
+    expect(await outboxTypes(booking.id)).toEqual(["barber_alert"]); // only the original creation alert
+  });
+
+  it("an undone no-show stops counting toward the pay-online rule", async () => {
+    const payShop = await makeShop({ onlinePayments: true });
+    extraShops.push(payShop);
+    const alexUser = await makeUser(payShop.shopId, "barber", payShop.alex);
+    const phone = uniquePhone();
+    const client = { name: "Test Client", phone };
+    const missed: string[] = [];
+    for (const daysAgo of [10, 20]) {
+      const { booking } = await book(payShop, { client, startsAt: at(TOMORROW, 10 + missed.length) });
+      const startsAt = new Date(NOW.getTime() - daysAgo * 24 * 60 * 60_000);
+      const endsAt = new Date(startsAt.getTime() + 30 * 60_000);
+      await sql`update public.bookings set starts_at = ${startsAt}, ends_at = ${endsAt}, blocked_until = ${endsAt} where id = ${booking.id}`;
+      await engine.setAttendance({ userId: alexUser, bookingId: booking.id, status: "no_show" });
+      missed.push(booking.id);
+    }
+    await expectCode(book(payShop, { client, startsAt: at(TOMORROW, 12) }), "PAY_ONLINE_REQUIRED");
+    await engine.undoAttendance({ userId: alexUser, bookingId: missed[0] });
+    await expect(book(payShop, { client, startsAt: at(TOMORROW, 12) })).resolves.toBeTruthy();
+  });
+
+  it("only a Walk-in can be removed; removing it frees the time and drops it from the stats", async () => {
+    const alexUser = await makeUser(shop.shopId, "barber", shop.alex);
+    const blakeUser = await makeUser(shop.shopId, "barber", shop.blake);
+    const owner = await makeUser(shop.shopId, "owner");
+    const { booking } = await book(shop, { startsAt: at(TOMORROW, 15) });
+    await expectCode(engine.removeWalkIn({ userId: alexUser, bookingId: booking.id, now: NOW }), "INVALID_INPUT");
+
+    const walkIn = await engine.logWalkIn({
+      userId: alexUser,
+      shopId: shop.shopId,
+      barberId: shop.alex,
+      serviceId: shop.cut,
+      startsAt: at(TOMORROW, 11),
+      now: NOW,
+    });
+    await expectCode(engine.undoAttendance({ userId: alexUser, bookingId: walkIn.id }), "INVALID_INPUT");
+    const stats = () => createReporting(sql).dayStats({ userId: owner, shopId: shop.shopId, date: TOMORROW });
+    expect(await stats()).toMatchObject({ bookings: 1, walkIns: 1 });
+    await expectCode(book(shop, { startsAt: at(TOMORROW, 11) }), "SLOT_TAKEN");
+
+    await expectCode(engine.removeWalkIn({ userId: blakeUser, bookingId: walkIn.id, now: NOW }), "FORBIDDEN");
+    await expect(engine.removeWalkIn({ userId: alexUser, bookingId: walkIn.id, now: NOW })).resolves.toMatchObject({ status: "cancelled" });
+    const [row] = await sql`select cancelled_by from public.bookings where id = ${walkIn.id}`;
+    expect(row.cancelled_by).toBe("barber");
+    expect(await outboxTypes(walkIn.id)).toEqual([]);
+    expect(await stats()).toMatchObject({ bookings: 1, walkIns: 0 });
+    expect(await availTimes(shop.alex)).toContain("11:00");
+    await book(shop, { startsAt: at(TOMORROW, 11) });
+    await expectCode(engine.removeWalkIn({ userId: alexUser, bookingId: walkIn.id, now: NOW }), "BOOKING_NOT_ACTIVE");
   });
 });
 

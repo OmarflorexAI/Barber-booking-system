@@ -219,6 +219,33 @@ test("cancel asks first and says what the Client is told", async ({ page }) => {
   expect(out.map((o) => o.type)).toContain("sms_cancelled");
 });
 
+test("undo a mistaken arrived, and remove a walk-in logged by mistake", async ({ page }) => {
+  await signIn(page, emails.dre);
+  await row(page, "Rafa Gomez").click();
+  const sheet = page.getByRole("dialog", { name: "Rafa Gomez" });
+  await sheet.getByRole("button", { name: "Arrived" }).click();
+  await expect(sheet.getByRole("button", { name: "Arrived" })).toHaveAttribute("aria-pressed", "true");
+  await sheet.getByRole("button", { name: "Undo" }).click();
+  await expect(sheet.getByRole("button", { name: "Arrived" })).toHaveAttribute("aria-pressed", "false");
+  await expect(sheet.getByRole("button", { name: "Undo" })).toHaveCount(0);
+  await expect(sheet.getByRole("button", { name: "Move" })).toBeEnabled();
+  const [b] = await sql<{ status: string }[]>`select status from public.bookings where id = ${bookingIds.past}`;
+  expect(b.status).toBe("confirmed");
+  await page.keyboard.press("Escape");
+  await expect(sheet).toBeHidden();
+
+  await page.locator(`ol [data-row="${bookingIds.walkin}"] button`).click();
+  const walkIn = page.getByRole("dialog", { name: "Walk-in" });
+  await walkIn.getByRole("button", { name: "Remove walk-in" }).click();
+  await expect(walkIn.getByRole("heading", { name: "Remove this walk-in?" })).toBeVisible();
+  await walkIn.getByRole("button", { name: "Remove walk-in" }).click();
+  await expect(page.getByText("Walk-in removed.")).toBeVisible();
+  await expect(page.locator(`ol [data-row="${bookingIds.walkin}"]`)).toHaveCount(0);
+  const [w] = await sql<{ status: string; cancelled_by: string }[]>`select status, cancelled_by from public.bookings where id = ${bookingIds.walkin}`;
+  expect(w).toEqual({ status: "cancelled", cancelled_by: "barber" });
+  expect((await sql`select 1 from public.outbox where booking_id = ${bookingIds.walkin}`).length).toBe(0);
+});
+
 test("the Owner's Today lists every Barber and filters by chip", async ({ page }) => {
   await signIn(page, emails.owner);
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();

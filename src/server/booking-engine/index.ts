@@ -666,6 +666,45 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     });
   }
 
+  /** Staff undo: a Booking marked arrived or no-show goes back to confirmed (so a mistaken no-show stops counting). */
+  async function undoAttendance(args: { userId: string; bookingId: string }) {
+    return sql.begin(async (tx) => {
+      const [b] = await tx<BookingRow[]>`select * from public.bookings where id = ${args.bookingId} for update`;
+      if (!b) throw notFound("Booking");
+      await authorizeForBarber(tx, args.userId, b.shop_id, b.barber_id);
+      if (b.kind === "walk_in") throw invalid("A walk-in can only be removed.");
+      if (b.status !== "arrived" && b.status !== "no_show") {
+        throw new BookingError("BOOKING_NOT_ACTIVE", "This booking is not marked arrived or no-show.");
+      }
+      await lockBarberCalendar(tx, b.barber_id);
+      const [updated] = await tx<BookingRow[]>`
+        update public.bookings set status = 'confirmed' where id = ${b.id} returning *
+      `;
+      return toSummary(updated);
+    });
+  }
+
+  /**
+   * Remove a Walk-in logged by mistake: cancelled by staff, so the time frees up and it
+   * leaves the stats. A Walk-in has no Client, so nothing is texted and no outbox row is written.
+   */
+  async function removeWalkIn(args: { userId: string; bookingId: string; now: Date }) {
+    return sql.begin(async (tx) => {
+      const [b] = await tx<BookingRow[]>`select * from public.bookings where id = ${args.bookingId} for update`;
+      if (!b) throw notFound("Booking");
+      const role = await authorizeForBarber(tx, args.userId, b.shop_id, b.barber_id);
+      if (b.kind !== "walk_in") throw invalid("Only a walk-in can be removed. Cancel a booking instead.");
+      if (b.status === "cancelled") throw new BookingError("BOOKING_NOT_ACTIVE", "This walk-in was already removed.");
+      await lockBarberCalendar(tx, b.barber_id);
+      const [updated] = await tx<BookingRow[]>`
+        update public.bookings
+        set status = 'cancelled', cancelled_by = ${role.owner ? "owner" : "barber"}, cancelled_at = ${args.now}
+        where id = ${b.id} returning *
+      `;
+      return toSummary(updated);
+    });
+  }
+
   async function addBarberDayOff(args: { userId: string; shopId: string; barberId: string; date: string }) {
     assertDate(args.date);
     const date = args.date;
@@ -796,6 +835,8 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     rescheduleBooking,
     logWalkIn,
     setAttendance,
+    undoAttendance,
+    removeWalkIn,
     addBarberDayOff,
     addShopClosedDay,
     getBookingByToken,

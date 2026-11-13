@@ -6,7 +6,15 @@ import { Notice } from "@/components/notice";
 import { PayTag } from "@/components/pay-tag";
 import { SlotPicker, type Slot } from "@/components/slot-picker";
 import { dictionaries, formatTime, type Locale } from "@/lib/i18n/dictionaries";
-import { cancelAsStaffAction, moveAsStaffAction, setAttendanceAction, walkInAction, type StaffResult } from "./actions";
+import {
+  cancelAsStaffAction,
+  moveAsStaffAction,
+  removeWalkInAction,
+  setAttendanceAction,
+  undoAttendanceAction,
+  walkInAction,
+  type StaffResult,
+} from "./actions";
 import { ArrowLeftIcon, CheckIcon, ClockIcon, CloseIcon, PhoneIcon, PlusIcon, ShareIcon, UserOffIcon } from "./icons";
 import type { DayBarber, DayRow } from "./types";
 
@@ -29,6 +37,9 @@ type Props = {
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 /** The gray pill for Cancel: never red (DESIGN.md → "App buttons"). */
 const GRAY_PILL = "btn w-full bg-raised text-ink hover:bg-line";
+/** A small gray pill that sits beside the status tags (still a 44px tap target). */
+const GRAY_CHIP =
+  "inline-flex min-h-11 items-center rounded-full bg-raised px-4 text-sm font-medium text-ink transition-colors hover:bg-line disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 /** The sheet: a bottom sheet on phones, a centered dialog from 640px; transform + opacity only. */
 const SHEET =
   "m-0 mt-auto max-h-[92dvh] w-full max-w-full overflow-y-auto overscroll-contain rounded-t-2xl border border-b-0 border-line bg-surface p-0 text-ink backdrop:bg-black/50 open:translate-y-0 motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out starting:open:translate-y-full sm:m-auto sm:w-[30rem] sm:rounded-2xl sm:border-b sm:motion-safe:transition-[transform,opacity] sm:starting:open:translate-y-3 sm:starting:open:opacity-0";
@@ -425,7 +436,7 @@ function RowSheet(props: {
   const t = dictionaries[locale];
   const d = t.day;
   const router = useRouter();
-  const [mode, setMode] = useState<"actions" | "move" | "cancel">("actions");
+  const [mode, setMode] = useState<"actions" | "move" | "cancel" | "remove">("actions");
   const [error, setError] = useState<string | null>(null);
   const [slot, setSlot] = useState<Slot | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -474,6 +485,11 @@ function RowSheet(props: {
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <span className="font-mono font-medium tabular-nums">{row.price}</span>
                     <RowTags row={row} locale={locale} />
+                    {row.kind === "booking" && (row.status === "arrived" || row.status === "no_show") && (
+                      <button type="button" className={GRAY_CHIP} disabled={pending} onClick={() => run(() => undoAttendanceAction(row.id), () => {})}>
+                        {d.undo}
+                      </button>
+                    )}
                   </div>
                 </div>
                 <CloseButton label={d.close} onClick={() => sheet.ref.current?.close()} />
@@ -523,6 +539,42 @@ function RowSheet(props: {
               </div>
               {(row.status === "arrived" || row.status === "no_show") && row.kind === "booking" && <p className="text-sm text-muted">{d.attendanceHint}</p>}
               {locked && <p className="text-sm text-muted">{locked}</p>}
+              {row.kind === "walk_in" && (
+                <button type="button" className={GRAY_PILL} disabled={pending} onClick={() => { setError(null); setMode("remove"); }}>
+                  {d.removeWalkIn}
+                </button>
+              )}
+            </>
+          )}
+
+          {mode === "remove" && (
+            <>
+              <div className="flex flex-col gap-2">
+                <h2 id="row-sheet-title" className="text-xl font-semibold tracking-tight">
+                  {d.removeTitle}
+                </h2>
+                <p className="text-muted">
+                  {row.service} · <span className="font-mono tabular-nums">{row.range}</span>
+                </p>
+              </div>
+              <Notice>
+                <p>{d.removeTold}</p>
+              </Notice>
+              {errorBox}
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  className="btn-primary w-full"
+                  disabled={pending}
+                  aria-busy={pending}
+                  onClick={() => run(() => removeWalkInAction(row.id), (r) => r.ok && props.onDone(d.removed))}
+                >
+                  {pending ? d.removing : d.removeWalkIn}
+                </button>
+                <button type="button" autoFocus className={GRAY_PILL} disabled={pending} onClick={() => { setMode("actions"); setError(null); }}>
+                  {d.keepWalkIn}
+                </button>
+              </div>
             </>
           )}
 
