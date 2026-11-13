@@ -1,8 +1,19 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-13, end of session (G, U1, U3a done; U2 partly done; next: the premium pass P3–P5 (P1, P2 done). See "U2 status → Milestones left"). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-13, end of session (G, U1, U3a done; U2 partly done; P1, P2 done and pushed; next: a demo deploy, then P3–P5 in small milestones. See "U2 status → Milestones left"). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
+
+**Direction from the user (2026-11-13, after P2, all pushed to `f50e318`):** "we are getting to the final stage." **Next priority: a demo deploy** so the user can show the app to their dad. P3 (calendar), P4 (Settings life) and further polish (animations, components) come **later, in small milestones**.
+
+**Demo deploy plan (not started; needs the user's go-ahead on each outward step):**
+
+1. Vercel project from the GitHub repo (`OmarflorexAI/Barber-booking-system`), Next.js preset. The Vercel CLI isn't installed; use the Vercel MCP tools or the dashboard.
+2. Env vars (names from `.env.example`): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SITE_URL` (the `*.vercel.app` URL, set before the build), `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, Turnstile keys (test keys are fine for a demo), `CRON_SECRET`, `MANAGE_LINK_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `STRIPE_SECRET_KEY` (test), `STRIPE_WEBHOOK_SECRET` (a new endpoint secret for the deployed URL, not the `stripe listen` one). Twilio/Telegram stay unset (log-only stand-ins).
+3. Supabase Auth: add the deployed URL to Site URL / redirect URLs so magic links come back to it.
+4. Stripe test webhook endpoint at `<url>/api/payments/webhook` (Events from: Connected accounts).
+5. Crons: the dispatcher needs every minute (Vercel Pro, or Supabase `pg_cron` + `pg_net`); for a demo, daily crons on Hobby are enough and booking still works.
+6. The demo uses the shared dev Supabase DB (`barber-booking-dev`) and demo-shop with its sample data; sign the dad in as staff with `npm run staff:add`.
 
 **The backend (B1–B6) is built, tested and pushed. Stripe payments work end to end in Stripe test mode (2026-11-10). Resend login emails work. The landing page (Cocoon template, missions L1–L4) is done and pushed (2026-11-12): `/` English and `/es` Spanish (static), legal pages, bilingual 404, SEO, motion, and `DESIGN.md`.** Twilio and Telegram are postponed (agreed 2026-11-10). **Next: mission G, the system UI grill. The user asked to start it at the beginning of the next session.**
 
