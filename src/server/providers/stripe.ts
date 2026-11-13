@@ -109,6 +109,9 @@ export function createStripePayments(cfg: { secretKey: string; webhookSecret: st
         "/checkout/sessions",
         {
           mode: "payment",
+          // Cards only (Apple Pay / Google Pay ride on "card"): delayed methods like Cash App,
+          // Klarna or crypto can confirm after the 10-minute hold has ended.
+          payment_method_types: ["card"],
           line_items: [{ quantity: 1, price_data: { currency: "usd", unit_amount: a.amountCents, product_data: { name: a.description } } }],
           success_url: a.successUrl,
           cancel_url: a.cancelUrl,

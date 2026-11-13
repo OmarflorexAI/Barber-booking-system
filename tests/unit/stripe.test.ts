@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto";
-import { describe, expect, it } from "vitest";
-import { stripeForm, stripeSignatureValid, toPaymentEvent } from "@/server/providers/stripe";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { createStripePayments, stripeForm, stripeSignatureValid, toPaymentEvent } from "@/server/providers/stripe";
 
 const secret = "whsec_test";
 const now = new Date("2027-01-11T14:00:00Z");
@@ -44,5 +44,29 @@ describe("Stripe events", () => {
     expect(form.toString()).toBe(
       "line_items%5B0%5D%5Bquantity%5D=1&line_items%5B0%5D%5Bprice_data%5D%5Bunit_amount%5D=3000&metadata%5Bbooking_id%5D=b1",
     );
+  });
+});
+
+describe("Stripe Checkout", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("offers cards only (wallets ride on card; no delayed methods that outlast the hold)", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ id: "cs_1", url: "https://checkout.test/cs_1" }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const stripe = createStripePayments({ secretKey: "sk_test_x", webhookSecret: secret, clock: () => now });
+    await stripe.createCheckout({
+      accountId: "acct_1",
+      bookingId: "b1",
+      amountCents: 3000,
+      description: "Cut",
+      successUrl: "https://x.test/ok",
+      cancelUrl: "https://x.test/back",
+      holdExpiresAt: new Date(now.getTime() + 10 * 60_000),
+    });
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://api.stripe.com/v1/checkout/sessions");
+    const form = init.body as URLSearchParams;
+    expect(form.getAll("payment_method_types[0]")).toEqual(["card"]);
+    expect(form.has("payment_method_types[1]")).toBe(false);
   });
 });
