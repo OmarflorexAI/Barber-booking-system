@@ -1,6 +1,6 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-12. Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-13 (G, U1, U3a done; next U2, waiting on the user's dashboard reference image). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
@@ -77,9 +77,9 @@ Rules for every mission:
 | L1+L2 | Landing foundation + sections | none (decided) | **DONE 2026-11-11** (`d496896`, `158c7ca`) |
 | L3 | Landing motion | none (decided) | **DONE 2026-11-12** |
 | L4 | Landing ship-ready | short [grill] for the /privacy and /terms wording | **DONE 2026-11-12**, pushed |
-| G | System UI grill | **[grill]** | **Grill DONE 2026-11-13** (answers below); DESIGN.md + briefs in progress |
-| U1 | Client booking `/b` + manage `/m` (with online payment) | covered by G | **IN PROGRESS 2026-11-13** |
-| U3a | Barber day view `/app/day` | covered by G | after U1 |
+| G | System UI grill | **[grill]** | **DONE 2026-11-13** (`d57426d`: answers below, DESIGN.md "App (Operate mode)", 6 surface briefs) |
+| U1 | Client booking `/b` + manage `/m` (with online payment) | covered by G | **DONE 2026-11-13** (`322f56f` … `48dbd8b`, see "U1 status") |
+| U3a | Barber day view `/app/day` | covered by G | **DONE 2026-11-13** (`559301f` shell, `9d16eec` day view; see "U3a status") |
 | U2 | Owner tools | covered by G, plus a short [grill] for the dashboard numbers | after U3a |
 | U3b | Barber profile, hours, Connect Telegram | covered by G | with or after U2 |
 | U4 | Platform admin panel | short [grill] | after U2 |
@@ -139,6 +139,27 @@ Output: the decisions recorded in this file, `DESIGN.md` extended to cover the a
 - **U3b Me:** Profile (photo, bio, specialties) · Gallery (3–6, the screen asks for ≥ 3) · Hours (weekly + break, days off) · Alerts (Connect Telegram by link/QR; "Alerts go to your email" until linked). **Photos upload to Supabase Storage**, resized on the phone first; initials when no photo. The Telegram screen is built now against the log-only stand-in; live test when keys arrive.
 - **U4 `/admin`:** Shops list (status, texting, billing, 7-day Bookings) · Create Shop · Shop detail (SMS status, free/paid, minutes per booking, CSV import with line errors, support access with reason, cancel/reactivate/export) · Failures (retry) · Access log.
 - **Process:** order **U1 (incl. product-wide fonts, theme tokens, dark switch; the landing's font swap) → U3a → U2 → U3b → U4 → U5**. Claude **commits each mission after QA passes**, then shows the user screenshots + the commit list; **push only after the user's OK**. The user asked to use multiple agents.
+
+**U1 status (DONE 2026-11-13, committed, not pushed).** Built by workers (foundation; `/b`; `/m`; cards-only), checked by a separate QA agent (9/11 criteria pass first round; 12 defects fixed after), then by the orchestrator.
+
+- Commits: `322f56f` cards-only Checkout · `79f7c0d` dark `/login` · `5a2dfa5` Hanken Grotesk + JetBrains Mono product-wide, achromatic light/dark tokens (`--paper --surface --raised --line --muted --ink --red`), sun/moon switch (`theme` cookie, inline script before paint, `ThemeSync`) · `ea49f4a` theme-color follows the cookie, input focus ring, `/login` html lang · `43dcb66` `/b` (5 steps, Barber sheet, slot picker, fresh Turnstile after an error, `UNPAID_LIMIT` wording fixed, html lang) and `/m` (awaiting payment, hold countdown, expired, cancelled + refund line, past, too late + tap-to-call, cancel sheet), shared `client-shell.tsx`, `notice.tsx`, `pay-tag.tsx` · `48dbd8b` e2e `book-pay-online` and `manage` specs.
+- Checks: typecheck, lint, `npm test` 144 (one flaky run, see below), Playwright 31/31 (incl. a real Stripe test payment confirmed by webhook), build OK, axe 0 on `/b` and `/m` states, no sideways scroll at 360, detector `[]`. QA also ran a real refund through the dispatcher: Stripe refund succeeded, `/m` showed "Refunded".
+- Fixed in env: `STRIPE_WEBHOOK_SECRET` in `.env.local` no longer matched `stripe listen` (new 38-char secret); replaced, old value kept as a comment.
+- **Open:**
+  - **Checkout still shows "Pay securely with Link" and "Klarna – Powered by Link"** although the session has `payment_method_types: ["card"]` (verified via the API). Comes from Link being on in the connected account's payment-method settings; turning it off is a Stripe Dashboard change for the user (or a payment-method configuration). Late payments are refunded automatically, so the risk is a refund, not lost money.
+  - Lighthouse not re-measured after the font swap (CPU was 51%). Do it on an idle PC.
+  - `tests/engine/payments.test.ts` "frees the time when the 10 minutes run out" counts holds across all Shops, so a leftover expired hold in demo-shop makes it fail once (it then releases it). Make it assert on its own booking.
+  - 37 pending `barber_alert` outbox rows with `booking_id` null from old test runs sit in the dev DB; running `/api/cron/dispatch` with `RESEND_API_KEY` set would email them. Delete them (user's OK) before running the dispatcher in dev.
+  - Day chips don't grey out closed days/days off yet (needs a month of availability). Demo Barber specialties are English only.
+  - Copy that makes claims (check before launch): `smsConsent` (confirmation + reminder texts), "We hold your time for 10 minutes", refund lines ("on its way to your card", no timing promised).
+
+**U3a status (DONE 2026-11-13, committed, not pushed).** Two workers (shell; day view) + a QA agent (narrowed after the usage limit hit: 5/5 checked criteria pass).
+
+- Shell `src/app/app/layout.tsx` + `_shell/` (`getStaff()` once per request; `--tabbar-h`, `--shell-bottom`); stub pages `/app/me` (name, language, sign out, temporary "our team sets this up" line), `/app/settings` (8 sections as plain rows, admin link, sign out), `/app/dashboard` (one line). Landing after sign-in is `/app/day` for everyone (U4: one line marked `// U4: "/admin"` in `_shell/staff.ts`). Callback blocks `//`, `/\` and absolute `next=`.
+- Day view `src/app/app/day/`: `day-board.tsx` (rows, now line by translateY, new dot = online Booking confirmed in the last 2 h, row sheet, cancel confirm with refund copy that depends on `sms_enabled`/payment, move via new `moveAsStaffAction` → `rescheduleBooking`, walk-in sheet), Owner chips on phones and per-Barber columns ≥1024px. Telegram button removed (comes back in Me, U3b; its actions stay in `day/actions.ts`).
+- QA: typecheck/lint, e2e 13/13 (`day.spec.ts` 6), a Barber's tampered server actions on another Barber's booking refused, redirects safe, axe 0 on Day/sheets/Me/Settings/Dashboard, no sideways scroll at 360, walk-in pill doesn't cover the last row, red only on now line + dot. Fixed after QA: h1 on the not-linked view, `viewportFit: "cover"` (safe-area insets work), Owner title says "Day" on other dates.
+- **Open (small):** no swipe-down to close sheets; walk-in start time not editable and no "next free" offer; "new" dot is a fixed 2 h window (DESIGN.md says "since the Barber last looked"); unused keys `day.noServices`, `notMember`; Spanish tab names "Perfil" (Me) and "Resumen" (Dashboard) to confirm; page `<title>`s English only. **Decision for the user:** the engine can't undo Arrived/No-show or remove a mistaken walk-in. Add an undo?
+- **Token note (user, 2026-11-13):** the session hit the 5-hour usage limit mid-QA. From now on every mission is split into **small agent jobs** (one screen or concern each, short reports, narrow QA).
 
 **U1 Client booking (`/b/<shop>`, `/m/<token>`).**
 
