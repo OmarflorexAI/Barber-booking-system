@@ -16,7 +16,16 @@ import { addDays, isLocalDate, toLocal, weekdayOf, type LocalDate } from "@/serv
 export type PeriodStats = { bookings: number; walkIns: number; noShows: number; timeSavedMin: number };
 
 type ShopActor = { userId: string; shopId: string };
-type DayRow = { day: string; bookings: number; walk_ins: number; no_shows: number; minutes: number };
+type DayRow = { day: string; barber_id: string | null; bookings: number; walk_ins: number; no_shows: number; minutes: number };
+
+/** One week of the Owner Dashboard (U2): totals, the week before, each day, each Barber. */
+export type DashboardWeek = {
+  weekStart: LocalDate;
+  totals: PeriodStats;
+  previous: PeriodStats;
+  days: { date: LocalDate; bookings: number; walkIns: number }[];
+  barbers: { barberId: string; name: string; photoUrl: string | null; bookings: number; walkIns: number }[];
+};
 
 function sumDays(days: DayRow[]): PeriodStats {
   return days.reduce<PeriodStats>(
@@ -31,10 +40,14 @@ function sumDays(days: DayRow[]): PeriodStats {
 }
 
 export function createReporting(sql: Sql) {
-  /** Counts per local day in [from, to). */
-  async function statsByDay(shopId: string, from: LocalDate, to: LocalDate) {
+  /**
+   * Counts per local day in [from, to), optionally split per Barber. The one place
+   * that knows what counts: every report goes through here.
+   */
+  async function statsByDay(shopId: string, from: LocalDate, to: LocalDate, perBarber = false) {
     return sql<DayRow[]>`
       select (b.starts_at at time zone s.timezone)::date::text as day,
+             ${perBarber ? sql`b.barber_id` : sql`null::uuid`} as barber_id,
              count(*) filter (where b.kind = 'booking')::int as bookings,
              count(*) filter (where b.kind = 'walk_in')::int as walk_ins,
              count(*) filter (where b.status = 'no_show')::int as no_shows,
@@ -45,7 +58,7 @@ export function createReporting(sql: Sql) {
         and b.status not in ('cancelled', 'pending_payment')
         and (b.starts_at at time zone s.timezone)::date >= ${from}::date
         and (b.starts_at at time zone s.timezone)::date < ${to}::date
-      group by 1
+      group by 1, 2
     `;
   }
 
@@ -73,6 +86,41 @@ export function createReporting(sql: Sql) {
     return { date: args.date, ...sumDays(await statsByDay(args.shopId, args.date, addDays(args.date, 1))) };
   }
 
+  /**
+   * The Owner Dashboard for one Monday-to-Sunday week (New York days): totals and the
+   * week before, per day, and per active Barber (sort order, Barbers with nothing included).
+   */
+  async function dashboardWeek(args: ShopActor & { weekStart: LocalDate }): Promise<DashboardWeek> {
+    await requireOwner(sql, args.userId, args.shopId);
+    const { weekStart } = args;
+    if (!isLocalDate(weekStart) || weekdayOf(weekStart) !== 1) throw invalid("Week must start on a Monday (YYYY-MM-DD).");
+
+    const [rows, barberRows] = await Promise.all([
+      statsByDay(args.shopId, addDays(weekStart, -7), addDays(weekStart, 7), true),
+      sql<{ id: string; display_name: string; photo_url: string | null }[]>`
+        select id, display_name, photo_url from public.barbers
+        where shop_id = ${args.shopId} and active
+        order by sort_order, id
+      `,
+    ]);
+    const week = rows.filter((r) => r.day >= weekStart);
+
+    return {
+      weekStart,
+      totals: sumDays(week),
+      previous: sumDays(rows.filter((r) => r.day < weekStart)),
+      days: Array.from({ length: 7 }, (_, i) => {
+        const date = addDays(weekStart, i);
+        const { bookings, walkIns } = sumDays(week.filter((r) => r.day === date));
+        return { date, bookings, walkIns };
+      }),
+      barbers: barberRows.map((b) => {
+        const { bookings, walkIns } = sumDays(week.filter((r) => r.barber_id === b.id));
+        return { barberId: b.id, name: b.display_name, photoUrl: b.photo_url, bookings, walkIns };
+      }),
+    };
+  }
+
   /** Every Client of the Shop as CSV (the Shop owns its data). */
   async function exportClientsCsv(args: ShopActor): Promise<string> {
     await requireOwner(sql, args.userId, args.shopId);
@@ -93,7 +141,7 @@ export function createReporting(sql: Sql) {
     return sumDays(await statsByDay(args.shopId, args.date, addDays(args.date, 1)));
   }
 
-  return { weeklyStats, dayStats, exportClientsCsv, exportClientsCsvForAdmin, dayStatsForScheduledJob };
+  return { weeklyStats, dayStats, dashboardWeek, exportClientsCsv, exportClientsCsvForAdmin, dayStatsForScheduledJob };
 }
 
 export type Reporting = ReturnType<typeof createReporting>;

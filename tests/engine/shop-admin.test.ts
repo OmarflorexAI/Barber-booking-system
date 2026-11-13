@@ -284,6 +284,79 @@ describe("reports", () => {
 
   it("a Barber cannot see the Shop's numbers", async () => {
     await expectCode(reports.weeklyStats({ userId: barberUser, shopId: shop.shopId, weeks: 4, now: NOW }), "FORBIDDEN");
+    await expectCode(reports.dashboardWeek({ userId: barberUser, shopId: shop.shopId, weekStart: "2027-01-11" }), "FORBIDDEN");
+  });
+});
+
+describe("the Owner Dashboard week", () => {
+  const dashboard = (weekStart: string) => reports.dashboardWeek({ userId: owner, shopId: shop.shopId, weekStart });
+  /** Moves a Booking to a wall-clock time the Shop's hours would not offer (late Sunday night). */
+  const moveTo = (bookingId: string, startsAt: Date) => sql`
+    update public.bookings
+    set starts_at = ${startsAt}, ends_at = ${startsAt}::timestamptz + interval '30 minutes', blocked_until = ${startsAt}::timestamptz + interval '30 minutes'
+    where id = ${bookingId}
+  `;
+
+  beforeEach(async () => {
+    await sql`update public.shops set manual_booking_minutes = 4 where id = ${shop.shopId}`;
+  });
+
+  it("totals the week and the week before, per day and per Barber", async () => {
+    const lastWeek = new Date(NOW.getTime() - 7 * 24 * 60 * 60_000);
+    await book(shop, { startsAt: at("2027-01-05", 10), now: lastWeek }); // previous week
+    const { booking: missed } = await book(shop, { startsAt: at(TOMORROW, 10) });
+    await engine.setAttendance({ userId: owner, bookingId: missed.id, status: "no_show" }); // still a Booking
+    await book(shop, { startsAt: at(TOMORROW, 11) });
+    await book(shop, { startsAt: at("2027-01-14", 12), barberId: shop.blake });
+    await book(shop, { startsAt: at("2027-01-17", 10) }); // Sunday
+    await book(shop, { startsAt: at("2027-01-18", 10) }); // next week: not counted
+    const { booking: gone, manageToken } = await book(shop, { startsAt: at(TOMORROW, 15) });
+    await engine.cancelBooking({ bookingId: gone.id, actor: { kind: "client", token: manageToken }, now: NOW });
+    await engine.logWalkIn({ userId: owner, shopId: shop.shopId, barberId: shop.blake, serviceId: shop.cut, startsAt: at(TOMORROW, 16), now: at(TOMORROW, 16) });
+    const [cam] = await sql<{ id: string }[]>`
+      insert into public.barbers (shop_id, display_name, sort_order, photo_url) values (${shop.shopId}, 'Cam', 2, 'https://img.test/cam.jpg') returning id
+    `;
+    await sql`insert into public.barbers (shop_id, display_name, sort_order, active) values (${shop.shopId}, 'Gone', 3, false)`;
+
+    const week = await dashboard("2027-01-11");
+    expect(week.totals).toEqual({ bookings: 4, walkIns: 1, noShows: 1, timeSavedMin: 16 });
+    expect(week.previous).toEqual({ bookings: 1, walkIns: 0, noShows: 0, timeSavedMin: 4 });
+    expect(week.days).toEqual([
+      { date: "2027-01-11", bookings: 0, walkIns: 0 },
+      { date: "2027-01-12", bookings: 2, walkIns: 1 },
+      { date: "2027-01-13", bookings: 0, walkIns: 0 },
+      { date: "2027-01-14", bookings: 1, walkIns: 0 },
+      { date: "2027-01-15", bookings: 0, walkIns: 0 },
+      { date: "2027-01-16", bookings: 0, walkIns: 0 },
+      { date: "2027-01-17", bookings: 1, walkIns: 0 },
+    ]);
+    expect(week.barbers).toEqual([
+      { barberId: shop.alex, name: "Alex", photoUrl: null, bookings: 3, walkIns: 0 },
+      { barberId: shop.blake, name: "Blake", photoUrl: null, bookings: 1, walkIns: 1 },
+      { barberId: cam.id, name: "Cam", photoUrl: "https://img.test/cam.jpg", bookings: 0, walkIns: 0 },
+    ]);
+  });
+
+  it("puts a late Sunday-night Booking on its New York day across the DST change", async () => {
+    const before = at("2027-03-01", 9);
+    // Sunday 2027-03-07 21:00 EST and Sunday 2027-03-14 22:30 EDT: both are Monday in UTC.
+    const { booking: a } = await book(shop, { startsAt: at("2027-03-07", 10), now: before });
+    await moveTo(a.id, at("2027-03-07", 21));
+    const { booking: b } = await book(shop, { startsAt: at("2027-03-14", 10), now: before });
+    await moveTo(b.id, at("2027-03-14", 22, 30));
+    expect(at("2027-03-14", 22, 30).toISOString()).toBe("2027-03-15T02:30:00.000Z");
+
+    const week = await dashboard("2027-03-08");
+    expect(week.totals.bookings).toBe(1);
+    expect(week.previous.bookings).toBe(1);
+    expect(week.days[6]).toEqual({ date: "2027-03-14", bookings: 1, walkIns: 0 });
+    expect(week.days.slice(0, 6).every((d) => d.bookings === 0)).toBe(true);
+    expect((await dashboard("2027-03-15")).totals.bookings).toBe(0);
+  });
+
+  it("refuses a week that does not start on a Monday", async () => {
+    await expectCode(dashboard("2027-01-12"), "INVALID_INPUT");
+    await expectCode(dashboard("2027-02-30"), "INVALID_INPUT");
   });
 });
 
