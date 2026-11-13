@@ -16,15 +16,53 @@ import { addDays, isLocalDate, toLocal, weekdayOf, type LocalDate } from "@/serv
 export type PeriodStats = { bookings: number; walkIns: number; noShows: number; timeSavedMin: number };
 
 type ShopActor = { userId: string; shopId: string };
-type DayRow = { day: string; barber_id: string | null; bookings: number; walk_ins: number; no_shows: number; minutes: number };
+type DayRow = {
+  day: string;
+  barber_id: string | null;
+  hour: number | null;
+  bookings: number;
+  walk_ins: number;
+  no_shows: number;
+  minutes: number;
+};
+
+/** One Barber's counts on one day of the Dashboard. */
+export type DashboardBarberDay = { barberId: string; bookings: number; walkIns: number; noShows: number };
+/** One local start hour (0-23, New York wall clock) of one day of the Dashboard. */
+export type DashboardHour = { hour: number; bookings: number; walkIns: number };
 
 /** One week of the Owner Dashboard (U2): totals, the week before, each day, each Barber. */
 export type DashboardWeek = {
   weekStart: LocalDate;
   totals: PeriodStats;
   previous: PeriodStats;
-  days: { date: LocalDate; bookings: number; walkIns: number }[];
-  barbers: { barberId: string; name: string; photoUrl: string | null; bookings: number; walkIns: number }[];
+  days: {
+    date: LocalDate;
+    bookings: number;
+    walkIns: number;
+    noShows: number;
+    timeSavedMin: number;
+    /** Every active Barber, in the same order as `barbers`, zeros included. */
+    byBarber: DashboardBarberDay[];
+    /** The week's open span (see `hours`), one entry per hour, zeros included. */
+    byHour: DashboardHour[];
+  }[];
+  /**
+   * The local hours every `byHour` covers, the same for all 7 days: from the earliest
+   * opening to the latest closing across the active Barbers' weekly hours, widened to
+   * any hour that has a Booking. `null` when there are neither hours nor Bookings.
+   */
+  hours: { first: number; last: number } | null;
+  barbers: {
+    barberId: string;
+    name: string;
+    photoUrl: string | null;
+    bookings: number;
+    walkIns: number;
+    noShows: number;
+    /** Bookings (not Walk-ins) per day, Monday to Sunday: 7 numbers for a sparkline. */
+    days: number[];
+  }[];
 };
 
 function sumDays(days: DayRow[]): PeriodStats {
@@ -44,10 +82,11 @@ export function createReporting(sql: Sql) {
    * Counts per local day in [from, to), optionally split per Barber. The one place
    * that knows what counts: every report goes through here.
    */
-  async function statsByDay(shopId: string, from: LocalDate, to: LocalDate, perBarber = false) {
+  async function statsByDay(shopId: string, from: LocalDate, to: LocalDate, split: { barber?: boolean; hour?: boolean } = {}) {
     return sql<DayRow[]>`
       select (b.starts_at at time zone s.timezone)::date::text as day,
-             ${perBarber ? sql`b.barber_id` : sql`null::uuid`} as barber_id,
+             ${split.barber ? sql`b.barber_id` : sql`null::uuid`} as barber_id,
+             ${split.hour ? sql`extract(hour from b.starts_at at time zone s.timezone)::int` : sql`null::int`} as hour,
              count(*) filter (where b.kind = 'booking')::int as bookings,
              count(*) filter (where b.kind = 'walk_in')::int as walk_ins,
              count(*) filter (where b.status = 'no_show')::int as no_shows,
@@ -58,7 +97,7 @@ export function createReporting(sql: Sql) {
         and b.status not in ('cancelled', 'pending_payment')
         and (b.starts_at at time zone s.timezone)::date >= ${from}::date
         and (b.starts_at at time zone s.timezone)::date < ${to}::date
-      group by 1, 2
+      group by 1, 2, 3
     `;
   }
 
@@ -89,6 +128,7 @@ export function createReporting(sql: Sql) {
   /**
    * The Owner Dashboard for one Monday-to-Sunday week (New York days): totals and the
    * week before, per day, and per active Barber (sort order, Barbers with nothing included).
+   * Each day drills down per Barber and per local start hour. Two queries, run together.
    */
   async function dashboardWeek(args: ShopActor & { weekStart: LocalDate }): Promise<DashboardWeek> {
     await requireOwner(sql, args.userId, args.shopId);
@@ -96,27 +136,61 @@ export function createReporting(sql: Sql) {
     if (!isLocalDate(weekStart) || weekdayOf(weekStart) !== 1) throw invalid("Week must start on a Monday (YYYY-MM-DD).");
 
     const [rows, barberRows] = await Promise.all([
-      statsByDay(args.shopId, addDays(weekStart, -7), addDays(weekStart, 7), true),
-      sql<{ id: string; display_name: string; photo_url: string | null }[]>`
-        select id, display_name, photo_url from public.barbers
-        where shop_id = ${args.shopId} and active
-        order by sort_order, id
+      statsByDay(args.shopId, addDays(weekStart, -7), addDays(weekStart, 7), { barber: true, hour: true }),
+      // first_hour / end_hour: this Barber's weekly hours as whole local hours [first, end).
+      sql<{ id: string; display_name: string; photo_url: string | null; first_hour: number | null; end_hour: number | null }[]>`
+        select b.id, b.display_name, b.photo_url,
+               min(extract(hour from wh.start_time))::int as first_hour,
+               max(ceil(extract(epoch from wh.end_time) / 3600))::int as end_hour
+        from public.barbers b
+        left join public.weekly_hours wh on wh.barber_id = b.id
+        where b.shop_id = ${args.shopId} and b.active
+        group by b.id
+        order by b.sort_order, b.id
       `,
     ]);
     const week = rows.filter((r) => r.day >= weekStart);
+
+    const spanHours = [
+      ...barberRows.flatMap((b) => (b.first_hour === null || b.end_hour === null ? [] : [b.first_hour, b.end_hour - 1])),
+      ...week.map((r) => r.hour ?? 0),
+    ];
+    const hours = spanHours.length ? { first: Math.min(...spanHours), last: Math.max(...spanHours) } : null;
+    const hourList = hours ? Array.from({ length: hours.last - hours.first + 1 }, (_, i) => hours.first + i) : [];
+    const dates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
     return {
       weekStart,
       totals: sumDays(week),
       previous: sumDays(rows.filter((r) => r.day < weekStart)),
-      days: Array.from({ length: 7 }, (_, i) => {
-        const date = addDays(weekStart, i);
-        const { bookings, walkIns } = sumDays(week.filter((r) => r.day === date));
-        return { date, bookings, walkIns };
+      days: dates.map((date) => {
+        const day = week.filter((r) => r.day === date);
+        return {
+          date,
+          ...sumDays(day),
+          byBarber: barberRows.map((b) => {
+            const { bookings, walkIns, noShows } = sumDays(day.filter((r) => r.barber_id === b.id));
+            return { barberId: b.id, bookings, walkIns, noShows };
+          }),
+          byHour: hourList.map((hour) => {
+            const { bookings, walkIns } = sumDays(day.filter((r) => r.hour === hour));
+            return { hour, bookings, walkIns };
+          }),
+        };
       }),
+      hours,
       barbers: barberRows.map((b) => {
-        const { bookings, walkIns } = sumDays(week.filter((r) => r.barber_id === b.id));
-        return { barberId: b.id, name: b.display_name, photoUrl: b.photo_url, bookings, walkIns };
+        const mine = week.filter((r) => r.barber_id === b.id);
+        const { bookings, walkIns, noShows } = sumDays(mine);
+        return {
+          barberId: b.id,
+          name: b.display_name,
+          photoUrl: b.photo_url,
+          bookings,
+          walkIns,
+          noShows,
+          days: dates.map((date) => sumDays(mine.filter((r) => r.day === date)).bookings),
+        };
       }),
     };
   }

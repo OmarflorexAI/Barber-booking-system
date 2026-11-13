@@ -321,7 +321,7 @@ describe("the Owner Dashboard week", () => {
     const week = await dashboard("2027-01-11");
     expect(week.totals).toEqual({ bookings: 4, walkIns: 1, noShows: 1, timeSavedMin: 16 });
     expect(week.previous).toEqual({ bookings: 1, walkIns: 0, noShows: 0, timeSavedMin: 4 });
-    expect(week.days).toEqual([
+    expect(week.days.map(({ date, bookings, walkIns }) => ({ date, bookings, walkIns }))).toEqual([
       { date: "2027-01-11", bookings: 0, walkIns: 0 },
       { date: "2027-01-12", bookings: 2, walkIns: 1 },
       { date: "2027-01-13", bookings: 0, walkIns: 0 },
@@ -331,10 +331,29 @@ describe("the Owner Dashboard week", () => {
       { date: "2027-01-17", bookings: 1, walkIns: 0 },
     ]);
     expect(week.barbers).toEqual([
-      { barberId: shop.alex, name: "Alex", photoUrl: null, bookings: 3, walkIns: 0 },
-      { barberId: shop.blake, name: "Blake", photoUrl: null, bookings: 1, walkIns: 1 },
-      { barberId: cam.id, name: "Cam", photoUrl: "https://img.test/cam.jpg", bookings: 0, walkIns: 0 },
+      { barberId: shop.alex, name: "Alex", photoUrl: null, bookings: 3, walkIns: 0, noShows: 1, days: [0, 2, 0, 0, 0, 0, 1] },
+      { barberId: shop.blake, name: "Blake", photoUrl: null, bookings: 1, walkIns: 1, noShows: 0, days: [0, 0, 0, 1, 0, 0, 0] },
+      { barberId: cam.id, name: "Cam", photoUrl: "https://img.test/cam.jpg", bookings: 0, walkIns: 0, noShows: 0, days: [0, 0, 0, 0, 0, 0, 0] },
     ]);
+
+    // Drill-down for Tuesday: per Barber (every active one, zeros too) and per local hour.
+    // The fixture Barbers work 09:00-17:00 and Cam has no hours, so the span is 9..16.
+    expect(week.hours).toEqual({ first: 9, last: 16 });
+    const tue = week.days[1];
+    expect(tue.noShows).toBe(1);
+    expect(tue.timeSavedMin).toBe(8);
+    expect(tue.byBarber).toEqual([
+      { barberId: shop.alex, bookings: 2, walkIns: 0, noShows: 1 },
+      { barberId: shop.blake, bookings: 0, walkIns: 1, noShows: 0 },
+      { barberId: cam.id, bookings: 0, walkIns: 0, noShows: 0 },
+    ]);
+    expect(tue.byHour).toEqual([9, 10, 11, 12, 13, 14, 15, 16].map((hour) => ({
+      hour,
+      bookings: hour === 10 || hour === 11 ? 1 : 0,
+      walkIns: hour === 16 ? 1 : 0,
+    })));
+    expect(week.days[0].byHour.every((h) => h.bookings === 0 && h.walkIns === 0)).toBe(true);
+    expect(week.days[0].byHour).toHaveLength(8);
   });
 
   it("puts a late Sunday-night Booking on its New York day across the DST change", async () => {
@@ -349,8 +368,16 @@ describe("the Owner Dashboard week", () => {
     const week = await dashboard("2027-03-08");
     expect(week.totals.bookings).toBe(1);
     expect(week.previous.bookings).toBe(1);
-    expect(week.days[6]).toEqual({ date: "2027-03-14", bookings: 1, walkIns: 0 });
+    expect(week.days[6]).toMatchObject({ date: "2027-03-14", bookings: 1, walkIns: 0, noShows: 0, timeSavedMin: 4 });
     expect(week.days.slice(0, 6).every((d) => d.bookings === 0)).toBe(true);
+    // 22:30 EDT is hour 22 on the New York clock (02:30 UTC Monday), and widens the span.
+    expect(week.hours).toEqual({ first: 9, last: 22 });
+    expect(week.days[6].byHour.filter((h) => h.bookings > 0)).toEqual([{ hour: 22, bookings: 1, walkIns: 0 }]);
+    expect(week.days[6].byBarber.find((b) => b.barberId === shop.alex)).toEqual({ barberId: shop.alex, bookings: 1, walkIns: 0, noShows: 0 });
+    expect(week.barbers.find((b) => b.barberId === shop.alex)?.days).toEqual([0, 0, 0, 0, 0, 0, 1]);
+    // The week before: 21:00 EST on Sunday 2027-03-07 is hour 21 there.
+    const prev = await dashboard("2027-03-01");
+    expect(prev.days[6].byHour.filter((h) => h.bookings > 0)).toEqual([{ hour: 21, bookings: 1, walkIns: 0 }]);
     expect((await dashboard("2027-03-15")).totals.bookings).toBe(0);
   });
 
