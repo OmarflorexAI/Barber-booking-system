@@ -6,6 +6,47 @@ Last updated: 2026-11-13, end of session (G, U1, U3a done; U2 partly done; P1, P
 
 **Direction from the user (2026-11-13, after P2, all pushed to `f50e318`):** "we are getting to the final stage." **Next priority: a demo deploy** so the user can show the app to their dad. P3 (calendar), P4 (Settings life) and further polish (animations, components) come **later, in small milestones**.
 
+### Session handoff (2026-11-13, end of session): how to start, run and stop things
+
+**Left running at the end of this session** (Claude's process kills were blocked by the permission check; the user was given this command):
+
+```powershell
+foreach ($id in 36708,12100,21412,7944,34772,31780,11488) { taskkill /PID $id /T /F }
+```
+
+PIDs `36708 12100 21412` = leftover QA scripts `.impeccable/review/qa-p2/qa*.mjs`; the rest = the dev server on :3000. If they're still alive next session (PIDs may have changed), find them with:
+
+```powershell
+Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Select-Object ProcessId, CommandLine
+Get-NetTCPConnection -State Listen | Where-Object LocalPort -in 3000,3001,3100,3200,3417,3600,3700
+```
+
+Only stop processes whose command line mentions `Sistema_Barberias` or `qa-`; the Codex runtime node process belongs to another app. Stopping a process needs the user's permission (ask them, or have them run it with `!` in the prompt).
+
+**Start of the next session:**
+
+1. Read `CLAUDE.md`, `AGENTS.md`, this file, `DESIGN.md` (`## App (Operate mode)` for app screens).
+2. Check the ports above are free. If :3000 is already a `next dev` for this repo, reuse it (a second `npm run dev` exits with "Another next dev server is already running").
+3. `npm run dev` in the background (<http://localhost:3000>). If pages reload in a loop: stop it, delete `.next`, start again.
+4. Only for payment work: `npm run stripe:listen` in the background; its secret must match `STRIPE_WEBHOOK_SECRET` in `.env.local`.
+
+**Agents (project-local, `.claude/agents/`):**
+
+- `bm-worker`: one small job per agent (one screen or concern). The brief lists the files it owns and the ones it must not touch, the checks to run, and "don't build, don't commit". Run jobs that don't share files in parallel; if two must share a file (e.g. `dashboard/page.tsx`), give each one its exact part. Short reports (< 25 lines).
+- `bm-qa`: read-only inspector (Sonnet). Give it numbered PASS/FAIL criteria for that job only; it writes scripts and screenshots to `.impeccable/review/qa-<job>/`. Afterwards check that its scripts aren't still running (the P2 QA left three node processes behind).
+- The orchestrator (main session) fixes small QA defects itself, runs typecheck/lint/e2e, commits in small conventional commits, updates this file, and pushes after the user's OK.
+- Design guidance: `/impeccable` and `~/.claude/skills/design-taste-frontend` (guidance only).
+
+**Checks and scripts used this session:**
+
+- `npm run typecheck`, `npm run lint`, `npx playwright test tests/e2e/dashboard.spec.ts tests/e2e/sidebar.spec.ts` (reuses the dev server on :3000).
+- Screenshot runs: `DASHBOARD_SHOTS=p2b npx playwright test tests/e2e/dashboard.spec.ts` writes to `.impeccable/review/p2b/`; the sidebar spec has skipped screenshot tests too.
+- Staff sign-in for scripts: a service-role magic link (pattern in `tests/e2e/day.spec.ts`); Supabase throttles after ~15 sign-ins. Throwaway Shops with random slugs, deleted afterwards (pattern in `tests/e2e/dashboard.spec.ts`).
+- axe: `@axe-core/playwright` isn't installed; QA injected axe-core from cdnjs (`axe-core/4.10.2`) with `page.addScriptTag`.
+- In dev, the Next dev-tools indicator covers the bottom-left corner (the collapsed rail's EN/ES button); click it by keyboard or hide the indicator in tests. Not present in production.
+- Don't run prettier on whole files (the repo isn't prettier-formatted). Don't run `npm run build` while workers are active (shared `.next`).
+- To show the user: demo-shop has sample data for the weeks of Nov 2 and Nov 9 (`/app/dashboard?week=2026-11-09`).
+
 **Demo deploy plan (not started; needs the user's go-ahead on each outward step):**
 
 1. Vercel project from the GitHub repo (`OmarflorexAI/Barber-booking-system`), Next.js preset. The Vercel CLI isn't installed; use the Vercel MCP tools or the dashboard.
