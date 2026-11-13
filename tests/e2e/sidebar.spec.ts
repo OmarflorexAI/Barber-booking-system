@@ -106,6 +106,20 @@ test.describe("desktop", () => {
     await page.locator("#e2e-typing").press("[");
     await expect(page.locator("#e2e-typing")).toHaveValue("[");
     await expect(page.locator("html")).toHaveAttribute("data-sidebar", "expanded");
+
+    // Collapsed, the language pill gives way to a two-letter square that still switches.
+    await page.getByRole("button", { name: "Hide sidebar" }).click();
+    const aside = page.locator("#app-sidebar");
+    const compact = aside.getByRole("button", { name: "Español", exact: true });
+    await expect(compact).toHaveCount(1);
+    await expect(compact).toBeVisible();
+    await expect(compact).toHaveText("ES");
+    expect(await compact.evaluate((el) => el.getBoundingClientRect().right)).toBeLessThanOrEqual(72);
+    // Keyboard, not a click: in dev the Next indicator covers the bottom-left corner.
+    await compact.focus();
+    await page.keyboard.press("Enter");
+    await expect(aside.getByRole("button", { name: "English", exact: true })).toHaveText("EN");
+    await expect(page.getByRole("button", { name: "Mostrar menú lateral" })).toBeVisible();
   });
 
   test("Spanish names the button", async ({ page, context }) => {

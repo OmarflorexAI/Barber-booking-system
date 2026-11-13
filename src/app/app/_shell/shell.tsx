@@ -85,12 +85,14 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
           {staff.isPlatformAdmin && <SidebarAdminLink label={t.shell.platformAdmin} initialCollapsed={collapsed} />}
           <div className="flex flex-col gap-3 border-t border-line pt-4">
             {person && <p className="rail-fade truncate px-3 text-sm text-muted">{person}</p>}
-            {/* Theme first: it fits the rail; the language pill doesn't, so it fades out there. */}
-            <div className="flex items-center gap-2 pl-0.5">
+            {/* Theme first: it fits the rail; the language pill doesn't, so it fades out there and
+                a two-letter square takes its place under the theme switch. */}
+            <div className="flex items-center gap-2 pl-0.5 in-data-[sidebar=collapsed]:flex-col in-data-[sidebar=collapsed]:items-start">
               <ThemeToggle label={t.themeDark} />
-              <div className="rail-hide">
+              <div className="rail-hide in-data-[sidebar=collapsed]:hidden">
                 <LanguageToggle locale={locale} label={t.otherLang} />
               </div>
+              <LanguageToggle compact locale={locale} label={t.otherLang} className="hidden in-data-[sidebar=collapsed]:inline-grid" />
             </div>
           </div>
         </div>
