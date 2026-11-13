@@ -77,8 +77,8 @@ Rules for every mission:
 | L1+L2 | Landing foundation + sections | none (decided) | **DONE 2026-11-11** (`d496896`, `158c7ca`) |
 | L3 | Landing motion | none (decided) | **DONE 2026-11-12** |
 | L4 | Landing ship-ready | short [grill] for the /privacy and /terms wording | **DONE 2026-11-12**, pushed |
-| G | System UI grill | **[grill]** | **NEXT** |
-| U1 | Client booking `/b` + manage `/m` (with online payment) | covered by G | after G |
+| G | System UI grill | **[grill]** | **Grill DONE 2026-11-13** (answers below); DESIGN.md + briefs in progress |
+| U1 | Client booking `/b` + manage `/m` (with online payment) | covered by G | **IN PROGRESS 2026-11-13** |
 | U3a | Barber day view `/app/day` | covered by G | after U1 |
 | U2 | Owner tools | covered by G, plus a short [grill] for the dashboard numbers | after U3a |
 | U3b | Barber profile, hours, Connect Telegram | covered by G | with or after U2 |
@@ -120,6 +120,25 @@ Rules for every mission:
 - Which existing screens (`/b`, `/m`, `/app/day`, `/login`) get restyled and which get rebuilt.
 
 Output: the decisions recorded in this file, `DESIGN.md` extended to cover the app, and a surface brief per area.
+
+**G grill answers (2026-11-13, 4 rounds, all confirmed by the user):**
+
+- **Theme:** the app screens (`/b`, `/m`, `/app/*`, `/admin`) are **light by default, follow the phone's setting**, with a **sun/moon switch next to the language toggle** in the header of every app screen; the choice is saved in a cookie (like `lang`) and applied before paint (no flash). Dark mode = the landing's dark ramp (ground 6%, panel 11%, raised 14%, hairline 18%, ink 93%); no second dark palette. Light = achromatic (no warm tint; the old `--paper` warm tokens go). `/login` is always dark (the landing's look; it's the bridge).
+- **Red:** the Live Signal rule carries over unchanged: the "now" line, the new-Booking dot, the booked check. Buttons are black (light) / white (dark) pills; errors are neutral notices; Cancel/remove are gray with a confirm step.
+- **Fonts (user wants Google Fonts):** **Hanken Grotesk** for everything and **JetBrains Mono** for times, prices and numbers (tabular), across the **whole product including the landing** (One Family rule). Chosen from a specimen (`.impeccable/review/fonts/specimen.html`, gitignored).
+- **Density:** 16px body, headings ≤ 1.5rem in the app, booking rows ≥ 56px, buttons ≥ 48px.
+- **Device first:** Clients and Barbers on phones; Owners phone-first but laid out properly on desktop; Platform admins desktop-first, usable on a phone.
+- **Navigation:** Barber = bottom tabs **Day · Me**. Owner = bottom tabs **Today · Dashboard · Settings** (+ **Me** if they cut hair), a left sidebar from 1024px. Platform admin = `/admin` with top nav **Shops · Failures · Access log** and a switch to `/app` when also Shop staff. **Sign out** at the bottom of Me (Barber), Settings (Owner), top nav (`/admin`). After sign-in: Barber → Day, Owner → Today, Platform admin → `/admin` (or `/app` if also staff).
+- **Owner Today:** phone = one time-ordered list of all Barbers with Barber filter chips; desktop = one column per Barber (≤ 6). The Owner can do everything a Barber can for any Barber.
+- **States:** loading = skeletons shaped like the layout (no spinners); empty = one sentence + the one next action; errors = a neutral notice next to the action, saying what to do, input kept.
+- **Restyle vs rebuild:** restyle `/b`, `/m`, `/login` (logic and e2e kept); rebuild `/app/day` in the new shell (server actions kept).
+- **U1 `/b`:** Service → Barber (photo or initials, "Any available" first, tap for profile + gallery) → Time → Details + payment → Done, a step counter on top; "Awaiting payment" and "Payment expired, pick a time again" states. Shop name leads the header; small Barber Master mark in the footer; no Shop logo uploads in v1. **Checkout is cards only** (cards, Apple Pay, Google Pay).
+- **U1 `/m`:** summary (Shop, Barber, Service, time, price, paid or not), Change time, Cancel with a confirm that says whether a refund is coming; states: cancelled, past, refunded, "too late to change, call the Shop" with tap-to-call (`shops.phone` exists).
+- **U3a Day:** date bar ‹ › + Today, red now line, a big **Add walk-in** button within thumb reach, row → sheet with **Arrived · No-show · Move · Cancel** + tap-to-call, "Paid online" tag (gray, card icon), finished rows dim.
+- **U2 Settings** (each a phone-friendly page): Services & prices (specials) · Hours & closed days · Barbers (invite/remove, max 6) · Booking rules (cutoff + over-2h warning) · Blocklist · Online payments (Stripe status) · **Booking link + printable counter QR** · Export clients (CSV). **Dashboard:** this Monday–Sunday week's Bookings, Walk-ins, No-shows, Time saved, each with last week beside it, plus a bar per day; no fake goals or trend lines. **The user sends a dashboard reference image at U2.** No-shows keep counting as online Bookings and time saved (as built).
+- **U3b Me:** Profile (photo, bio, specialties) · Gallery (3–6, the screen asks for ≥ 3) · Hours (weekly + break, days off) · Alerts (Connect Telegram by link/QR; "Alerts go to your email" until linked). **Photos upload to Supabase Storage**, resized on the phone first; initials when no photo. The Telegram screen is built now against the log-only stand-in; live test when keys arrive.
+- **U4 `/admin`:** Shops list (status, texting, billing, 7-day Bookings) · Create Shop · Shop detail (SMS status, free/paid, minutes per booking, CSV import with line errors, support access with reason, cancel/reactivate/export) · Failures (retry) · Access log.
+- **Process:** order **U1 (incl. product-wide fonts, theme tokens, dark switch; the landing's font swap) → U3a → U2 → U3b → U4 → U5**. Claude **commits each mission after QA passes**, then shows the user screenshots + the commit list; **push only after the user's OK**. The user asked to use multiple agents.
 
 **U1 Client booking (`/b/<shop>`, `/m/<token>`).**
 

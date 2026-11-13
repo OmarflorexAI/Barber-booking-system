@@ -13,40 +13,40 @@ colors:
   pure-white: "#ffffff"
 typography:
   display:
-    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Hanken Grotesk, ui-sans-serif, system-ui, sans-serif"
     fontSize: "2.25rem"
     fontWeight: 500
     lineHeight: 1.08
     letterSpacing: "-0.035em"
   headline:
-    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Hanken Grotesk, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.875rem"
     fontWeight: 600
     lineHeight: 1.1
     letterSpacing: "-0.03em"
   title:
-    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Hanken Grotesk, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.5rem"
     fontWeight: 600
     lineHeight: 1.15
     letterSpacing: "-0.025em"
   body-lead:
-    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Hanken Grotesk, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.125rem"
     fontWeight: 400
     lineHeight: 1.625
   body:
-    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Hanken Grotesk, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.625
   label:
-    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Hanken Grotesk, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 500
     lineHeight: 1.43
   mono-time:
-    fontFamily: "Geist Mono, ui-monospace, monospace"
+    fontFamily: "JetBrains Mono, ui-monospace, monospace"
     fontSize: "0.625rem"
     fontWeight: 400
     lineHeight: 1.5
@@ -126,11 +126,11 @@ A calm, near-black page lit like a barbershop after closing: grayscale ground, n
 
 The world is the Cocoon template's grayscale grammar (MIT, rebuilt in React and Tailwind v4, never copied in), pinned by the user, plus one accent. It is a one-column, generous, Persuade-mode system: a 1024px reading column, wide 1152px panels that open to the full window on scroll, white pill actions, rounded-2xl black cards. All motion is paint-only (opacity, translate, clip) so layout never moves, and every effect has a resting final state for reduced motion, no scroll-timeline support, or no JS.
 
-This document records the shipped landing (`/`, `/es`), the legal pages (`/privacy`, `/terms` and their `/es` pairs) and the 404. **Future, not built:** the brand is meant to carry into the app (`/b`, `/m`, `/app/*`) in a calmer, denser "Operate" mode. Light or dark, density and type scale for that mode are open questions for the G System UI grill; nothing below should be read as already deciding them. The warm-paper `:root` tokens in `globals.css` (`--paper`, `--ink`, `--accent` and friends) belong to the pre-G app screens and are not part of this system.
+This document records the shipped landing (`/`, `/es`), the legal pages (`/privacy`, `/terms` and their `/es` pairs) and the 404. **The app (`/b`, `/m`, `/login`, `/app/*`, `/admin`)** carries the same brand in a calmer, denser "Operate" mode. Its rules were decided in the G System UI grill (2026-11-13) and live in **[App (Operate mode)](#app-operate-mode)** at the end of this file; most of that section is decided but not yet built (it lands in missions U1 to U4). The old warm-paper `:root` tokens in `globals.css` are being replaced by the achromatic app ramp described there.
 
 **Key Characteristics:**
 - Near-black grayscale ground, near-white ink, one barber red reserved for live and status signals.
-- Geist for everything; Geist Mono only for times and short product metadata.
+- Hanken Grotesk for everything; JetBrains Mono only for times, prices and numbers.
 - Depth by tone steps and hairlines, not shadows.
 - White pill = the action; outlined pill = the quieter action.
 - Wide panels clipped to the column with 16px corners that open to full width on scroll.
@@ -164,11 +164,13 @@ Product depictions (the hero phone's screens) show the real Client booking page 
 
 ## Typography
 
-**Display Font:** Geist (with ui-sans-serif, system-ui)
-**Body Font:** Geist
-**Label/Mono Font:** Geist Mono, for times and short metadata only
+**Display Font:** Hanken Grotesk (Google Fonts, with ui-sans-serif, system-ui)
+**Body Font:** Hanken Grotesk
+**Label/Mono Font:** JetBrains Mono (Google Fonts), tabular, for times, prices and numbers only
 
-**Character:** One neo-grotesk doing every job, tightened as it grows (headings carry negative tracking from -0.025em to -0.035em) and set in medium or semibold. Mono appears as small tabular numerals inside product cards, the way a booking screen shows a time.
+**Product-wide (decided in G, 2026-11-13; swap lands in U1).** The user chose these two Google Fonts from a specimen (`.impeccable/review/fonts/specimen.html`, gitignored) to replace Geist and Geist Mono across the whole product, the landing included. Until U1 ships, the landing still renders Geist; the sizes, weights and tracking below were tuned on Geist and are re-checked on Hanken Grotesk at the swap (keep the steps, adjust tracking if headings look loose or cramped).
+
+**Character:** One grotesque doing every job, tightened as it grows (headings carry negative tracking from -0.025em to -0.035em) and set in medium or semibold. Mono appears as tabular numerals, the way a booking screen shows a time or a price.
 
 ### Hierarchy
 
@@ -180,12 +182,12 @@ Sizes step up at breakpoints rather than fluidly; the frontmatter holds the phon
 - **Body lead** (400, 1.125rem, 1.625): the hero subline, Why's lead (in ink, medium), contact intro.
 - **Body** (400, 1rem, 1.625, `muted-ink`): section copy, kept to 48 to 65ch. Legal reading text runs 1.7 line-height at ink/80, inside a 68ch article.
 - **Label** (500, 0.875rem): buttons, nav links, form labels, timeline "when" lines.
-- **Mono time** (Geist Mono 400, 10px, tabular): slot times and service meta inside product cards only.
+- **Mono time** (JetBrains Mono 400, 10px, tabular): slot times, durations and prices inside product cards only.
 
 ### Named Rules
-**The One Family Rule.** Geist sets every word on the page. Hierarchy comes from size, weight (400/500/600) and tracking, never from a second display face.
+**The One Family Rule.** Hanken Grotesk sets every word in the product, landing and app alike. Hierarchy comes from size, weight (400/500/600) and tracking, never from a second display face.
 
-**The Mono Means Time Rule.** Geist Mono appears only where a booking screen would show a time or duration. Never for body, labels or decoration.
+**The Mono Means Time Rule.** JetBrains Mono appears only where a booking screen would show a time, a duration, a price or a count (tabular figures, so columns of numbers line up). Never for body, labels, headings or decoration.
 
 ## Layout
 
@@ -257,7 +259,7 @@ A full-width background layer (gradient or photo) clipped to the 1152px column w
 An 11px (or 8px) barber-red dot with a red ring that scales to 2.6x and fades over 2s, running only while on screen. Still under reduced motion. The only repeating animation in the system.
 
 ### Brand mark
-"Open scissors": two finger rings and tapered blades in currentColor crossing at a barber-red pivot with a knockout ring in the ground color. The wordmark pairs it (28px) with "Barber Master" in Geist semibold, 17px, -0.02em. Source of truth: `public/brand/mark.svg`.
+"Open scissors": two finger rings and tapered blades in currentColor crossing at a barber-red pivot with a knockout ring in the ground color. The wordmark pairs it (28px) with "Barber Master" in Hanken Grotesk semibold (Geist until the U1 swap), 17px, -0.02em. Source of truth: `public/brand/mark.svg`.
 
 ### Motion
 Easing is a quick-out curve (`cubic-bezier(0.2, 0.8, 0.2, 1)`) for reveals and arrivals, an expo-out (`cubic-bezier(0.16, 1, 0.3, 1)`) for the FAQ and live ring. Blocks fade up 24px over their first 180px in view; How-it-works photos fade in from 5%. View transitions exist in three places only: the hero phone's screens (10px slide plus fade), the language switch (cross-fade) and moving between pages (12px rise plus fade); the header holds still on its own layer above them. Reduced motion sets every view transition to 0s.
@@ -268,7 +270,7 @@ Easing is a quick-out curve (`cubic-bezier(0.2, 0.8, 0.2, 1)`) for reveals and a
 - **Do** keep every surface on the achromatic ramp (ground, panel, raised, hairline) and step it to separate layers.
 - **Do** use barber red only for live and status signals: pivot, live dot, "new" dot, booked check.
 - **Do** make the white pill the single primary action in any view, with the outline pill for the quieter alternative.
-- **Do** set every heading in Geist with negative tracking (-0.025em to -0.035em) and keep body text in muted ink at 48 to 65ch.
+- **Do** set every heading in Hanken Grotesk with negative tracking (-0.025em to -0.035em) and keep body text in muted ink at 48 to 65ch.
 - **Do** show the real product (booking, alert, reminder screens) as the proof, on dimmed photos under small dark cards.
 - **Do** use the one focus ring (2px solid ink, 2px offset) on every interactive element, and at least 44px targets.
 - **Do** animate only opacity, translate and clip, behind `@supports (animation-timeline: view())` and `prefers-reduced-motion: no-preference`, with the final state as the default.
@@ -278,7 +280,123 @@ Easing is a quick-out curve (`cubic-bezier(0.2, 0.8, 0.2, 1)`) for reveals and a
 - **Don't** use barber red for buttons, links, headings, borders or error states.
 - **Don't** add pill labels above headings. The two on the landing (hero and first month) are a user-kept exception, not a pattern for other sections or future surfaces.
 - **Don't** add drop shadows for elevation; use a tone step and a hairline.
-- **Don't** introduce a second display face, or use Geist Mono outside times and durations.
+- **Don't** introduce a second display face, or use JetBrains Mono outside times, durations, prices and counts.
 - **Don't** show photos at full strength behind text; darken them with a black gradient or hold them at 45% on black.
 - **Don't** imply customers, results or prices: no logo bars, testimonial cards, rating stars or number counters. The only price is "first month free".
 - **Don't** animate layout properties or leave anything hidden until a script runs.
+
+## App (Operate mode)
+
+Decided in the G System UI grill (2026-11-13, all answers confirmed by the user; the record is in `progress.md` → "G grill answers"). This covers every screen that is not the landing: the Client pages `/b/<shopSlug>` and `/m/<token>`, `/login`, the staff app `/app/*` and the Platform admin panel `/admin`. Per-area direction contracts live in `.impeccable/surfaces/` (`src-app-b-shopslug.md`, `src-app-m-token.md`, `src-app-app-day.md`, `src-app-app-owner.md`, `src-app-app-me.md`, `src-app-admin.md`).
+
+**Build status.** Everything in this section is **decided, not yet built**, unless marked otherwise. It lands in mission order: U1 (theme tokens, the theme switch, the product-wide fonts, `/b`, `/m`, `/login`), U3a (the `/app` shell and Day/Today), U2 (Owner Dashboard and Settings), U3b (Barber Me), U4 (`/admin`). Restyle vs rebuild: `/b`, `/m` and `/login` are **restyled** (their logic and e2e tests are kept); `/app/day` is **rebuilt** inside the new shell (its server actions are kept).
+
+**Scene.** A Barber glances at a phone between cuts, under bright shop lights, clippers in one hand. A Client books on a small phone on the train or at the counter. An Owner checks the week on a phone at the chair or on a laptop at home at night. That is why the app is light by default, follows the phone, and keeps the landing's dark as the night option.
+
+### App colors: two achromatic ramps, one red
+
+Six tokens, defined on `:root` in `src/app/globals.css` for light and redefined for dark. Components use only these (through Tailwind's `--color-*` aliases); no hex or oklch values in components.
+
+| Token | Role | Dark value (exact) |
+| --- | --- | --- |
+| `--paper` | The page ground behind everything. | `oklch(6% 0 0)` (the landing's ground) |
+| `--surface` | Cards, sheets, the tab bar, the sidebar, inputs' fill where they sit on paper. | `oklch(11% 0 0)` (the landing's panel) |
+| `--ink` | Primary text, icons, the primary pill's fill in light, the focus ring. | `oklch(93% 0 0)` |
+| `--muted` | Secondary text: durations, labels, captions, finished rows. At least 4.5:1 on both `--paper` and `--surface`. | `oklch(64% 0 0)` |
+| `--line` | Every hairline: row dividers, card and input borders, the tab bar's top edge. | `oklch(18% 0 0)` |
+| `--red` | Barber red, live signals only (see below). | `oklch(62% 0.2 27)` |
+
+- **Light** is the same six roles on a light, strictly achromatic ramp (chroma 0: no warm paper, no cool blue-gray). The exact light values live in `globals.css`; this file does not repeat them so the two can't drift. The pre-G warm tokens (`#f6f3ee` paper and friends, `--accent`) are retired.
+- **Dark is the landing's ramp, not a second dark palette.** If a screen needs a third surface step (a pressed row, a sheet over a surface), the landing's raised step `oklch(14% 0 0)` is the dark value: add it as a token in both themes in `globals.css` first, never hard-code it.
+- The No Tint Rule and the Tone Not Shadow Rule apply unchanged: separate layers by a tone step and a `--line` hairline. A bottom sheet may carry one soft shadow in light mode only if a tone step alone doesn't separate it; nothing else gets a shadow.
+
+### Theme switching
+
+- **Default:** follow the phone (`prefers-color-scheme`). With no saved choice, a phone in light mode gets light and a phone in dark mode gets dark.
+- **Switch:** a sun/moon icon button in the header of every app screen, **right next to the language toggle**, at least 44px. It shows the theme you would switch to (moon in light, sun in dark), has an EN/ES accessible name ("Dark mode" / "Modo oscuro", "Light mode" / "Modo claro"), and tapping it flips the theme and saves the choice.
+- **Saved** in a cookie, the same way `lang` is, so the server renders the right theme.
+- **No flash.** The first paint is already in the right theme: the saved choice is rendered on `<html>` by the server, and with no cookie the CSS media query decides, so no script has to run first. The browser `theme-color` follows the theme.
+- **Always dark, no switch:** `/login` (the bridge from the landing, in the landing's look), the landing, the legal pages and the 404.
+
+### App typography
+
+Hanken Grotesk for every word, JetBrains Mono (tabular) for times, prices and numbers: the One Family and Mono Means Time rules above apply in the app too. A Booking row's "10:30", a Service's "$35" and "45 min", and a dashboard count are mono; names, labels and buttons are not.
+
+- **Body 16px** (1rem), line-height about 1.5. Also every input's text size (no iOS zoom).
+- **Headings ≤ 1.5rem** in the app, semibold, light negative tracking. A fixed rem scale (no fluid type), steps about 1.2 apart: page title 1.5rem, section 1.25rem, row title 1rem semibold, meta 0.875rem.
+- **Labels** 0.875rem medium. Nothing below 0.75rem, and 0.75rem only for tags.
+
+### Density and size
+
+- Booking rows **≥ 56px** tall; Settings and list rows the same.
+- Buttons **≥ 48px** tall; icon buttons and toggles ≥ 44px.
+- Content column: phones get 16px side gutters; Settings and Me pages hold a reading column (about 640px) on desktop; Day/Today and the Dashboard use the full width on desktop.
+- Lists are hairline-ruled rows on `--paper` or inside one `--surface` card, not a card per row.
+- No sideways scroll at 360px. Phones first for Clients and Barbers; Owners phone-first but laid out properly on desktop; Platform admins desktop-first, usable on a phone.
+
+### The Live Signal Rule in the app
+
+Barber red still means only "alive" or "confirmed":
+
+- **The now line** across Day/Today at the current time (a red line with a small red dot at its start), only on today's date.
+- **The new-Booking dot** on a row that arrived since the Barber last looked.
+- **The booked check** on the Client's "You're booked" screen and in `/m`'s confirmed state.
+
+Everything else is grayscale. In particular the **"Paid online" tag is gray**, with a small card icon (a gray pill with `--line` border, `--muted` or `--ink` text), never red. Errors are not red. Cancel and remove are not red. Selected states, links and active tabs are not red.
+
+### App buttons
+
+- **Primary:** a full pill, at least 48px tall, **black with white text in light, white with black text in dark** (`--ink` fill, `--paper` text). One primary per view.
+- **Secondary:** an outlined pill (`--line` border, `--ink` text), hover fills one tone step.
+- **Destructive (Cancel a Booking, Remove a Barber, Cancel a Shop):** a **gray** pill or a gray sheet row, never red, and always behind a **confirm step** that says what happens (for example whether the Client is refunded and texted). The confirm's own button is the primary pill with the plain verb ("Cancel booking" / "Cancelar cita").
+- Disabled: 40% opacity, no hover. Loading: the label stays, a small inline indicator replaces the icon, and the button can't be pressed twice.
+- Focus: the one ring (2px solid `--ink`, 2px offset) on everything.
+
+### Navigation per role
+
+| Role | Phone | Desktop (≥ 1024px) | Sign out |
+| --- | --- | --- | --- |
+| Barber | Bottom tabs **Day · Me** | The same two items in the shared `/app` left sidebar | Bottom of **Me** |
+| Owner | Bottom tabs **Today · Dashboard · Settings**, plus **Me** when the Owner also cuts hair | A **left sidebar** with the same items | Bottom of **Settings** |
+| Platform admin | `/admin` top nav **Shops · Failures · Access log** (wraps or scrolls on a phone) | Same top nav | In the top nav |
+
+- A Platform admin who is also Shop staff gets a switch between `/admin` and `/app` in the top nav (and in Me/Settings on the `/app` side).
+- **After sign-in:** Barber → Day, Owner → Today, Platform admin → `/admin` (or `/app` when also Shop staff).
+- Tabs: icon (24px line) plus a label in both languages, the active tab in `--ink` with a filled icon, the others `--muted`. The tab bar sits on `--surface` with a `--line` top edge and respects the phone's safe area.
+- Every app header holds: the page or Shop name on the left; the language toggle and the theme switch on the right.
+
+### Bottom sheets for row actions
+
+Tapping a Booking row opens a **bottom sheet** (a real `<dialog>`, not a custom overlay): the Client's name, Service, time and paid status on top, then full-width 56px action rows (Day: **Arrived · No-show · Move · Cancel**, plus tap-to-call). Destructive rows are gray and lead to the confirm step inside the same sheet. The sheet closes on the backdrop, Escape, a swipe down or after an action; focus returns to the row. It slides up with a transform in about 200ms and appears instantly under reduced motion. On desktop the same content and order can sit in a centered dialog. Modals are not used for anything a sheet or an inline section can do.
+
+### States
+
+- **Loading:** skeletons shaped like the real layout (rows, cards, the bar chart's outline) in a `--line`/`--surface` tone, with a slow opacity pulse that stops under reduced motion. **No spinners** in content.
+- **Empty:** **one sentence plus the one next action** (for example "No bookings today." + "Add walk-in"). No illustrations, no "nothing here".
+- **Error:** a **neutral notice** next to the action that failed (a `--surface` box, `--line` border, 6px corners, a line icon, `role="alert"`), saying what happened and what to do next in plain words. The user's input is kept. Never red.
+- Engine `BookingError` codes map to these messages in EN and ES; a slot that was just taken is a normal, calm state, not an error page.
+
+### Shape, icons and motion in the app
+
+The landing's shapes carry over: 16px for cards and sheets' top corners, full pills for buttons and tags, 6px for inputs and small controls. Icons are 24px line drawings in one 1.5px round-capped stroke. Motion is state only, 150 to 250ms, transform and opacity, with the final state as the default and nothing hidden until a script runs. The wide-panel, scroll-timeline and live-ring effects are landing-only.
+
+### App Do's and Don'ts
+
+#### Do:
+- **Do** build every app color from the six tokens, in both themes, and check each screen in light and dark at 360px and 1440px, EN and ES.
+- **Do** keep red to the now line, the new-Booking dot and the booked check.
+- **Do** make the black (light) / white (dark) pill the one primary action per view, at least 48px tall.
+- **Do** set times, prices and counts in JetBrains Mono with tabular figures, and everything else in Hanken Grotesk.
+- **Do** put row actions in a bottom sheet and destructive actions behind a confirm that says what happens to the Client and their money.
+- **Do** give every list a skeleton, an empty state (one sentence + one action) and a neutral error that keeps the input.
+- **Do** keep the theme switch next to the language toggle on every app screen, and render the saved theme with no flash.
+- **Do** use the PRD's terms in the copy: Shop, Owner, Barber, Client, Booking, Walk-in, Service, Platform admin.
+
+#### Don't:
+- **Don't** make "Paid online", errors, Cancel, Remove, links or the active tab red.
+- **Don't** add a warm or cool tint to the light ramp, or a second dark palette.
+- **Don't** put headings above 1.5rem in the app, or rows below 56px, or buttons below 48px.
+- **Don't** use spinners in content, or empty states without a next action.
+- **Don't** open a modal where a sheet or an inline section works, or a card per row where a ruled list works.
+- **Don't** show goals, targets, trend lines or invented numbers on the Dashboard; show this week's real counts beside last week's.
+- **Don't** let `/login` follow the theme: it stays dark.
