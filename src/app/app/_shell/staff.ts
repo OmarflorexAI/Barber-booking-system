@@ -86,6 +86,12 @@ export function landingPath(staff: Staff | null): string {
   return "/app/day";
 }
 
+/**
+ * Whether /admin exists yet (mission U4). Until it does, every link to it stays hidden: the
+ * sidebar row, the Settings row and the no-Shop screen's button. Flip to true with U4.
+ */
+export const ADMIN_PANEL_READY = false;
+
 /** The tabs (phone) and sidebar items (desktop) for this person, in order. */
 export type NavKey = "day" | "today" | "dashboard" | "settings" | "me";
 export function navFor(staff: Staff): { key: NavKey; href: string }[] {

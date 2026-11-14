@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ChevronIcon, NavIcon } from "../_shell/icons";
 import { SignOutButton } from "../_shell/sign-out";
+import { ADMIN_PANEL_READY } from "../_shell/staff";
 import { RowsSkeleton } from "../_shell/skeleton";
 import { SettingsIcon, type SettingsKey } from "./_icons";
 import { focusRing, ownerContext } from "./_owner";
@@ -86,7 +87,7 @@ async function Settings() {
           <span className="font-medium">{t.shell.settings.shop}</span>
           <span className="min-w-0 truncate text-muted">{membership.shopName}</span>
         </li>
-        {staff.isPlatformAdmin && (
+        {staff.isPlatformAdmin && ADMIN_PANEL_READY && (
           <li className="border-b border-line">
             <Link
               href="/admin"

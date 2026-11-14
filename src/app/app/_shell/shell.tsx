@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { ShellMain, SidebarAdminLink, SidebarNav, TabBar, type NavItem } from "./nav";
 import { SIDEBAR_COOKIE, SidebarToggle } from "./sidebar";
 import { SignOutButton } from "./sign-out";
-import { getShellContext, navFor } from "./staff";
+import { ADMIN_PANEL_READY, getShellContext, navFor } from "./staff";
 
 /**
  * The frame every /app screen sits in (DESIGN.md → "Navigation per role"):
@@ -43,9 +43,9 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
           {toggles}
         </header>
         <main className="flex flex-1 flex-col justify-center gap-6 pb-16">
-          <h1 className="text-lg leading-relaxed font-normal text-pretty">{staff.isPlatformAdmin ? t.shell.adminNoShop : t.shell.noShop}</h1>
+          <h1 className="text-lg leading-relaxed font-normal text-pretty">{staff.isPlatformAdmin && ADMIN_PANEL_READY ? t.shell.adminNoShop : t.shell.noShop}</h1>
           <div className="flex flex-col gap-3">
-            {staff.isPlatformAdmin && (
+            {staff.isPlatformAdmin && ADMIN_PANEL_READY && (
               <Link href="/admin" className="btn-primary">
                 {t.shell.platformAdmin}
               </Link>
@@ -82,7 +82,7 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
         </div>
         <SidebarNav items={items} label={t.shell.navLabel} initialCollapsed={collapsed} />
         <div className="mt-auto flex flex-col gap-4">
-          {staff.isPlatformAdmin && <SidebarAdminLink label={t.shell.platformAdmin} initialCollapsed={collapsed} />}
+          {staff.isPlatformAdmin && ADMIN_PANEL_READY && <SidebarAdminLink label={t.shell.platformAdmin} initialCollapsed={collapsed} />}
           <div className="flex flex-col gap-3 border-t border-line pt-4">
             {person && <p className="rail-fade truncate px-3 text-sm text-muted">{person}</p>}
             {/* Theme first: it fits the rail; the language pill doesn't, so it fades out there and
