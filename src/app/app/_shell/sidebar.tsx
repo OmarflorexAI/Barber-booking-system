@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useSyncExternalStore } from "react";
+import { cssDurationMs } from "@/components/motion/css-time";
 
 /**
  * The desktop sidebar's collapsed/expanded state (≥ 1024px). It lives on
@@ -47,7 +48,7 @@ function toggleSidebar() {
   if (!delta) return;
   const css = getComputedStyle(document.documentElement);
   content.animate([{ translate: `${delta}px 0` }, { translate: "0 0" }], {
-    duration: parseFloat(css.getPropertyValue("--dur-slow")) || 420,
+    duration: cssDurationMs("--dur-slow", 420),
     easing: css.getPropertyValue("--ease-spring").trim() || "ease-out",
   });
 }

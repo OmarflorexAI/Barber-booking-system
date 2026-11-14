@@ -6,6 +6,7 @@ import { useLayoutEffect, useRef } from "react";
 import { NavIcon } from "./icons";
 import { useSidebarCollapsed } from "./sidebar";
 import type { NavKey } from "./staff";
+import { cssDurationMs } from "@/components/motion/css-time";
 
 export type NavItem = { key: NavKey; href: string; label: string };
 
@@ -137,7 +138,7 @@ export function ShellMain({ className, children }: { className: string; children
     if (!el || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const css = getComputedStyle(document.documentElement);
     el.animate([{ opacity: 0, translate: "0 8px" }, { opacity: 1, translate: "0 0" }], {
-      duration: parseFloat(css.getPropertyValue("--dur-base")) || 240,
+      duration: cssDurationMs("--dur-base", 240),
       easing: css.getPropertyValue("--ease-out").trim() || "ease-out",
     });
   }, [pathname]);
