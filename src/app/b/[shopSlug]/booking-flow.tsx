@@ -38,6 +38,11 @@ function initials(name: string) {
     .join("");
 }
 const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;
+/** The bio in the Client's language, else the one the Barber wrote (Q35: no auto-translation). */
+function bioFor(b: Barber, locale: Locale) {
+  const [mine, other] = locale === "es" ? [b.bioEs, b.bio] : [b.bio, b.bioEs];
+  return mine.trim() || other.trim();
+}
 
 export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Locale }) {
   const t = dictionaries[locale];
@@ -263,7 +268,7 @@ export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Loc
                     </li>
                     {offering.map((b) => {
                       const p = b.services[service.id];
-                      const hasProfile = !!(b.photoUrl || b.bio || b.gallery.length > 0);
+                      const hasProfile = !!(b.photoUrl || bioFor(b, locale) || b.instagram || b.gallery.length > 0);
                       return (
                         <li key={b.id} className="flex items-stretch">
                           <button
@@ -310,6 +315,7 @@ export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Loc
                 <BarberSheet
                   barber={profile}
                   t={t}
+                  locale={locale}
                   priceCents={profile ? profile.services[service.id]?.priceCents ?? null : null}
                   onClose={() => setProfile(null)}
                   onChoose={(b) => {
@@ -527,8 +533,16 @@ function EmptyNotice({ text, phone, t }: { text: string; phone: string | null; t
 }
 
 /** The profile sheet: a real <dialog>, a bottom sheet on phones and a centered dialog on desktop. */
-function BarberSheet(props: { barber: Barber | null; t: Dictionary; priceCents: number | null; onClose: () => void; onChoose: (b: Barber) => void }) {
+function BarberSheet(props: {
+  barber: Barber | null;
+  t: Dictionary;
+  locale: Locale;
+  priceCents: number | null;
+  onClose: () => void;
+  onChoose: (b: Barber) => void;
+}) {
   const { barber: b, t } = props;
+  const bio = b ? bioFor(b, props.locale) : "";
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -570,7 +584,25 @@ function BarberSheet(props: { barber: Barber | null; t: Dictionary; priceCents: 
               </svg>
             </button>
           </div>
-          {b.bio && <p className="leading-relaxed">{b.bio}</p>}
+          {bio && <p className="leading-relaxed whitespace-pre-line">{bio}</p>}
+          {b.instagram && (
+            <a
+              href={`https://instagram.com/${b.instagram}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="-my-2 inline-flex min-h-11 items-center gap-2 self-start rounded-md font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0 text-muted">
+                <rect x="3" y="3" width="18" height="18" rx="5" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="17.5" cy="6.5" r="0.75" fill="currentColor" />
+              </svg>
+              <span className="min-w-0 break-all">
+                <span className="sr-only">Instagram </span>@{b.instagram}
+                <span className="sr-only"> {t.opensNewTab}</span>
+              </span>
+            </a>
+          )}
           {b.gallery.length > 0 && (
             <ul className="grid grid-cols-3 gap-2">
               {b.gallery.slice(0, 6).map((url, i) => (
