@@ -1,8 +1,25 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-13, end of session (G, U1, U3a done; U2 partly done; P1, P2 done and pushed; next: a demo deploy, then P3–P5 in small milestones. See "U2 status → Milestones left"). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-14, end of session (PLAN.md M1–M7 all DONE and pushed; landing rail + hero glow done; next: landing-page grilling session. See "START HERE next session" below). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
+
+### START HERE next session (written 2026-11-14, end of session)
+
+**State:** every PLAN.md milestone (M1–M7) is built, QA'd and pushed to `origin/main`. The dev DB (`barber-booking-dev`) has every migration through `20261114140000_shop_billing_guard`. 162/162 engine tests; e2e green in groups (book-pay-online needs `npm run stripe:listen`; run e2e in groups because of the Supabase sign-in rate limit).
+
+**How we worked this session:** the orchestrator gives one small job per `bm-worker` agent (brief names the files it owns), then a `bm-qa` agent checks it against PASS/FAIL criteria; the orchestrator fixes or re-briefs, then commits by path (`git commit -- <paths>`, never `git add .`). Migrations are applied with a throwaway node script (`node --env-file=.env.local`, runs the SQL in a transaction and inserts into `supabase_migrations.schema_migrations`), deleted after use.
+
+**Next, in order:**
+1. **Landing-page grilling session** (the user asked for it). Open questions to start with:
+   - Price: PRODUCT.md says the only price shown is "first month free". Should the landing now mention Pro at $50/month (and Free)? Draft EN/ES and show the user before committing.
+   - Hero claim: "Your barbers get an alert on their phone" while Telegram alerts aren't built. Soften it or build Telegram first?
+   - Anything else on the landing the user wants polished (they liked the rail; reference sites: truehorizon.ai "How we work", the user's local "moises website").
+2. **DESIGN.md "Navigation per role"** still lists Barber rows and the Me tab: update to Owner tabs only (M6).
+3. **Demo deploy** (still the user's priority from 2026-11-13: show the app to their dad). Checklist under "Demo deploy" further down; `NEXT_PUBLIC_SITE_URL` must be set at build time.
+4. Later, small milestones: Telegram alerts for Barbers (Pro), a Settings page for Client texts, real-iPhone test of photo uploads (M1 open item), P3 calendar, P4 Settings polish.
+
+**Known small issues:** another Shop's Barber page renders not-found with HTTP 200 (streaming); abandoned unsaved uploads stay in storage; `/b` offers card payment from `payments_enabled` alone (not checking `payment_account_id`), pre-existing.
 
 **NEXT (2026-11-14): `PLAN.md`** — Shop profile, Barber profiles, team management, Free/Pro plans; milestones M1–M7 from a grilling session (Q1–Q36). Key reversals of earlier decisions: Barbers never sign in (Me tab, Barber invite and Barber Day view retired in M6); Shop logo/cover uploads are now in; deleting a Barber deletes their past Bookings. Plan confirmed by the user 2026-11-14.
 
@@ -14,7 +31,7 @@ Last updated: 2026-11-13, end of session (G, U1, U3a done; U2 partly done; P1, P
 - **M6 Retire Barber sign-in: DONE 2026-11-14** (`f093cc1` shell, `bfeee3d` linkBarberLogin removed, `4206794` e2e). Tabs: Today · Dashboard · Settings; `/app/me` → Settings; a legacy Barber-only login sees "ask your Owner". `onboardShop` lives in `src/server/onboard-shop.ts`; `src/server/invites.ts` deletion was swept into the landing commit `7059468` by mistake (harmless). No dev-DB logins needed disconnecting (only Carlos = the Owner's own Barber). QA 8/9: the 9th was a pre-existing Dashboard day-bar label mismatch, being fixed in M7's UI job. **DESIGN.md "Navigation per role" still lists Barber rows and the Me tab: update it.**
 - **M7 Plans: DONE 2026-11-14** (`aecc04d` engine, `e5e5276` billing guard, `cebdb73` UI, `e48d0e6` Dashboard a11y). Migrations `20261114130000` (shops.plan; existing Shops → 'pro', new Shops default 'free') and `20261114140000` (trigger: the `authenticated` role can't change plan, billing_status, status, sms_*, payments_enabled, payment_account_id; QA found an Owner could self-upgrade through RLS). On Free the server turns off online payments, Client texts (incl. reminders), Telegram linking and payments onboarding (PRO_ONLY). Settings shows the plan; on Free, gray "Pro" tags open an "Ask us to upgrade" sheet ("Pro is $50 a month", Talk to us → /#contact); on Pro, texts show On/Off, Telegram "Soon". 162/162 engine tests; plans.spec e2e. Pro price **$50/month** (user). **Open:** landing price wording (PRODUCT.md says the only price is "first month free"); draft and show the user before changing.
 - **Landing, 2026-11-14:** first-month rail reworked to the user's taste after several rounds (rejected: scroll-scrubbed reveal, stacked cards). Final: the white line draws down with its tip 60% down the screen; unreached steps are a faint preview with an empty ring; when the line meets a bubble it pops, then when / title / body / three tags rise in (`rail-reveal.tsx`, IntersectionObserver on the bubble). Copy rewritten after truehorizon.ai "How we work" (Setup & go-live · Launch & first bookings · Routine & fewer calls · Review & decide; no Barber sign-in claim). Hero panel got two slow-drifting soft lights. Commits `7059468`…`335d7f3`. **Open:** the hero still says Barbers "get an alert on their phone" while Telegram is not live; ask the user. **Next: a grilling session to polish the landing page** (user, 2026-11-14).
-- All commits local, not pushed (waiting on the user's OK).
+- **Pushed to `origin/main` on 2026-11-14** with the user's OK.
 
 **Direction from the user (2026-11-13, after P2, all pushed to `f50e318`):** "we are getting to the final stage." **Next priority: a demo deploy** so the user can show the app to their dad. P3 (calendar), P4 (Settings life) and further polish (animations, components) come **later, in small milestones**.
 
