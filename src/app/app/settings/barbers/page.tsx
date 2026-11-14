@@ -50,7 +50,7 @@ async function Barbers() {
       .eq("shop_id", shopId)
       .returns<{ barber_id: string; services: { active: boolean } | null }[]>(),
     supabase.from("weekly_hours").select("barber_id").eq("shop_id", shopId).returns<{ barber_id: string }[]>(),
-    supabase.from("shops").select("sms_enabled").eq("id", shopId).maybeSingle<{ sms_enabled: boolean }>(),
+    supabase.from("shops").select("sms_enabled, plan").eq("id", shopId).maybeSingle<{ sms_enabled: boolean; plan: string }>(),
   ]);
   if (barbers.error || offers.error || hours.error) throw new Error("Couldn't load the Barbers");
 
@@ -83,7 +83,7 @@ async function Barbers() {
         shopId={shopId}
         locale={locale}
         timezone={membership.timezone}
-        smsEnabled={shop.data?.sms_enabled ?? false}
+        smsEnabled={(shop.data?.sms_enabled && shop.data.plan === "pro") ?? false}
         full={items.length >= MAX_BARBERS}
         items={items}
       />

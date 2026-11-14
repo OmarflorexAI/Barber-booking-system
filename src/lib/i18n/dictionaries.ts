@@ -159,6 +159,7 @@ const en = {
     BOT_CHECK: "Please complete the security check and try again.",
     PAYMENTS_OFF: "Online payment isn't available right now. Please pay at the shop.",
     PAY_ONLINE_REQUIRED: "This number missed a couple of recent visits, so this booking is paid online. We've switched it to card for you: press Continue to payment.",
+    PRO_ONLY: "That's part of the Pro plan. To turn it on, ask us to upgrade from Settings.",
     UNKNOWN: "Something went wrong. Please try again.",
   } as Record<string, string>,
   // staff
@@ -689,6 +690,33 @@ const en = {
       },
     },
   },
+  // M7: the Shop's plan in Settings, the gray "Pro" tag and the "Ask us to upgrade" sheet.
+  plans: {
+    free: "Free plan",
+    pro: "Pro plan",
+    freeNote: "Everything you need to take Bookings. Pro adds card payments, texts and Telegram alerts.",
+    proNote: "Your Shop has every feature, card payments, texts and Telegram alerts included.",
+    tag: "Pro",
+    textsOn: "On",
+    textsOff: "Off",
+    rows: {
+      texts: { title: "Texts to Clients", desc: "Confirmations and reminders by text message." },
+      telegram: { title: "Telegram alerts", desc: "Barbers get each new Booking on Telegram." },
+    },
+    sheet: {
+      title: "Ask us to upgrade",
+      intro: "Pro adds three things to your Shop:",
+      features: [
+        { title: "Online card payments", desc: "Clients can pay by card when they book." },
+        { title: "Texts to Clients", desc: "Confirmations and reminders go out by text message." },
+        { title: "Telegram alerts for Barbers", desc: "Each new Booking reaches the Barber on Telegram." },
+      ],
+      price: "Pro is $50 a month.",
+      how: "Our team switches Shops to Pro by hand. Send us a message and we'll set it up with you.",
+      talk: "Talk to us",
+      close: "Close",
+    },
+  },
   photo: {
     add: "Add photo",
     change: "Change photo",
@@ -860,6 +888,7 @@ const es: Dictionary = {
     BOT_CHECK: "Completa la verificación de seguridad e intenta otra vez.",
     PAYMENTS_OFF: "El pago en línea no está disponible ahora. Paga en la barbería.",
     PAY_ONLINE_REQUIRED: "Este número faltó a un par de citas recientes, así que esta cita se paga en línea. Ya lo cambiamos a tarjeta: presiona Continuar al pago.",
+    PRO_ONLY: "Eso es parte del plan Pro. Para activarlo, pídenos el cambio desde Ajustes.",
     UNKNOWN: "Algo salió mal. Intenta otra vez.",
   },
   login: "Entrar",
@@ -1385,6 +1414,32 @@ const es: Dictionary = {
           },
         },
       },
+    },
+  },
+  plans: {
+    free: "Plan gratis",
+    pro: "Plan Pro",
+    freeNote: "Todo lo que necesitas para recibir citas. Pro agrega pagos con tarjeta, mensajes de texto y avisos por Telegram.",
+    proNote: "Tu barbería tiene todas las funciones, con pagos con tarjeta, mensajes de texto y avisos por Telegram.",
+    tag: "Pro",
+    textsOn: "Activados",
+    textsOff: "Desactivados",
+    rows: {
+      texts: { title: "Mensajes a clientes", desc: "Confirmaciones y recordatorios por mensaje de texto." },
+      telegram: { title: "Avisos por Telegram", desc: "Los barberos reciben cada cita nueva en Telegram." },
+    },
+    sheet: {
+      title: "Pídenos el plan Pro",
+      intro: "Pro le agrega tres cosas a tu barbería:",
+      features: [
+        { title: "Pagos con tarjeta en línea", desc: "Los clientes pueden pagar con tarjeta al reservar." },
+        { title: "Mensajes a clientes", desc: "Las confirmaciones y los recordatorios llegan por mensaje de texto." },
+        { title: "Avisos por Telegram para barberos", desc: "Cada cita nueva le llega al barbero por Telegram." },
+      ],
+      price: "Pro cuesta $50 al mes.",
+      how: "Nuestro equipo cambia las barberías a Pro a mano. Escríbenos y lo configuramos contigo.",
+      talk: "Habla con nosotros",
+      close: "Cerrar",
     },
   },
   photo: {

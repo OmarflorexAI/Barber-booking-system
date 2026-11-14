@@ -66,7 +66,7 @@ async function Day({ searchParams }: { searchParams: Promise<Record<string, stri
   const { shopId, timezone: tz } = staff.membership;
 
   const [{ data: shop }, { data: barberRows }] = await Promise.all([
-    supabase.from("shops").select("name, slug, sms_enabled").eq("id", shopId).maybeSingle<{ name: string; slug: string; sms_enabled: boolean }>(),
+    supabase.from("shops").select("name, slug, sms_enabled, plan").eq("id", shopId).maybeSingle<{ name: string; slug: string; sms_enabled: boolean; plan: string }>(),
     supabase
       .from("barbers")
       .select("id, display_name")
@@ -209,7 +209,7 @@ async function Day({ searchParams }: { searchParams: Promise<Record<string, stri
         shopId={shopId}
         shopName={shop?.name ?? staff.membership.shopName}
         bookingPath={shop ? `/b/${shop.slug}` : null}
-        smsEnabled={shop?.sms_enabled ?? false}
+        smsEnabled={(shop?.sms_enabled && shop.plan === "pro") ?? false}
         timezone={tz}
         barbers={barbers}
         filter={filter}
