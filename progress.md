@@ -4,6 +4,8 @@ Last updated: 2026-11-13, end of session (G, U1, U3a done; U2 partly done; P1, P
 
 ## Where we are
 
+**NEXT (2026-11-14): `PLAN.md`** — Shop profile, Barber profiles, team management, Free/Pro plans; milestones M1–M7 from a grilling session (Q1–Q36). Key reversals of earlier decisions: Barbers never sign in (Me tab, Barber invite and Barber Day view retired in M6); Shop logo/cover uploads are now in; deleting a Barber deletes their past Bookings. Start at M1 once the user confirms the plan.
+
 **Direction from the user (2026-11-13, after P2, all pushed to `f50e318`):** "we are getting to the final stage." **Next priority: a demo deploy** so the user can show the app to their dad. P3 (calendar), P4 (Settings life) and further polish (animations, components) come **later, in small milestones**.
 
 ### Session handoff (2026-11-13, end of session): how to start, run and stop things
