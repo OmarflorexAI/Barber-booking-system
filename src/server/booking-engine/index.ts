@@ -11,6 +11,7 @@ import {
   pgCode,
   PG_DAY_HAS_BOOKINGS,
   PG_EXCLUSION_VIOLATION,
+  PG_FOREIGN_KEY_VIOLATION,
   slotTaken,
 } from "./errors";
 import { authorizeForBarber, requireOwner } from "./access";
@@ -306,8 +307,8 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
         select id, name_en, name_es, duration_min, buffer_min, active from public.services
         where shop_id = ${shop.id} and active order by sort_order, name_en
       `,
-      sql<{ id: string; display_name: string; bio: string; photo_url: string | null; specialties: string[] }[]>`
-        select id, display_name, bio, photo_url, specialties from public.barbers
+      sql<{ id: string; display_name: string; bio: string; bio_es: string; instagram: string | null; photo_url: string | null; specialties: string[] }[]>`
+        select id, display_name, bio, bio_es, instagram, photo_url, specialties from public.barbers
         where shop_id = ${shop.id} and active order by sort_order, display_name
       `,
       sql<{ barber_id: string; url: string }[]>`
@@ -358,6 +359,8 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
         id: b.id,
         displayName: b.display_name,
         bio: b.bio,
+        bioEs: b.bio_es,
+        instagram: b.instagram,
         photoUrl: b.photo_url,
         specialties: b.specialties,
         gallery: gallery.filter((g) => g.barber_id === b.id).map((g) => g.url),
@@ -716,6 +719,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
       `;
     } catch (e) {
       if (pgCode(e) === PG_DAY_HAS_BOOKINGS) throw dayHasBookings(e);
+      if (pgCode(e) === PG_FOREIGN_KEY_VIOLATION) throw notFound("Barber"); // deleted meanwhile
       throw e;
     }
   }

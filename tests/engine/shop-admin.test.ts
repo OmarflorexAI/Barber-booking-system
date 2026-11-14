@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { isBookingError } from "@/server/booking-engine";
 import { staffRole } from "@/server/booking-engine/access";
 import { createReporting } from "@/server/reporting";
-import { createShopAdmin } from "@/server/shop-admin";
+import { createShopAdmin, normalizeInstagram } from "@/server/shop-admin";
 import { at, book, dropShop, engine, makeShop, makeUser, NOW, sql, TOMORROW, uniquePhone, type TestShop } from "./fixtures";
 
 /**
@@ -342,6 +342,68 @@ describe("Barber profile", () => {
     await expectCode(admin.setGallery({ ...as, urls: ["javascript:alert(1)"] }), "INVALID_INPUT");
   });
 
+  it("saves the Spanish bio and an Instagram handle, typed with or without @", async () => {
+    const as = { userId: owner, shopId: shop.shopId, barberId: shop.blake, displayName: "Blake", specialties: [], photoUrl: null };
+    await admin.updateBarberProfile({ ...as, bio: "Fades.", bioEs: " Degradados. ", instagram: "@fresh.cuts" });
+    expect(await profileOf(shop.blake)).toMatchObject({ bio: "Fades.", bioEs: "Degradados.", instagram: "fresh.cuts" });
+
+    await admin.updateBarberProfile({ ...as, bio: "Fades.", instagram: "blake_cuts" });
+    expect(await profileOf(shop.blake)).toMatchObject({ bioEs: "Degradados.", instagram: "blake_cuts" });
+
+    await admin.updateBarberProfile({ ...as, bio: "Fades.", instagram: null });
+    expect((await profileOf(shop.blake)).instagram).toBeNull();
+  });
+
+  it("leaves the Spanish bio, Instagram and phone alone when they are left out", async () => {
+    const as = { userId: owner, shopId: shop.shopId, barberId: shop.blake, displayName: "Blake", specialties: [], photoUrl: null };
+    await admin.updateBarberProfile({ ...as, bio: "", bioEs: "Hola.", instagram: "blake", phone: "(718) 555-0123" });
+    await admin.updateBarberProfile({ ...as, bio: "Hello." });
+    const [row] = await sql<{ bio: string; bio_es: string; instagram: string | null; phone_e164: string | null }[]>`
+      select bio, bio_es, instagram, phone_e164 from public.barbers where id = ${shop.blake}
+    `;
+    expect(row).toEqual({ bio: "Hello.", bio_es: "Hola.", instagram: "blake", phone_e164: "+17185550123" });
+  });
+
+  it("refuses an Instagram URL, spaces or a handle over 30 characters", async () => {
+    const as = { userId: owner, shopId: shop.shopId, barberId: shop.blake, displayName: "Blake", bio: "", specialties: [], photoUrl: null };
+    for (const bad of ["https://instagram.com/x", "a b", "a".repeat(31)]) {
+      await expectCode(admin.updateBarberProfile({ ...as, instagram: bad }), "INVALID_INPUT");
+    }
+    await expectCode(admin.updateBarberProfile({ ...as, bioEs: "x".repeat(501) }), "INVALID_INPUT");
+  });
+
+  it("normalizeInstagram strips @ and clears blanks", () => {
+    expect(normalizeInstagram("@fresh.cuts")).toBe("fresh.cuts");
+    expect(normalizeInstagram("name")).toBe("name");
+    expect(normalizeInstagram("a".repeat(30))).toBe("a".repeat(30));
+    expect(normalizeInstagram("a".repeat(31))).toBe("invalid");
+    expect(normalizeInstagram("https://instagram.com/x")).toBe("invalid");
+    expect(normalizeInstagram("a b")).toBe("invalid");
+    expect(normalizeInstagram("@")).toBe("invalid");
+    expect(normalizeInstagram("  ")).toBeNull();
+    expect(normalizeInstagram(null)).toBeNull();
+  });
+
+  it("a Barber edits their own Spanish bio and Instagram", async () => {
+    await admin.updateBarberProfile({
+      userId: barberUser, shopId: shop.shopId, barberId: shop.blake, displayName: "Blake", bio: "", bioEs: "Diseños.", specialties: [], photoUrl: null, instagram: "blake",
+    });
+    expect(await profileOf(shop.blake)).toMatchObject({ bioEs: "Diseños.", instagram: "blake" });
+  });
+
+  it("the public catalog never carries a Barber's phone", async () => {
+    const phone = uniquePhone();
+    await admin.updateBarberProfile({
+      userId: owner, shopId: shop.shopId, barberId: shop.blake, displayName: "Blake", bio: "", specialties: [], photoUrl: null, phone,
+    });
+    const catalog = (await engine.getShopCatalog(shop.slug, NOW))!;
+    for (const b of catalog.barbers) {
+      expect(Object.keys(b)).toEqual(expect.arrayContaining(["bio", "bioEs", "instagram"]));
+      expect(Object.keys(b).some((k) => /phone/i.test(k))).toBe(false);
+    }
+    expect(JSON.stringify(catalog)).not.toContain(phone.slice(-7));
+  });
+
   it("a Barber cannot edit another Barber's profile", async () => {
     await expectCode(
       admin.updateBarberProfile({ userId: barberUser, shopId: shop.shopId, barberId: shop.alex, displayName: "X", bio: "", specialties: [], photoUrl: null }),
@@ -541,3 +603,75 @@ describe("Barber logins", () => {
     );
   });
 });
+
+describe("Shop isolation", () => {
+  /** Everything an Owner of `shop` could reach in `other` by passing its ids. */
+  const snapshot = async (o: TestShop) => ({
+    prices: await sql`
+      select barber_id, service_id, price_cents, duration_override_min, special_price_cents, special_ends_at
+      from public.barber_services where shop_id = ${o.shopId} order by barber_id, service_id
+    `,
+    barbers: await sql`
+      select id, display_name, bio, specialties, photo_url, phone_e164, instagram
+      from public.barbers where shop_id = ${o.shopId} order by id
+    `,
+    gallery: await sql`select barber_id, url, position from public.barber_gallery where shop_id = ${o.shopId} order by barber_id, position`,
+    hours: await sql`select barber_id, weekday, start_time, end_time from public.weekly_hours where shop_id = ${o.shopId} order by barber_id, weekday`,
+    daysOff: await sql`select barber_id, day from public.barber_time_off where shop_id = ${o.shopId} order by barber_id, day`,
+  });
+
+  it("an Owner cannot change another Shop's prices, profiles, gallery, hours or days off", async () => {
+    const other = await makeShop();
+    try {
+      await sql`insert into public.barber_gallery (shop_id, barber_id, url, position) values (${other.shopId}, ${other.alex}, 'https://example.com/b.jpg', 0)`;
+      await sql`insert into public.barber_time_off (shop_id, barber_id, day) values (${other.shopId}, ${other.alex}, '2027-01-20')`;
+      const before = await snapshot(other);
+      const as = { userId: owner, shopId: shop.shopId };
+
+      // Prices: their Barber + their Service, or one of each with ours.
+      for (const [barberId, serviceId] of [
+        [other.alex, other.cut],
+        [other.alex, shop.cut],
+        [shop.alex, other.cut],
+      ]) {
+        await expectCode(admin.setBarberPrice({ ...as, barberId, serviceId, priceCents: 1 }), "NOT_FOUND");
+        await expectCode(admin.removeBarberPrice({ ...as, barberId, serviceId }), "NOT_FOUND");
+      }
+      await expectCode(admin.setSpecialPrice({ ...as, serviceId: other.cut, specialPriceCents: 1, endsAt: TOMORROW_END }), "NOT_FOUND");
+      await expectCode(
+        admin.setSpecialPrice({ ...as, serviceId: shop.cut, barberId: other.alex, specialPriceCents: 1, endsAt: TOMORROW_END }),
+        "NOT_FOUND",
+      );
+
+      const theirs = { ...as, barberId: other.alex };
+      await expectCode(
+        admin.updateBarberProfile({ ...theirs, displayName: "Hacked", bio: "", specialties: [], photoUrl: null, phone: null, instagram: null }),
+        "NOT_FOUND",
+      );
+      await expectCode(admin.setGallery({ ...theirs, urls: [] }), "NOT_FOUND");
+      await expectCode(admin.setWeeklyHours({ ...theirs, days: [] }), "NOT_FOUND");
+      await expectCode(admin.removeBarberDayOff({ ...theirs, date: "2027-01-20" }), "NOT_FOUND");
+      await expectCode(engine.addBarberDayOff({ ...theirs, date: "2027-01-21" }), "NOT_FOUND");
+      // A garbage id is NOT_FOUND too, not a raw database error.
+      await expectCode(admin.setGallery({ ...as, barberId: "not-a-uuid", urls: [] }), "NOT_FOUND");
+
+      expect(await snapshot(other)).toEqual(before);
+    } finally {
+      await dropShop(other);
+    }
+  });
+
+  it("a Barber acting on another Shop's Barber is refused", async () => {
+    const other = await makeShop();
+    try {
+      await expectCode(
+        admin.setWeeklyHours({ userId: barberUser, shopId: shop.shopId, barberId: other.alex, days: [] }),
+        "FORBIDDEN",
+      );
+    } finally {
+      await dropShop(other);
+    }
+  });
+});
+
+const TOMORROW_END = at(TOMORROW, 17);

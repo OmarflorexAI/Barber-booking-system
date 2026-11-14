@@ -1,7 +1,8 @@
 import type { Sql } from "postgres";
 import { normalizePhone } from "@/lib/phone";
+import { normalizeInstagram } from "@/lib/instagram";
 import { RULES } from "@/server/booking-engine";
-import { authorizeForBarber, requireOwner } from "@/server/booking-engine/access";
+import { authorizeForBarber, requireBarberInShop, requireOwner, requireServiceInShop } from "@/server/booking-engine/access";
 import {
   barberHasBookings,
   barberLimit,
@@ -14,6 +15,8 @@ import {
   pgCode,
 } from "@/server/booking-engine/errors";
 import { isLocalDate } from "@/server/booking-engine/time";
+
+export { normalizeInstagram };
 
 export const MAX_ACTIVE_BARBERS = 6;
 
@@ -269,12 +272,16 @@ export function createShopAdmin(sql: Sql) {
     if (!isCents(args.priceCents)) throw invalid("Price must be a whole number of cents.");
     const override = args.durationOverrideMin ?? null;
     if (override !== null && !onGrid(override)) throw invalid("Duration must be a multiple of 15 minutes.");
+    // Both must be this Shop's: the upsert below would otherwise overwrite another Shop's row.
+    await requireBarberInShop(sql, args.shopId, args.barberId);
+    await requireServiceInShop(sql, args.shopId, args.serviceId);
     try {
       await sql`
         insert into public.barber_services (shop_id, barber_id, service_id, price_cents, duration_override_min)
         values (${args.shopId}, ${args.barberId}, ${args.serviceId}, ${args.priceCents}, ${override})
         on conflict (barber_id, service_id) do update
           set price_cents = excluded.price_cents, duration_override_min = excluded.duration_override_min
+          where barber_services.shop_id = excluded.shop_id
       `;
     } catch (e) {
       if (pgCode(e) === PG_FOREIGN_KEY_VIOLATION) throw notFound("Barber or Service"); // not in this Shop
@@ -285,6 +292,8 @@ export function createShopAdmin(sql: Sql) {
   /** The Barber stops offering a Service. */
   async function removeBarberPrice(args: ShopActor & { barberId: string; serviceId: string }): Promise<void> {
     await requireOwner(sql, args.userId, args.shopId);
+    await requireBarberInShop(sql, args.shopId, args.barberId);
+    await requireServiceInShop(sql, args.shopId, args.serviceId);
     await sql`
       delete from public.barber_services
       where shop_id = ${args.shopId} and barber_id = ${args.barberId} and service_id = ${args.serviceId}
@@ -299,6 +308,8 @@ export function createShopAdmin(sql: Sql) {
     args: ShopActor & { serviceId: string; barberId?: string; specialPriceCents: number | null; endsAt: Date | null },
   ): Promise<void> {
     await requireOwner(sql, args.userId, args.shopId);
+    await requireServiceInShop(sql, args.shopId, args.serviceId);
+    if (args.barberId) await requireBarberInShop(sql, args.shopId, args.barberId);
     const clear = args.specialPriceCents === null || args.endsAt === null;
     if (!clear && !isCents(args.specialPriceCents!)) throw invalid("Price must be a whole number of cents.");
     const rows = await sql`
@@ -384,25 +395,34 @@ export function createShopAdmin(sql: Sql) {
     args: ShopActor & {
       barberId: string;
       displayName: string;
+      /** The English bio. */
       bio: string;
+      /** The Spanish bio (Q35). Left out: unchanged. */
+      bioEs?: string;
       specialties: string[];
       photoUrl: string | null;
       /** Owner-only contact (Q27). Left out: unchanged; null or blank: cleared. */
       phone?: string | null;
+      /** Instagram handle, with or without "@". Left out: unchanged; null or blank: cleared. */
+      instagram?: string | null;
     },
   ): Promise<void> {
     await authorizeForBarber(sql, args.userId, args.shopId, args.barberId);
     const displayName = args.displayName.trim();
     const specialties = args.specialties.map((x) => x.trim()).filter(Boolean);
     if (!displayName || displayName.length > 60) throw invalid("Name is required (max 60 characters).");
-    if (args.bio.length > 500) throw invalid("Bio is too long (max 500 characters).");
+    if (args.bio.length > 500 || (args.bioEs?.length ?? 0) > 500) throw invalid("Bio is too long (max 500 characters).");
     if (specialties.length > 8 || specialties.some((x) => x.length > 40)) throw invalid("Up to 8 short specialties.");
     if (args.photoUrl !== null && !httpsUrl(args.photoUrl)) throw invalid("Photo must be an https link.");
     const phone = args.phone === undefined ? undefined : optionalPhone(args.phone);
+    const instagram = args.instagram === undefined ? undefined : normalizeInstagram(args.instagram);
+    if (instagram === "invalid") throw invalid("Instagram must be a handle like @name (letters, numbers, . and _, max 30).");
     await sql`
       update public.barbers
       set display_name = ${displayName}, bio = ${args.bio.trim()}, specialties = ${specialties}, photo_url = ${args.photoUrl}
+        ${args.bioEs === undefined ? sql`` : sql`, bio_es = ${args.bioEs.trim()}`}
         ${phone === undefined ? sql`` : sql`, phone_e164 = ${phone}`}
+        ${instagram === undefined ? sql`` : sql`, instagram = ${instagram}`}
       where id = ${args.barberId} and shop_id = ${args.shopId}
     `;
   }
