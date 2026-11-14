@@ -312,17 +312,14 @@ const en = {
     rank: (n: number) => `Rank ${n}`,
   },
   shell: {
-    nav: { day: "Day", today: "Today", dashboard: "Dashboard", settings: "Settings", me: "Me" },
+    nav: { today: "Today", dashboard: "Dashboard", settings: "Settings" },
     navLabel: "Main",
     platformAdmin: "Platform admin",
     hideSidebar: "Hide sidebar",
     showSidebar: "Show sidebar",
     noShop: "This account isn't linked to a Shop yet. Ask the Barber Master team to add you.",
     adminNoShop: "This account isn't linked to a Shop. Your Platform admin tools are on their own page.",
-    language: "Language",
-    me: {
-      setupNote: "For now, our team sets up your profile, hours and alerts with you.",
-    },
+    askOwner: "Your Shop's Owner runs Barber Master for the Shop. Ask them for your schedule and bookings.",
     settings: {
       title: "Settings",
       note: "These pages are on their way. Until then, our team makes these changes for you.",
@@ -1013,17 +1010,14 @@ const es: Dictionary = {
     rank: (n: number) => `Puesto ${n}`,
   },
   shell: {
-    nav: { day: "Día", today: "Hoy", dashboard: "Resumen", settings: "Ajustes", me: "Perfil" },
+    nav: { today: "Hoy", dashboard: "Resumen", settings: "Ajustes" },
     navLabel: "Principal",
     platformAdmin: "Administración",
     hideSidebar: "Ocultar menú lateral",
     showSidebar: "Mostrar menú lateral",
     noShop: "Esta cuenta aún no está unida a una barbería. Pide al equipo de Barber Master que te agregue.",
     adminNoShop: "Esta cuenta no está unida a una barbería. Tus herramientas de administración están en su propia página.",
-    language: "Idioma",
-    me: {
-      setupNote: "Por ahora, nuestro equipo configura contigo tu perfil, tu horario y tus alertas.",
-    },
+    askOwner: "El dueño de tu barbería maneja Barber Master. Pídele tu horario y tus citas.",
     settings: {
       title: "Ajustes",
       note: "Estas páginas vienen pronto. Mientras tanto, nuestro equipo hace estos cambios por ti.",

@@ -25,7 +25,6 @@ type Props = {
   bookingPath: string | null;
   smsEnabled: boolean;
   timezone: string;
-  isOwner: boolean;
   barbers: DayBarber[];
   filter: string | null;
   rows: DayRow[];
@@ -180,7 +179,7 @@ function RowName({ row, locale, dim }: { row: DayRow; locale: Locale; dim: boole
   );
 }
 
-/** A list row (phone, and a Barber on any screen): time column, name + Service, price, tags. */
+/** A list row (phone, and a one-Barber Shop on any screen): time column, name + Service, price, tags. */
 function ListRow({ row, now, locale, barberName, onOpen }: { row: DayRow; now: number; locale: Locale; barberName: string | null; onOpen: (id: string, el: HTMLElement) => void }) {
   const d = dictionaries[locale].day;
   const dim = isDone(row, now);
@@ -248,7 +247,7 @@ function CellRow({ row, now, locale, onOpen }: { row: DayRow; now: number; local
 }
 
 export function DayBoard(props: Props) {
-  const { locale, rows, barbers, isOwner, filter, isToday } = props;
+  const { locale, rows, barbers, filter, isToday } = props;
   const t = dictionaries[locale];
   const d = t.day;
   const now = useNow(props.serverNow, isToday);
@@ -258,7 +257,7 @@ export function DayBoard(props: Props) {
   const [walkInOpen, setWalkInOpen] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
 
-  const columns = isOwner && barbers.length > 1;
+  const columns = barbers.length > 1;
   const nameOf = (id: string) => barbers.find((b) => b.id === id)?.name ?? "";
   const listRows = filter ? rows.filter((r) => r.barberId === filter) : rows;
   const canWalkIn = isToday && barbers.some((b) => b.services.length > 0);
@@ -295,13 +294,13 @@ export function DayBoard(props: Props) {
         </Notice>
       )}
 
-      {/* Phone list (and a Barber's day on any screen). */}
+      {/* Phone list (and a one-Barber Shop on any screen). */}
       <div className={columns ? "lg:hidden" : "lg:max-w-3xl"}>
         {empty(listRows) || (
           <div className="relative">
             <ol ref={listRef} className="border-t border-line">
               {listRows.map((r) => (
-                <ListRow key={r.id} row={r} now={now} locale={locale} barberName={isOwner && !filter && barbers.length > 1 ? nameOf(r.barberId) : null} onOpen={open} />
+                <ListRow key={r.id} row={r} now={now} locale={locale} barberName={!filter && barbers.length > 1 ? nameOf(r.barberId) : null} onOpen={open} />
               ))}
             </ol>
             {isToday && <NowLine container={listRef} now={now} label={nowLabel} scrollIntoView />}
@@ -360,7 +359,7 @@ export function DayBoard(props: Props) {
 
       <RowSheet
         row={rows.find((r) => r.id === openId) ?? null}
-        barberName={isOwner && openId ? nameOf(rows.find((r) => r.id === openId)?.barberId ?? "") : null}
+        barberName={openId ? nameOf(rows.find((r) => r.id === openId)?.barberId ?? "") : null}
         locale={locale}
         shopId={props.shopId}
         timezone={props.timezone}

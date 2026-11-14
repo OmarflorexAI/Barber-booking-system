@@ -16,8 +16,8 @@ import type { DayBarber, DayRow } from "./types";
 export const metadata: Metadata = { title: "Day", robots: { index: false } };
 
 /**
- * Day (a Barber's own Bookings) and Today (the Owner: every active Barber). URL state is
- * `?date=YYYY-MM-DD&barber=<id>`; the Owner's phone list filters by `barber`, the desktop
+ * Today (the Owner: every active Barber, the Owner's own column too when they cut hair). URL
+ * state is `?date=YYYY-MM-DD&barber=<id>`; the phone list filters by `barber`, the desktop
  * shows one column per Barber. Row-level security limits every read to what this person may see.
  */
 export default function DayPage(props: PageProps<"/app/day">) {
@@ -58,13 +58,12 @@ async function Day({ searchParams }: { searchParams: Promise<Record<string, stri
   await connection();
   const [{ locale, t }, staff] = await Promise.all([getDictionary(), getStaff()]);
   if (!staff) redirect("/login");
-  // The shell shows the "not linked to a Shop" view for this case.
+  // The shell shows the "not linked to a Shop" / "Ask your Shop's Owner" view for this case.
   if (!staff.membership) return null;
   const d = t.day;
 
   const supabase = await createClient();
-  const { shopId, timezone: tz, role } = staff.membership;
-  const isOwner = role === "owner";
+  const { shopId, timezone: tz } = staff.membership;
 
   const [{ data: shop }, { data: barberRows }] = await Promise.all([
     supabase.from("shops").select("name, slug, sms_enabled").eq("id", shopId).maybeSingle<{ name: string; slug: string; sms_enabled: boolean }>(),
@@ -78,10 +77,9 @@ async function Day({ searchParams }: { searchParams: Promise<Record<string, stri
       .returns<{ id: string; display_name: string }[]>(),
   ]);
 
-  // A Barber sees only their own day; the Owner sees every active Barber.
-  const visible = isOwner ? (barberRows ?? []) : staff.barber ? [{ id: staff.barber.id, display_name: staff.barber.displayName }] : [];
+  const visible = barberRows ?? [];
   const requested = typeof sp.barber === "string" ? sp.barber : undefined;
-  const filter = isOwner && visible.some((b) => b.id === requested) ? requested! : null;
+  const filter = visible.some((b) => b.id === requested) ? requested! : null;
 
   const nowDate = new Date();
   const now = nowDate.getTime();
@@ -166,7 +164,7 @@ async function Day({ searchParams }: { searchParams: Promise<Record<string, stri
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-4">
       <div className="flex flex-col gap-3">
-        <h1 className="text-2xl font-semibold tracking-[-0.02em]">{isOwner && isToday ? d.titleOwner : d.titleBarber}</h1>
+        <h1 className="text-2xl font-semibold tracking-[-0.02em]">{isToday ? d.titleOwner : d.titleBarber}</h1>
 
         {/* Date bar: ‹ · the date · ›, plus a way back to today. */}
         <nav aria-label={t.dayLabel} className="flex w-full items-center gap-3 lg:max-w-md">
@@ -191,7 +189,7 @@ async function Day({ searchParams }: { searchParams: Promise<Record<string, stri
           </Link>
         )}
 
-        {isOwner && visible.length > 1 && (
+        {visible.length > 1 && (
           <nav aria-label={d.filterLabel} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:hidden">
             <Link href={href(date, null)} scroll={false} className={chip(!filter)} aria-current={!filter ? "page" : undefined}>
               {d.all}
@@ -213,7 +211,6 @@ async function Day({ searchParams }: { searchParams: Promise<Record<string, stri
         bookingPath={shop ? `/b/${shop.slug}` : null}
         smsEnabled={shop?.sms_enabled ?? false}
         timezone={tz}
-        isOwner={isOwner}
         barbers={barbers}
         filter={filter}
         rows={rows}

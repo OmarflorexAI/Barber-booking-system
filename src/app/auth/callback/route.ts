@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Where the emailed magic link lands. Starts the session, then goes to `next` when it's a
- * same-site path, else to the person's landing screen (Barber → Day, Owner → Today; see
+ * same-site path, else to the person's landing screen (the Owner → Today; see
  * landingPath).
  */
 export async function GET(request: NextRequest) {

@@ -5,20 +5,26 @@ import { cache } from "react";
 import { getDictionary } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 
-export type StaffRole = "owner" | "barber";
+/** The roles a `shop_members` row can hold. Only Owners use /app (PLAN.md Q11: Barbers never sign in). */
+type MemberRole = "owner" | "barber";
 
 /** Who is signed in to /app, read through row-level security as that person. */
 export type Staff = {
   userId: string;
   email: string | null;
-  /** The Shop they work at (the Owner role wins if they somehow have two Shops). */
-  membership: { shopId: string; shopName: string; timezone: string; role: StaffRole } | null;
-  /** Their own active Barber row in that Shop: set for every Barber and for an Owner who cuts hair. */
+  /** The Shop they own. Null for anyone who isn't an Owner (a legacy Barber login included). */
+  membership: { shopId: string; shopName: string; timezone: string; role: "owner" } | null;
+  /**
+   * A login left over from when Barbers could sign in: on a Shop's staff as a Barber, not as
+   * its Owner. The shell shows them "Ask your Shop's Owner" instead of any screen.
+   */
+  retiredBarber: boolean;
+  /** The Owner's own active Barber row, when the Owner also cuts hair. */
   barber: { id: string; displayName: string } | null;
   isPlatformAdmin: boolean;
 };
 
-/** Loads the signed-in person's Shop, role, Barber row and Platform admin flag. Null when nobody is signed in. */
+/** Loads the signed-in person's Shop, Barber row and Platform admin flag. Null when nobody is signed in. */
 export async function loadStaff(supabase: SupabaseClient): Promise<Staff | null> {
   const { data: auth } = await supabase.auth.getUser();
   const user = auth.user;
@@ -31,16 +37,17 @@ export async function loadStaff(supabase: SupabaseClient): Promise<Staff | null>
       .eq("user_id", user.id)
       .order("role", { ascending: false }) // "owner" before "barber"
       .limit(1)
-      .maybeSingle<{ shop_id: string; role: StaffRole; shops: { name: string; timezone: string } }>(),
+      .maybeSingle<{ shop_id: string; role: MemberRole; shops: { name: string; timezone: string } }>(),
     supabase.from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle(),
   ]);
+  const owner = member?.role === "owner" ? member : null;
 
   let barber: Staff["barber"] = null;
-  if (member) {
+  if (owner) {
     const { data } = await supabase
       .from("barbers")
       .select("id, display_name")
-      .eq("shop_id", member.shop_id)
+      .eq("shop_id", owner.shop_id)
       .eq("user_id", user.id)
       .eq("active", true)
       .maybeSingle<{ id: string; display_name: string }>();
@@ -50,9 +57,10 @@ export async function loadStaff(supabase: SupabaseClient): Promise<Staff | null>
   return {
     userId: user.id,
     email: user.email ?? null,
-    membership: member
-      ? { shopId: member.shop_id, shopName: member.shops.name, timezone: member.shops.timezone, role: member.role }
+    membership: owner
+      ? { shopId: owner.shop_id, shopName: owner.shops.name, timezone: owner.shops.timezone, role: "owner" }
       : null,
+    retiredBarber: member?.role === "barber",
     barber,
     isPlatformAdmin: Boolean(admin),
   };
@@ -77,7 +85,7 @@ export const getShellContext = cache(async () => {
 
 /**
  * Where a person lands after signing in (DESIGN.md → "Navigation per role"):
- * Barber → Day, Owner → Today (both /app/day), staff who are also Platform admins → /app/day.
+ * Owner → Today (/app/day), an Owner who is also a Platform admin → /app/day.
  * A Platform admin with no Shop belongs on /admin, which isn't built yet (mission U4), so
  * they land on /app/day for now, where the shell shows them the link to /admin.
  */
@@ -92,20 +100,10 @@ export function landingPath(staff: Staff | null): string {
  */
 export const ADMIN_PANEL_READY = false;
 
-/** The tabs (phone) and sidebar items (desktop) for this person, in order. */
-export type NavKey = "day" | "today" | "dashboard" | "settings" | "me";
-export function navFor(staff: Staff): { key: NavKey; href: string }[] {
-  if (staff.membership?.role === "owner") {
-    const items: { key: NavKey; href: string }[] = [
-      { key: "today", href: "/app/day" },
-      { key: "dashboard", href: "/app/dashboard" },
-      { key: "settings", href: "/app/settings" },
-    ];
-    if (staff.barber) items.push({ key: "me", href: "/app/me" });
-    return items;
-  }
-  return [
-    { key: "day", href: "/app/day" },
-    { key: "me", href: "/app/me" },
-  ];
-}
+/** The tabs (phone) and sidebar items (desktop): the Owner's three, in order. */
+export type NavKey = "today" | "dashboard" | "settings";
+export const NAV: readonly { key: NavKey; href: string }[] = [
+  { key: "today", href: "/app/day" },
+  { key: "dashboard", href: "/app/dashboard" },
+  { key: "settings", href: "/app/settings" },
+];

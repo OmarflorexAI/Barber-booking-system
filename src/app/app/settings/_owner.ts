@@ -3,15 +3,14 @@ import { redirect } from "next/navigation";
 import { getShellContext } from "../_shell/staff";
 
 /**
- * The Settings pages' guard: nobody signed in → /login; a Barber → /app/day. Returns null
- * when the person has no Shop (the shell already shows the "not linked to a Shop" page).
+ * The Owner pages' guard: nobody signed in → /login. Returns null when the person owns no
+ * Shop (the shell already shows the "not linked to a Shop" or "Ask your Shop's Owner" page).
  */
 export async function ownerContext() {
   const ctx = await getShellContext();
   const { staff } = ctx;
   if (!staff) redirect("/login");
   if (!staff.membership) return null;
-  if (staff.membership.role !== "owner") redirect("/app/day");
   return { ...ctx, staff, membership: staff.membership };
 }
 

@@ -56,7 +56,7 @@ export function ShellSkeleton() {
       </div>
       <div aria-hidden="true" className="fixed inset-x-0 bottom-0 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden">
         <div className="mx-auto flex h-16 max-w-lg items-center justify-around">
-          {[0, 1].map((i) => (
+          {[0, 1, 2].map((i) => (
             <div key={i} className="flex flex-col items-center gap-1.5">
               <div className={`${block} h-6 w-6`} />
               <div className={`${block} h-3 w-10`} />

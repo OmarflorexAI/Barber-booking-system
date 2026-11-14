@@ -8,7 +8,7 @@ import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { ShellMain, SidebarAdminLink, SidebarNav, TabBar, type NavItem } from "./nav";
 import { SIDEBAR_COOKIE, SidebarToggle } from "./sidebar";
 import { SignOutButton } from "./sign-out";
-import { ADMIN_PANEL_READY, getShellContext, navFor } from "./staff";
+import { ADMIN_PANEL_READY, getShellContext, NAV } from "./staff";
 
 /**
  * The frame every /app screen sits in (DESIGN.md → "Navigation per role"):
@@ -19,7 +19,7 @@ import { ADMIN_PANEL_READY, getShellContext, navFor } from "./staff";
  *   collapses to an icon rail (button or `[`), saved in the `sidebar` cookie; the CSS lives
  *   in globals.css → "Staff app sidebar", the behavior in sidebar.tsx.
  * Content goes in <main>, which reserves room for the tab bar. Sign out is not here: it
- * sits at the bottom of Me (Barber) and Settings (Owner).
+ * sits at the bottom of Settings. The app is the Owner's alone (PLAN.md M6).
  */
 export async function StaffShell({ children }: { children: React.ReactNode }) {
   const [{ staff, locale, t }, cookieStore] = await Promise.all([getShellContext(), cookies()]);
@@ -41,8 +41,10 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 
-  // Signed in, but not on any Shop's staff: one calm sentence and the way out.
+  // Signed in, but not a Shop's Owner: one calm sentence and the way out. A login left over
+  // from when Barbers could sign in is told to ask their Owner.
   if (!staff.membership) {
+    const message = staff.retiredBarber ? t.shell.askOwner : staff.isPlatformAdmin && ADMIN_PANEL_READY ? t.shell.adminNoShop : t.shell.noShop;
     return (
       <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col px-4">
         <HtmlLang lang={locale} />
@@ -51,7 +53,7 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
           {toggles}
         </header>
         <main className="flex flex-1 flex-col justify-center gap-6 pb-16">
-          <h1 className="text-lg leading-relaxed font-normal text-pretty">{staff.isPlatformAdmin && ADMIN_PANEL_READY ? t.shell.adminNoShop : t.shell.noShop}</h1>
+          <h1 className="text-lg leading-relaxed font-normal text-pretty">{message}</h1>
           <div className="flex flex-col gap-3">
             {staff.isPlatformAdmin && ADMIN_PANEL_READY && (
               <Link href="/admin" className="btn-primary">
@@ -68,7 +70,7 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const items: NavItem[] = navFor(staff).map((i) => ({ ...i, label: t.shell.nav[i.key] }));
+  const items: NavItem[] = NAV.map((i) => ({ ...i, label: t.shell.nav[i.key] }));
   const person = staff.barber?.displayName ?? staff.email;
 
   return (

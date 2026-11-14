@@ -22,7 +22,6 @@ const cut = { stroke: "var(--icon-cut, var(--surface))" };
 export function NavIcon({ name, filled = false, className = "h-6 w-6" }: { name: NavKey | "admin"; filled?: boolean; className?: string }) {
   const fill = filled ? "currentColor" : "none";
   switch (name) {
-    case "day":
     case "today":
       // A calendar page.
       return (
@@ -49,14 +48,6 @@ export function NavIcon({ name, filled = false, className = "h-6 w-6" }: { name:
           <path d="M4 8h2.5M11.5 8H20M4 16h8.5M17.5 16H20" />
           <circle cx="9" cy="8" r="2.5" fill={fill} />
           <circle cx="15" cy="16" r="2.5" fill={fill} />
-        </svg>
-      );
-    case "me":
-      // A person.
-      return (
-        <svg {...base} className={className}>
-          <circle cx="12" cy="8" r="3.75" fill={fill} />
-          <path d="M4.75 20a7.25 7.25 0 0 1 14.5 0Z" fill={fill} />
         </svg>
       );
     case "admin":
