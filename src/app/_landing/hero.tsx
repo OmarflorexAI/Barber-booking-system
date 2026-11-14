@@ -5,7 +5,8 @@ import { Container, Pill, WidePanel, focusRing, type } from "./ui";
 
 /**
  * The first view: who it's for, the promise, and the booking page itself on a phone
- * inside the template's wide gradient panel. Visitors can book a pretend cut right here.
+ * inside the template's wide gradient panel, lit by two slow-drifting soft lights so the
+ * panel feels alive. Visitors can book a pretend cut right here.
  */
 export function Hero({ t }: SectionProps) {
   return (
@@ -36,7 +37,16 @@ export function Hero({ t }: SectionProps) {
         <WidePanel
           id="hero-panel"
           className="flex items-center justify-center px-4 py-10 md:p-16"
-          background={<div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(128,134,145,0.3), transparent)" }} />}
+          background={
+            <>
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(128,134,145,0.3), transparent)" }} />
+              {/* Two soft lights drifting behind the phone (globals.css → "Hero glow"). */}
+              <div className="hero-glow absolute inset-0">
+                <span />
+                <span />
+              </div>
+            </>
+          }
         >
           <HeroPhone p={t.heroPhone} lang={t.heroPhone.lang} />
         </WidePanel>
