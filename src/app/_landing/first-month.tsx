@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { LiveDot } from "./live-dot";
 import type { SectionProps } from "./types";
 import { Container, Pill, type } from "./ui";
@@ -5,6 +6,11 @@ import { Container, Pill, type } from "./ui";
 /**
  * Your first month: the template's sticky-heading timeline, Day 1 to Day 30 top to
  * bottom. Day 1 carries the red dot, its ring pulsing while on screen (still under reduced motion).
+ *
+ * Scroll motion (globals.css → "First-month rail"): a white line draws down the rail with
+ * its tip held at 60% of the screen; as it reaches each Day the bubble pops in and that
+ * entry's lines rise one after another. CSS scroll timelines only; at rest, under reduced
+ * motion or without support, the whole timeline simply shows.
  */
 export function FirstMonth({ t }: SectionProps) {
   return (
@@ -19,23 +25,24 @@ export function FirstMonth({ t }: SectionProps) {
             <p className={`mt-4 ${type.body}`}>{t.monthBody}</p>
           </div>
 
-          <div className="relative pl-8">
-            <span aria-hidden className="absolute bottom-0 left-[5px] top-0 w-px" style={{ background: "linear-gradient(to bottom, var(--l-fg), var(--l-border))" }} />
+          <div className="month-rail relative pl-8">
+            <span aria-hidden className="absolute bottom-0 left-[5px] top-0 w-px bg-[var(--l-border)]" />
+            <span aria-hidden className="month-rail-fill absolute bottom-0 left-[5px] top-0 w-px" style={{ background: "linear-gradient(to bottom, var(--l-fg), var(--l-fg) 85%, var(--l-border))" }} />
             <ol>
               {t.month.map((entry, i) => {
                 const first = i === 0;
                 const last = i === t.month.length - 1;
                 return (
-                  <li key={entry.when} className={`relative ${last ? "" : "pb-16"}`} data-reveal>
-                    <span aria-hidden className="absolute -left-8 top-[0.35rem]">
+                  <li key={entry.when} className={`month-step relative ${last ? "" : "pb-16"}`}>
+                    <span aria-hidden className="month-dot absolute -left-8 top-[0.35rem]">
                       {first ? <LiveDot className="h-[11px] w-[11px]" /> : <span className="block h-[11px] w-[11px] rounded-full bg-muted-foreground" />}
                     </span>
-                    <p className="flex flex-wrap items-center gap-x-3 text-sm font-medium text-muted-foreground">
+                    <p className="month-line flex flex-wrap items-center gap-x-3 text-sm font-medium text-muted-foreground">
                       <span>{entry.when}</span>
                       {first && <span className="text-foreground">{t.monthStart}</span>}
                     </p>
-                    <h3 className="mt-3 text-base font-semibold text-foreground">{entry.title}</h3>
-                    <p className="mt-1 max-w-[52ch] text-sm leading-relaxed text-muted-foreground">{entry.body}</p>
+                    <h3 className="month-line mt-3 text-base font-semibold text-foreground" style={{ "--line": 1 } as CSSProperties}>{entry.title}</h3>
+                    <p className="month-line mt-1 max-w-[52ch] text-sm leading-relaxed text-muted-foreground" style={{ "--line": 2 } as CSSProperties}>{entry.body}</p>
                   </li>
                 );
               })}

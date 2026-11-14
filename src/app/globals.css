@@ -390,6 +390,33 @@ body:has(.landing) {
       animation-timeline: view();
       animation-range: cover 0px cover 180px;
     }
+    /*
+     * First-month rail (first-month.tsx). The "reading line" sits 60% down the screen
+     * (--rail-at = 40vh above the bottom). The white fill grows with the rail's own view
+     * timeline so its tip stays on that line; each step's bubble pops as the step's top
+     * crosses it, then its when / title / body rise 40px of scroll apart.
+     */
+    .landing .month-rail {
+      --rail-at: 40vh;
+      view-timeline: --month-rail block;
+    }
+    .landing .month-rail-fill {
+      transform-origin: top;
+      animation: month-rail-draw linear both;
+      animation-timeline: --month-rail;
+      animation-range: cover var(--rail-at) cover calc(100% - 100vh + var(--rail-at));
+    }
+    .landing .month-dot {
+      animation: month-dot-pop linear both;
+      animation-timeline: view();
+      animation-range: cover calc(var(--rail-at) - 20px) cover calc(var(--rail-at) + 50px);
+    }
+    .landing .month-line {
+      --line: 0;
+      animation: landing-reveal cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      animation-timeline: view();
+      animation-range: cover calc(var(--rail-at) + var(--line) * 40px) cover calc(var(--rail-at) + 140px + var(--line) * 40px);
+    }
   }
 }
 @keyframes landing-widen {
@@ -415,6 +442,25 @@ body:has(.landing) {
 @keyframes landing-fade-in {
   from {
     opacity: 0;
+  }
+}
+@keyframes month-rail-draw {
+  from {
+    scale: 1 0;
+  }
+}
+/* Scroll-linked, so the "pop" is shaped in the keyframes: grow past full size, settle. */
+@keyframes month-dot-pop {
+  0% {
+    opacity: 0;
+    scale: 0;
+  }
+  60% {
+    opacity: 1;
+    scale: 1.35;
+  }
+  100% {
+    scale: 1;
   }
 }
 @keyframes landing-reveal {
