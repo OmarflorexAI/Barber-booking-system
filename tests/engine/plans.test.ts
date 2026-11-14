@@ -170,3 +170,39 @@ describe("setPlan", () => {
     expect((await platform.listShops({ userId: admin, now: NOW })).find((s) => s.id === shop.shopId)?.plan).toBe("pro");
   });
 });
+
+describe("an Owner can't change what we sell them (RLS + guard trigger)", () => {
+  /** Run an update as a signed-in user, the way Supabase's API does. Returns the error code, or "OK". */
+  async function asUser(userId: string, q: (tx: typeof sql) => Promise<unknown>): Promise<string> {
+    try {
+      await sql.begin(async (tx) => {
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: userId, role: "authenticated" })}, true)`;
+        await tx`set local role authenticated`;
+        await q(tx as unknown as typeof sql);
+      });
+      return "OK";
+    } catch (e) {
+      return (e as { code?: string }).code ?? "ERR";
+    }
+  }
+
+  it("refuses plan, billing, status, payments and texts; still allows the Shop's own details", async () => {
+    const shop = await shopOn("free");
+    const owner = await makeUser(shop.shopId, "owner");
+    const id = shop.shopId;
+    const tries = [
+      (tx: typeof sql) => tx`update public.shops set plan = 'pro' where id = ${id}`,
+      (tx: typeof sql) => tx`update public.shops set billing_status = 'paid' where id = ${id}`,
+      (tx: typeof sql) => tx`update public.shops set status = 'active', sms_enabled = false where id = ${id}`,
+      (tx: typeof sql) => tx`update public.shops set sms_registration = 'approved' where id = ${id}`,
+      (tx: typeof sql) => tx`update public.shops set payments_enabled = false where id = ${id}`,
+      (tx: typeof sql) => tx`update public.shops set payment_account_id = 'acct_fake' where id = ${id}`,
+    ];
+    for (const t of tries) expect(await asUser(owner, t)).toBe("42501");
+    const [row] = await sql<{ plan: string }[]>`select plan from public.shops where id = ${id}`;
+    expect(row.plan).toBe("free");
+    expect(await asUser(owner, (tx) => tx`update public.shops set name = 'Renamed' where id = ${id}`)).toBe("OK");
+    // The server (DB owner) still can.
+    await sql`update public.shops set plan = 'pro' where id = ${id}`;
+  });
+});
