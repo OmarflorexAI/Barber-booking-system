@@ -22,6 +22,17 @@ export const MAX_ACTIVE_BARBERS = 6;
 
 type ShopActor = { userId: string; shopId: string };
 
+export type ShopProfile = {
+  slug: string;
+  name: string;
+  phone: string | null;
+  address: string | null;
+  aboutEn: string;
+  aboutEs: string;
+  logoUrl: string | null;
+  coverUrl: string | null;
+};
+
 export type DayHours = { weekday: number; start: string; end: string; breakStart?: string | null; breakEnd?: string | null };
 
 /** "HH:MM" on the 15-minute grid, as minutes after midnight; null when malformed. */
@@ -443,6 +454,75 @@ export function createShopAdmin(sql: Sql) {
     });
   }
 
+  /** What the Owner edits on Settings -> Shop profile. The booking link (slug) is not here: only we change it (Q21). */
+  async function getShopProfile(args: ShopActor): Promise<ShopProfile> {
+    await requireOwner(sql, args.userId, args.shopId);
+    const [s] = await sql<
+      {
+        slug: string;
+        name: string;
+        phone: string | null;
+        address: string | null;
+        about_en: string;
+        about_es: string;
+        logo_url: string | null;
+        cover_url: string | null;
+      }[]
+    >`
+      select slug, name, phone, address, about_en, about_es, logo_url, cover_url from public.shops where id = ${args.shopId}
+    `;
+    if (!s) throw notFound("Shop");
+    return {
+      slug: s.slug,
+      name: s.name,
+      phone: s.phone,
+      address: s.address,
+      aboutEn: s.about_en,
+      aboutEs: s.about_es,
+      logoUrl: s.logo_url,
+      coverUrl: s.cover_url,
+    };
+  }
+
+  /**
+   * How the Shop looks to Clients at the top of /b (M5). Owner only. Phone is stored in
+   * E.164 like everywhere else (blank clears it); about follows Q35 (either language may be
+   * blank, Clients fall back to the other). There is no slug parameter on purpose (Q21).
+   */
+  async function updateShopProfile(
+    args: ShopActor & {
+      name: string;
+      phone: string | null;
+      address: string | null;
+      aboutEn: string;
+      aboutEs: string;
+      logoUrl: string | null;
+      coverUrl: string | null;
+    },
+  ): Promise<void> {
+    await requireOwner(sql, args.userId, args.shopId);
+    const name = args.name.trim();
+    if (!name || name.length > 80) throw invalid("Shop name is required (max 80 characters).");
+    const phone = optionalPhone(args.phone);
+    const address = args.address?.trim() || null;
+    if (address && address.length > 200) throw invalid("Address is too long (max 200 characters).");
+    const aboutEn = args.aboutEn.trim();
+    const aboutEs = args.aboutEs.trim();
+    if (aboutEn.length > 600 || aboutEs.length > 600) throw invalid("About is too long (max 600 characters).");
+    const logoUrl = args.logoUrl || null;
+    const coverUrl = args.coverUrl || null;
+    if ((logoUrl !== null && !httpsUrl(logoUrl)) || (coverUrl !== null && !httpsUrl(coverUrl))) {
+      throw invalid("Photos must be https links.");
+    }
+    const rows = await sql`
+      update public.shops
+      set name = ${name}, phone = ${phone}, address = ${address}, about_en = ${aboutEn}, about_es = ${aboutEs},
+          logo_url = ${logoUrl}, cover_url = ${coverUrl}
+      where id = ${args.shopId}
+    `;
+    if (rows.count === 0) throw notFound("Shop");
+  }
+
   /**
    * Tie a login (an invited auth user) to a Barber, so they can sign in and see their day.
    * The invite email itself is sent by the app (Supabase Auth); this only grants access.
@@ -479,6 +559,8 @@ export function createShopAdmin(sql: Sql) {
   }
 
   return {
+    getShopProfile,
+    updateShopProfile,
     linkBarberLogin,
     blockPhone,
     unblockPhone,

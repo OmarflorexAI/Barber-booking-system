@@ -3,7 +3,21 @@ import { isBookingError } from "@/server/booking-engine";
 import { staffRole } from "@/server/booking-engine/access";
 import { createReporting } from "@/server/reporting";
 import { createShopAdmin, normalizeInstagram } from "@/server/shop-admin";
-import { at, book, dropShop, engine, makeShop, makeUser, NOW, sql, TOMORROW, uniquePhone, type TestShop } from "./fixtures";
+import {
+  at,
+  book,
+  dropShop,
+  dropUser,
+  engine,
+  makeLoneUser,
+  makeShop,
+  makeUser,
+  NOW,
+  sql,
+  TOMORROW,
+  uniquePhone,
+  type TestShop,
+} from "./fixtures";
 
 /**
  * Owner tools (B5): what an Owner can change about their Shop, and what a
@@ -675,3 +689,87 @@ describe("Shop isolation", () => {
 });
 
 const TOMORROW_END = at(TOMORROW, 17);
+
+describe("Shop profile (M5)", () => {
+  const profile = {
+    name: "  Fresh Cuts Uptown ",
+    phone: "(718) 555-0142",
+    address: " 123 Dyckman St, New York, NY ",
+    aboutEn: " Fades and lineups since 2009. ",
+    aboutEs: "",
+    logoUrl: "https://example.com/logo.webp",
+    coverUrl: "https://example.com/cover.webp",
+  };
+
+  it("the Owner updates name, phone, address, about, logo and cover; the slug stays; /b reads them", async () => {
+    await admin.updateShopProfile({ userId: owner, shopId: shop.shopId, ...profile });
+    expect(await admin.getShopProfile({ userId: owner, shopId: shop.shopId })).toEqual({
+      slug: shop.slug,
+      name: "Fresh Cuts Uptown",
+      phone: "+17185550142",
+      address: "123 Dyckman St, New York, NY",
+      aboutEn: "Fades and lineups since 2009.",
+      aboutEs: "",
+      logoUrl: profile.logoUrl,
+      coverUrl: profile.coverUrl,
+    });
+    const [row] = await sql<{ slug: string }[]>`select slug from public.shops where id = ${shop.shopId}`;
+    expect(row.slug).toBe(shop.slug);
+
+    const catalog = await engine.getShopCatalog(shop.slug, NOW);
+    expect(catalog?.shop).toMatchObject({
+      name: "Fresh Cuts Uptown",
+      phone: "+17185550142",
+      address: "123 Dyckman St, New York, NY",
+      aboutEn: "Fades and lineups since 2009.",
+      aboutEs: "",
+      logoUrl: profile.logoUrl,
+      coverUrl: profile.coverUrl,
+    });
+
+    // Blank phone and address clear them; null pictures remove them.
+    await admin.updateShopProfile({ userId: owner, shopId: shop.shopId, ...profile, phone: " ", address: "", logoUrl: null, coverUrl: null });
+    expect(await admin.getShopProfile({ userId: owner, shopId: shop.shopId })).toMatchObject({
+      phone: null,
+      address: null,
+      logoUrl: null,
+      coverUrl: null,
+    });
+  });
+
+  it("a slug sent along is ignored", async () => {
+    await admin.updateShopProfile({ userId: owner, shopId: shop.shopId, ...profile, slug: "stolen-slug" } as Parameters<
+      typeof admin.updateShopProfile
+    >[0]);
+    const [row] = await sql<{ slug: string }[]>`select slug from public.shops where id = ${shop.shopId}`;
+    expect(row.slug).toBe(shop.slug);
+  });
+
+  it("a stranger, a Barber of the Shop and another Shop's Owner are refused", async () => {
+    const stranger = await makeLoneUser();
+    const other = await makeShop();
+    try {
+      const otherOwner = await makeUser(other.shopId, "owner");
+      for (const userId of [stranger, barberUser, otherOwner]) {
+        await expectCode(admin.updateShopProfile({ userId, shopId: shop.shopId, ...profile, name: "Hacked" }), "FORBIDDEN");
+        await expectCode(admin.getShopProfile({ userId, shopId: shop.shopId }), "FORBIDDEN");
+      }
+      const [row] = await sql<{ name: string }[]>`select name from public.shops where id = ${shop.shopId}`;
+      expect(row.name).not.toBe("Hacked");
+    } finally {
+      await dropShop(other);
+      await dropUser(stranger);
+    }
+  });
+
+  it("refuses a bad phone, http or non-URL pictures, a blank name and over-long text", async () => {
+    const as = { userId: owner, shopId: shop.shopId, ...profile };
+    await expectCode(admin.updateShopProfile({ ...as, phone: "555-12" }), "INVALID_INPUT");
+    await expectCode(admin.updateShopProfile({ ...as, logoUrl: "http://example.com/logo.webp" }), "INVALID_INPUT");
+    await expectCode(admin.updateShopProfile({ ...as, coverUrl: "javascript:alert(1)" }), "INVALID_INPUT");
+    await expectCode(admin.updateShopProfile({ ...as, name: "   " }), "INVALID_INPUT");
+    await expectCode(admin.updateShopProfile({ ...as, name: "x".repeat(81) }), "INVALID_INPUT");
+    await expectCode(admin.updateShopProfile({ ...as, address: "x".repeat(201) }), "INVALID_INPUT");
+    await expectCode(admin.updateShopProfile({ ...as, aboutEs: "x".repeat(601) }), "INVALID_INPUT");
+  });
+});

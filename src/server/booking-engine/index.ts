@@ -70,6 +70,9 @@ type ShopRow = {
   payments_enabled: boolean;
 };
 
+/** The public profile columns only the catalog reads (M5). */
+type ShopProfileRow = { logo_url: string | null; cover_url: string | null; about_en: string; about_es: string };
+
 type ServiceRow = {
   id: string;
   name_en: string;
@@ -296,8 +299,9 @@ function assertDate(date: string): asserts date is LocalDate {
 export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }) {
   /** Shop page data: Services with "from" prices and Barbers with profiles. No business rules here beyond pricing. */
   async function getShopCatalog(slug: string, now: Date) {
-    const [shop] = await sql<ShopRow[]>`
-      select id, slug, name, phone, address, timezone, cancel_cutoff_minutes, sms_enabled, status, payment_account_id, payments_enabled
+    const [shop] = await sql<(ShopRow & ShopProfileRow)[]>`
+      select id, slug, name, phone, address, logo_url, cover_url, about_en, about_es, timezone, cancel_cutoff_minutes, sms_enabled, status,
+             payment_account_id, payments_enabled
       from public.shops where slug = ${slug} and status = 'active'
     `;
     if (!shop) return null;
@@ -331,6 +335,10 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
         name: shop.name,
         phone: shop.phone,
         address: shop.address,
+        logoUrl: shop.logo_url,
+        coverUrl: shop.cover_url,
+        aboutEn: shop.about_en,
+        aboutEs: shop.about_es,
         timezone: shop.timezone,
         cancelCutoffMinutes: shop.cancel_cutoff_minutes,
         onlinePayments: shop.payments_enabled,
