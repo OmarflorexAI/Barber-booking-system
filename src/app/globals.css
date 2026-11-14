@@ -391,10 +391,9 @@ body:has(.landing) {
       animation-range: cover 0px cover 180px;
     }
     /*
-     * First-month rail (first-month.tsx). The "reading line" sits 60% down the screen
-     * (--rail-at = 40vh above the bottom). The white fill grows with the rail's own view
-     * timeline so its tip stays on that line; each step's bubble pops as the step's top
-     * crosses it, then its when / title / body rise 40px of scroll apart.
+     * First-month rail (first-month.tsx): the white fill grows with the rail's own view
+     * timeline, its tip held 60% down the screen (--rail-at = 40vh above the bottom), the
+     * same line rail-reveal.tsx uses to reveal each step.
      */
     .landing .month-rail {
       --rail-at: 40vh;
@@ -405,17 +404,6 @@ body:has(.landing) {
       animation: month-rail-draw linear both;
       animation-timeline: --month-rail;
       animation-range: cover var(--rail-at) cover calc(100% - 100vh + var(--rail-at));
-    }
-    .landing .month-dot {
-      animation: month-dot-pop linear both;
-      animation-timeline: view();
-      animation-range: cover calc(var(--rail-at) - 20px) cover calc(var(--rail-at) + 50px);
-    }
-    .landing .month-line {
-      --line: 0;
-      animation: landing-reveal cubic-bezier(0.2, 0.8, 0.2, 1) both;
-      animation-timeline: view();
-      animation-range: cover calc(var(--rail-at) + var(--line) * 40px) cover calc(var(--rail-at) + 140px + var(--line) * 40px);
     }
   }
 }
@@ -444,23 +432,32 @@ body:has(.landing) {
     opacity: 0;
   }
 }
+/*
+ * First-month steps (rail-reveal.tsx arms the rail only with JS and motion allowed). An
+ * unreached step waits hidden; once `is-in`, its bubble pops past full size and settles,
+ * then the when / title / body lines rise 90ms apart. Time-based, played once per step.
+ */
+.landing .month-rail[data-armed] .month-dot {
+  transition:
+    scale 560ms cubic-bezier(0.34, 1.7, 0.64, 1),
+    opacity 200ms ease-out;
+}
+.landing .month-rail[data-armed] .month-line {
+  transition:
+    opacity 520ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(140ms + var(--line, 0) * 90ms),
+    translate 620ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(140ms + var(--line, 0) * 90ms);
+}
+.landing .month-rail[data-armed] .month-step:not(.is-in) .month-dot {
+  opacity: 0;
+  scale: 0;
+}
+.landing .month-rail[data-armed] .month-step:not(.is-in) .month-line {
+  opacity: 0;
+  translate: 0 18px;
+}
 @keyframes month-rail-draw {
   from {
     scale: 1 0;
-  }
-}
-/* Scroll-linked, so the "pop" is shaped in the keyframes: grow past full size, settle. */
-@keyframes month-dot-pop {
-  0% {
-    opacity: 0;
-    scale: 0;
-  }
-  60% {
-    opacity: 1;
-    scale: 1.35;
-  }
-  100% {
-    scale: 1;
   }
 }
 @keyframes landing-reveal {

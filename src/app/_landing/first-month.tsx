@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { LiveDot } from "./live-dot";
+import { RailReveal } from "./rail-reveal";
 import type { SectionProps } from "./types";
 import { Container, Pill, type } from "./ui";
 
@@ -7,10 +8,10 @@ import { Container, Pill, type } from "./ui";
  * Your first month: the template's sticky-heading timeline, Day 1 to Day 30 top to
  * bottom. Day 1 carries the red dot, its ring pulsing while on screen (still under reduced motion).
  *
- * Scroll motion (globals.css → "First-month rail"): a white line draws down the rail with
- * its tip held at 60% of the screen; as it reaches each Day the bubble pops in and that
- * entry's lines rise one after another. CSS scroll timelines only; at rest, under reduced
- * motion or without support, the whole timeline simply shows.
+ * Motion (globals.css → "First-month rail"): a white line draws down the rail as the
+ * visitor scrolls, its tip held 60% down the screen. Each step stays hidden until the line
+ * reaches it; then its bubble pops and its when / title / body rise in turn (rail-reveal.tsx).
+ * Without JS, under reduced motion or without support, the whole timeline simply shows.
  */
 export function FirstMonth({ t }: SectionProps) {
   return (
@@ -25,7 +26,8 @@ export function FirstMonth({ t }: SectionProps) {
             <p className={`mt-4 ${type.body}`}>{t.monthBody}</p>
           </div>
 
-          <div className="month-rail relative pl-8">
+          <div id="month-rail" className="month-rail relative pl-8">
+            <RailReveal railId="month-rail" />
             <span aria-hidden className="absolute bottom-0 left-[5px] top-0 w-px bg-[var(--l-border)]" />
             <span aria-hidden className="month-rail-fill absolute bottom-0 left-[5px] top-0 w-px" style={{ background: "linear-gradient(to bottom, var(--l-fg), var(--l-fg) 85%, var(--l-border))" }} />
             <ol>
@@ -33,7 +35,7 @@ export function FirstMonth({ t }: SectionProps) {
                 const first = i === 0;
                 const last = i === t.month.length - 1;
                 return (
-                  <li key={entry.when} className={`month-step relative ${last ? "" : "pb-16"}`}>
+                  <li key={entry.when} className={`month-step relative ${last ? "" : "pb-16"}`} data-step>
                     <span aria-hidden className="month-dot absolute -left-8 top-[0.35rem]">
                       {first ? <LiveDot className="h-[11px] w-[11px]" /> : <span className="block h-[11px] w-[11px] rounded-full bg-muted-foreground" />}
                     </span>
