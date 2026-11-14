@@ -27,7 +27,7 @@ export default function SettingsPage() {
 
 /** The rows, in order, with the pages that exist so far. */
 const ROWS: { key: SettingsKey; href?: string }[] = [
-  { key: "services" },
+  { key: "services", href: "/app/settings/services" },
   { key: "hours" },
   { key: "barbers" },
   { key: "rules", href: "/app/settings/rules" },
