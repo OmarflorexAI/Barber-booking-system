@@ -206,8 +206,8 @@ unaffected; EN/ES; axe 0.
 
 ## Needs you (collected)
 
-- **Pro's price** and the landing wording that replaces "first month free" (Q32).
-- OK to **disconnect the test Barber logins** in the dev database (M6).
+- **Pro's price: $50/month** (user, 2026-11-14). Landing wording drafted in M7 for the user to see before commit.
+- Test Barber logins: **OK to disconnect where necessary** (user, 2026-11-14); only logins tied to test Barbers, never the Owner's.
 - Push to GitHub after each milestone (your OK each time).
 - Later, not in this plan: self-serve Shop sign-up (Q1 b), in-app upgrade checkout, Premium tier,
   Barber sign-in as a paid feature, Telegram keys.
