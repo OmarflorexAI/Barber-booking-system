@@ -10,7 +10,8 @@ import { Container, Pill, type } from "./ui";
  *
  * Motion (globals.css → "First-month rail"): a white line draws down the rail as the
  * visitor scrolls, its tip held 60% down the screen. Each step stays hidden until the line
- * reaches it; then its bubble pops and its when / title / body rise in turn (rail-reveal.tsx).
+ * reaches it, showing only as a faint preview with an empty ring; then its bubble pops and
+ * its when / title / body / tags brighten and rise in turn (rail-reveal.tsx).
  * Without JS, under reduced motion or without support, the whole timeline simply shows.
  */
 export function FirstMonth({ t }: SectionProps) {
@@ -35,7 +36,7 @@ export function FirstMonth({ t }: SectionProps) {
                 const first = i === 0;
                 const last = i === t.month.length - 1;
                 return (
-                  <li key={entry.when} className={`month-step relative ${last ? "" : "pb-16"}`} data-step>
+                  <li key={entry.when} className={`month-step relative ${last ? "" : "pb-20"}`} data-step>
                     <span aria-hidden className="month-dot absolute -left-8 top-[0.35rem]">
                       {first ? <LiveDot className="h-[11px] w-[11px]" /> : <span className="block h-[11px] w-[11px] rounded-full bg-muted-foreground" />}
                     </span>
@@ -43,8 +44,19 @@ export function FirstMonth({ t }: SectionProps) {
                       <span>{entry.when}</span>
                       {first && <span className="text-foreground">{t.monthStart}</span>}
                     </p>
-                    <h3 className="month-line mt-3 text-base font-semibold text-foreground" style={{ "--rise": 1 } as CSSProperties}>{entry.title}</h3>
-                    <p className="month-line mt-1 max-w-[52ch] text-sm leading-relaxed text-muted-foreground" style={{ "--rise": 2 } as CSSProperties}>{entry.body}</p>
+                    <h3 className="month-line mt-3 text-xl leading-snug font-semibold tracking-[-0.015em] text-foreground" style={{ "--rise": 1 } as CSSProperties}>
+                      {entry.title}
+                    </h3>
+                    <p className="month-line mt-2 max-w-[52ch] text-sm leading-relaxed text-muted-foreground" style={{ "--rise": 2 } as CSSProperties}>
+                      {entry.body}
+                    </p>
+                    <ul className="month-line mt-5 flex flex-wrap gap-2" style={{ "--rise": 3 } as CSSProperties}>
+                      {entry.tags.map((tag) => (
+                        <li key={tag} className="rounded-full border border-border bg-panel px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                          {tag}
+                        </li>
+                      ))}
+                    </ul>
                   </li>
                 );
               })}

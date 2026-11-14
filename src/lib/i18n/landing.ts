@@ -122,29 +122,33 @@ const en = {
 
   // The first-month timeline.
   monthPill: "Your first month",
-  monthTitle: "What the first 30 days look like",
-  monthBody: "Nothing to install and nothing to pay. This is the plan for the month after our visit.",
+  monthTitle: "How your first month works",
+  monthBody: "One visit to set it up, then a month to see it work in your shop. Nothing to install and nothing to pay.",
   monthStart: "Starts here",
   month: [
     {
       when: "Day 1",
-      title: "We visit, and your link goes live",
-      body: "We set up your services, barbers and hours with you. Your booking link and the QR code for the counter work before we leave.",
+      title: "Setup & go-live",
+      body: "We come to your shop and set it up with you: services, prices, barbers and hours. Your booking link and the QR code for the counter work before we leave.",
+      tags: ["Setup visit", "Your booking link", "QR code for the counter"],
     },
     {
       when: "Week 1",
-      title: "Clients start booking from the link",
-      body: "Share it on Instagram and WhatsApp and put the QR by the mirror. Each barber opens their day on their phone and sees who's next.",
+      title: "Launch & first bookings",
+      body: "Share the link on Instagram and WhatsApp and put the QR by the mirror. Clients pick a barber and a time on their phone, with no account and no app.",
+      tags: ["Link on Instagram & WhatsApp", "No account for clients", "Every booking on Today"],
     },
     {
       when: "Weeks 2–3",
-      title: "Fewer bookings by phone",
-      body: "As your regulars get used to the link, fewer of them tend to call to book. Walk-ins keep going on the same day view.",
+      title: "Routine & fewer calls",
+      body: "As your regulars get used to the link, fewer of them tend to call to book. You run the day from one screen: bookings, walk-ins, arrivals and no-shows.",
+      tags: ["Walk-ins on the same day", "Arrived or no-show in one tap", "The week's bookings at a glance"],
     },
     {
       when: "Day 30",
-      title: "You decide",
-      body: "Keep going at one monthly price, agreed with you before the free month ends. Or stop, and take your client list with you.",
+      title: "Review & decide",
+      body: "Your Dashboard shows the month: bookings, walk-ins and time saved. Keep going at one monthly price, agreed with you before the free month ends. Or stop, and take your client list with you.",
+      tags: ["Your month on the Dashboard", "No contract", "Your client list stays yours"],
     },
   ],
 
@@ -328,29 +332,33 @@ const es: LandingDictionary = {
   setupSupport: "Cuando algo no funciona, le escribes a una persona de verdad que contesta, en español o inglés.",
 
   monthPill: "Tu primer mes",
-  monthTitle: "Cómo son los primeros 30 días",
-  monthBody: "Nada que instalar y nada que pagar. Este es el plan para el mes después de nuestra visita.",
+  monthTitle: "Cómo funciona tu primer mes",
+  monthBody: "Una visita para dejarlo listo y un mes para verlo funcionar en tu barbería. Nada que instalar y nada que pagar.",
   monthStart: "Aquí empieza",
   month: [
     {
       when: "Día 1",
-      title: "Te visitamos y tu enlace queda activo",
-      body: "Configuramos contigo tus servicios, barberos y horarios. Tu enlace de citas y el QR del mostrador funcionan antes de que nos vayamos.",
+      title: "Instalación y arranque",
+      body: "Vamos a tu barbería y lo configuramos contigo: servicios, precios, barberos y horarios. Tu enlace de citas y el QR del mostrador funcionan antes de que nos vayamos.",
+      tags: ["Visita de instalación", "Tu enlace de citas", "QR para el mostrador"],
     },
     {
       when: "Semana 1",
-      title: "Los clientes empiezan a reservar con el enlace",
-      body: "Compártelo en Instagram y WhatsApp y pon el QR junto al espejo. Cada barbero abre su día en el celular y ve quién sigue.",
+      title: "Lanzamiento y primeras citas",
+      body: "Comparte el enlace en Instagram y WhatsApp y pon el QR junto al espejo. Tus clientes eligen barbero y hora en el celular, sin cuenta y sin app.",
+      tags: ["Enlace en Instagram y WhatsApp", "Sin cuenta para tus clientes", "Cada cita en Hoy"],
     },
     {
       when: "Semanas 2–3",
-      title: "Menos citas por teléfono",
-      body: "A medida que tus clientes de siempre se acostumbran al enlace, menos de ellos suelen llamar para reservar. Los clientes sin cita siguen en la misma agenda del día.",
+      title: "Rutina y menos llamadas",
+      body: "A medida que tus clientes de siempre se acostumbran al enlace, menos de ellos suelen llamar para reservar. Llevas el día desde una sola pantalla: citas, clientes sin cita, llegadas y ausencias.",
+      tags: ["Clientes sin cita el mismo día", "Llegó o no vino, en un toque", "Las citas de la semana de un vistazo"],
     },
     {
       when: "Día 30",
-      title: "Tú decides",
-      body: "Sigues con un precio mensual, acordado contigo antes de que termine el mes gratis. O lo dejas y te llevas tu lista de clientes.",
+      title: "Revisión y decisión",
+      body: "Tu Resumen muestra el mes: citas, clientes sin cita y tiempo ahorrado. Sigues con un precio mensual, acordado contigo antes de que termine el mes gratis. O lo dejas y te llevas tu lista de clientes.",
+      tags: ["Tu mes en el Resumen", "Sin contrato", "Tu lista de clientes es tuya"],
     },
   ],
 
