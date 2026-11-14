@@ -68,16 +68,22 @@ export function BarberList(props: {
       <ul aria-label={s.listLabel} className="border-t border-line">
         {items.map((it) => (
           <li key={it.id} className="flex min-h-16 items-center gap-3 border-b border-line py-2">
-            <Avatar name={it.name} photoUrl={it.photoUrl} />
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="flex min-w-0 items-center gap-2">
-                <span className="truncate font-semibold">{it.name}</span>
-                {it.isYou && (
-                  <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-xs font-medium text-muted">{s.you}</span>
-                )}
+            <Link
+              href={`/app/settings/barbers/${it.id}`}
+              className={`group -ml-2 flex min-h-12 min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-1 transition-colors hover:bg-raised ${focusRing}`}
+            >
+              <Avatar name={it.name} photoUrl={it.photoUrl} />
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="truncate font-semibold">{it.name}</span>
+                  {it.isYou && (
+                    <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-xs font-medium text-muted">{s.you}</span>
+                  )}
+                </span>
+                {!it.bookable && <span className="text-sm text-muted">{s.notBookable}</span>}
               </span>
-              {!it.bookable && <span className="text-sm text-muted">{s.notBookable}</span>}
-            </div>
+              <ChevronIcon className="h-5 w-5 shrink-0 text-muted transition-colors group-hover:text-ink" />
+            </Link>
             {!it.isYou && (
               <button
                 type="button"
@@ -550,6 +556,14 @@ function TrashIcon({ className }: { className?: string }) {
   return (
     <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m9 6 6 6-6 6" />
     </svg>
   );
 }
