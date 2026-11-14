@@ -434,18 +434,24 @@ body:has(.landing) {
 }
 /*
  * First-month steps (rail-reveal.tsx arms the rail only with JS and motion allowed). An
- * unreached step waits hidden; once `is-in`, its bubble pops past full size and settles,
- * then the when / title / body lines rise 90ms apart. Time-based, played once per step.
+ * unreached step waits hidden. When the drawing line meets its bubble (`is-in`), the bubble
+ * pops past full size and settles (560ms); only then do the when / title / body lines
+ * fade, rise and sharpen in, 120ms apart. Time-based, played once per step.
  */
 .landing .month-rail[data-armed] .month-dot {
   transition:
     scale 560ms cubic-bezier(0.34, 1.7, 0.64, 1),
-    opacity 200ms ease-out;
+    opacity 180ms ease-out;
+}
+.landing .month-line {
+  --rise: 0; /* order within the step; the title and body set 1 and 2 inline */
 }
 .landing .month-rail[data-armed] .month-line {
+  --after-pop: calc(480ms + var(--rise) * 120ms);
   transition:
-    opacity 520ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(140ms + var(--line, 0) * 90ms),
-    translate 620ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(140ms + var(--line, 0) * 90ms);
+    opacity 800ms cubic-bezier(0.16, 1, 0.3, 1) var(--after-pop),
+    translate 900ms cubic-bezier(0.16, 1, 0.3, 1) var(--after-pop),
+    filter 800ms cubic-bezier(0.16, 1, 0.3, 1) var(--after-pop);
 }
 .landing .month-rail[data-armed] .month-step:not(.is-in) .month-dot {
   opacity: 0;
@@ -453,8 +459,10 @@ body:has(.landing) {
 }
 .landing .month-rail[data-armed] .month-step:not(.is-in) .month-line {
   opacity: 0;
-  translate: 0 18px;
+  translate: 0 16px;
+  filter: blur(6px);
 }
+
 @keyframes month-rail-draw {
   from {
     scale: 1 0;

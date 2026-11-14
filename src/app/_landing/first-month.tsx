@@ -43,8 +43,8 @@ export function FirstMonth({ t }: SectionProps) {
                       <span>{entry.when}</span>
                       {first && <span className="text-foreground">{t.monthStart}</span>}
                     </p>
-                    <h3 className="month-line mt-3 text-base font-semibold text-foreground" style={{ "--line": 1 } as CSSProperties}>{entry.title}</h3>
-                    <p className="month-line mt-1 max-w-[52ch] text-sm leading-relaxed text-muted-foreground" style={{ "--line": 2 } as CSSProperties}>{entry.body}</p>
+                    <h3 className="month-line mt-3 text-base font-semibold text-foreground" style={{ "--rise": 1 } as CSSProperties}>{entry.title}</h3>
+                    <p className="month-line mt-1 max-w-[52ch] text-sm leading-relaxed text-muted-foreground" style={{ "--rise": 2 } as CSSProperties}>{entry.body}</p>
                   </li>
                 );
               })}
