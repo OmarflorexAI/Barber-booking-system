@@ -2,6 +2,7 @@ import type { Sql } from "postgres";
 import { hashToken, type BookingEngine } from "@/server/booking-engine";
 import { requireOwner } from "@/server/booking-engine/access";
 import { BookingError, notFound } from "@/server/booking-engine/errors";
+import { requirePro, requireProShop } from "@/server/booking-engine/plans";
 import type { RefundRequest } from "@/server/dispatch";
 
 /**
@@ -61,6 +62,7 @@ export function createPayments({ sql, engine, provider, config, clock = () => ne
   /** Owner only: start (or continue) connecting the Shop's payment account. */
   async function startOnboarding(args: { userId: string; shopId: string }): Promise<{ url: string }> {
     await requireOwner(sql, args.userId, args.shopId);
+    await requireProShop(sql, args.shopId, "online_payments");
     const [shop] = await sql<{ payment_account_id: string | null }[]>`select payment_account_id from public.shops where id = ${args.shopId}`;
     if (!shop) throw notFound("Shop");
     const link = await provider.createAccountLink({
@@ -89,15 +91,17 @@ export function createPayments({ sql, engine, provider, config, clock = () => ne
   async function startCheckout(args: { bookingId: string; manageToken: string }): Promise<{ url: string }> {
     const now = clock();
     const [b] = await sql<
-      { status: string; hold_expires_at: Date | null; price_cents: number; account: string | null; shop_name: string; service: string }[]
+      { status: string; hold_expires_at: Date | null; price_cents: number; account: string | null; shop_name: string; service: string; plan: string }[]
     >`
-      select b.status, b.hold_expires_at, b.price_cents, s.payment_account_id as account, s.name as shop_name, sv.name_en as service
+      select b.status, b.hold_expires_at, b.price_cents, s.payment_account_id as account, s.name as shop_name, sv.name_en as service, s.plan
       from public.bookings b
       join public.shops s on s.id = b.shop_id
       join public.services sv on sv.id = b.service_id
       where b.id = ${args.bookingId} and b.manage_token_hash = ${hashToken(args.manageToken)}
     `;
     if (!b) throw notFound("Booking");
+    // A hold made while the Shop was on Pro can't be paid once it is on Free; the hold just runs out.
+    requirePro(b, "online_payments");
     if (b.status !== "pending_payment" || !b.hold_expires_at || b.hold_expires_at <= now || !b.account) {
       throw new BookingError("BOOKING_NOT_ACTIVE", "This booking is no longer waiting for payment.");
     }

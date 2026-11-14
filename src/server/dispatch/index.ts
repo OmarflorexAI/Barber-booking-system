@@ -113,12 +113,13 @@ export function createDispatcher({ sql, senders }: { sql: Sql; senders: Senders 
 
   /**
    * Who to text, decided at send time, not when the row was written: the Client may
-   * have replied STOP, the Shop may have turned texts off, or the Booking may be gone.
+   * have replied STOP, the Shop may have turned texts off (or be on Free: texts are Pro),
+   * or the Booking may be gone.
    * Returns null when the text should be skipped.
    */
   async function textRecipient(bookingId: string, template: SmsTemplate): Promise<string | null> {
     const [r] = await sql<{ status: string; phone_e164: string | null; sms_opt_out: boolean | null; sms_enabled: boolean }[]>`
-      select b.status, c.phone_e164, c.sms_opt_out, s.sms_enabled
+      select b.status, c.phone_e164, c.sms_opt_out, (s.sms_enabled and s.plan = 'pro') as sms_enabled
       from public.bookings b
       join public.shops s on s.id = b.shop_id
       left join public.clients c on c.id = b.client_id

@@ -13,6 +13,7 @@ import {
   pgCode,
   slugTaken,
 } from "@/server/booking-engine/errors";
+import { isPlan, type Plan } from "@/server/booking-engine/plans";
 import type { Failure } from "@/server/dispatch";
 import { createReporting } from "@/server/reporting";
 import { checkWeek, MAX_ACTIVE_BARBERS, type DayHours } from "@/server/shop-admin";
@@ -56,6 +57,7 @@ export type ShopOverview = {
   status: "active" | "suspended" | "cancelled";
   smsRegistration: SmsRegistration;
   smsEnabled: boolean;
+  plan: Plan;
   billingStatus: BillingStatus;
   manualBookingMinutes: number;
   barbers: number;
@@ -189,6 +191,7 @@ export function createPlatformAdmin(sql: Sql) {
         status: ShopOverview["status"];
         sms_registration: SmsRegistration;
         sms_enabled: boolean;
+        plan: Plan;
         billing_status: BillingStatus;
         manual_booking_minutes: number;
         barbers: number;
@@ -197,7 +200,7 @@ export function createPlatformAdmin(sql: Sql) {
         cancelled_at: Date | null;
       }[]
     >`
-      select s.id, s.slug, s.name, s.status, s.sms_registration, s.sms_enabled, s.billing_status,
+      select s.id, s.slug, s.name, s.status, s.sms_registration, s.sms_enabled, s.plan, s.billing_status,
              s.manual_booking_minutes, s.created_at, s.cancelled_at,
              (select count(*)::int from public.barbers b where b.shop_id = s.id and b.active) as barbers,
              (select count(*)::int from public.bookings k
@@ -212,6 +215,7 @@ export function createPlatformAdmin(sql: Sql) {
       status: r.status,
       smsRegistration: r.sms_registration,
       smsEnabled: r.sms_enabled,
+      plan: r.plan,
       billingStatus: r.billing_status,
       manualBookingMinutes: r.manual_booking_minutes,
       barbers: r.barbers,
@@ -284,6 +288,25 @@ export function createPlatformAdmin(sql: Sql) {
     await requirePlatformAdmin(sql, args.userId);
     if (!BILLING_STATUS.includes(args.status)) throw invalid("Unknown billing status.");
     await updateShop(args.shopId, sql`billing_status = ${args.status}`);
+  }
+
+  /**
+   * Free or Pro (M7). Switched by hand by us for now (billing is by hand too), so every
+   * change is written to the support access log with the plan it replaced.
+   */
+  async function setPlan(args: ShopActor & { plan: Plan }): Promise<void> {
+    await requirePlatformAdmin(sql, args.userId);
+    if (!isPlan(args.plan)) throw invalid("Unknown plan.");
+    await sql.begin(async (tx) => {
+      const [before] = await tx<{ plan: Plan }[]>`select plan from public.shops where id = ${args.shopId} for update`;
+      if (!before) throw notFound("Shop");
+      if (before.plan === args.plan) return;
+      await tx`update public.shops set plan = ${args.plan} where id = ${args.shopId}`;
+      await tx`
+        insert into public.support_access_log (shop_id, admin_user_id, reason)
+        values (${args.shopId}, ${args.userId}, ${`Plan changed from ${before.plan} to ${args.plan}`})
+      `;
+    });
   }
 
   /** Minutes the Shop spent on each phone booking; drives the Owner's "time saved". */
@@ -423,6 +446,7 @@ export function createPlatformAdmin(sql: Sql) {
     importClients,
     setSmsRegistration,
     setBillingStatus,
+    setPlan,
     setManualBookingMinutes,
     openSupportAccess,
     listSupportAccess,

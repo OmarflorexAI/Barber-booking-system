@@ -15,10 +15,12 @@ import {
   slotTaken,
 } from "./errors";
 import { authorizeForBarber, requireOwner } from "./access";
+import { requirePro, type Plan } from "./plans";
 import { manageTokenFor } from "./manage-token";
 import { isLocalDate, localDayRange, MINUTE, timeToMinutes, toLocal, weekdayOf, type LocalDate } from "./time";
 
 export * from "./errors";
+export * from "./plans";
 export { RULES } from "./availability";
 export type { LocalDate } from "./time";
 
@@ -68,6 +70,7 @@ type ShopRow = {
   status: string;
   payment_account_id: string | null;
   payments_enabled: boolean;
+  plan: Plan;
 };
 
 /** The public profile columns only the catalog reads (M5). */
@@ -176,9 +179,11 @@ async function scheduleReminder(db: Db, b: { id: string; shop_id: string; starts
   `;
 }
 
+/** Client texts and online card payments are Pro (M7): on Free, `sms_enabled` and `payments_enabled` read as false. */
 async function loadShop(db: Db, shopId: string): Promise<ShopRow> {
   const [shop] = await db<ShopRow[]>`
-    select id, slug, name, phone, address, timezone, cancel_cutoff_minutes, sms_enabled, status, payment_account_id, payments_enabled
+    select id, slug, name, phone, address, timezone, cancel_cutoff_minutes, status, payment_account_id, plan,
+           (sms_enabled and plan = 'pro') as sms_enabled, (payments_enabled and plan = 'pro') as payments_enabled
     from public.shops where id = ${shopId}
   `;
   if (!shop) throw notFound("Shop");
@@ -300,8 +305,8 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
   /** Shop page data: Services with "from" prices and Barbers with profiles. No business rules here beyond pricing. */
   async function getShopCatalog(slug: string, now: Date) {
     const [shop] = await sql<(ShopRow & ShopProfileRow)[]>`
-      select id, slug, name, phone, address, logo_url, cover_url, about_en, about_es, timezone, cancel_cutoff_minutes, sms_enabled, status,
-             payment_account_id, payments_enabled
+      select id, slug, name, phone, address, logo_url, cover_url, about_en, about_es, timezone, cancel_cutoff_minutes, status,
+             payment_account_id, plan, (sms_enabled and plan = 'pro') as sms_enabled, (payments_enabled and plan = 'pro') as payments_enabled
       from public.shops where slug = ${slug} and status = 'active'
     `;
     if (!shop) return null;
@@ -341,8 +346,11 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
         aboutEs: shop.about_es,
         timezone: shop.timezone,
         cancelCutoffMinutes: shop.cancel_cutoff_minutes,
+        /** Free Shops: always false (online card payments are Pro). */
         onlinePayments: shop.payments_enabled,
+        /** Free Shops: always false (Client texts are Pro). */
         smsEnabled: shop.sms_enabled,
+        plan: shop.plan,
       },
       services: services
         .map((s) => {
@@ -440,6 +448,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     }
 
     const shop = await loadShop(sql, shopId);
+    if (args.paymentMethod === "online") requirePro(shop, "online_payments");
     if (args.paymentMethod === "online" && !shop.payments_enabled) throw invalid("Online payment is not available.");
 
     const date = toLocal(startsAt, shop.timezone).date;
@@ -525,7 +534,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     const rows =
       actor.kind === "client"
         ? await tx<(BookingRow & ShopFields)[]>`
-            select b.*, s.cancel_cutoff_minutes, s.sms_enabled, s.timezone, c.sms_opt_out, c.phone_e164
+            select b.*, s.cancel_cutoff_minutes, (s.sms_enabled and s.plan = 'pro') as sms_enabled, s.timezone, c.sms_opt_out, c.phone_e164
             from public.bookings b
             join public.shops s on s.id = b.shop_id
             left join public.clients c on c.id = b.client_id
@@ -533,7 +542,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
             for update of b
           `
         : await tx<(BookingRow & ShopFields)[]>`
-            select b.*, s.cancel_cutoff_minutes, s.sms_enabled, s.timezone, c.sms_opt_out, c.phone_e164
+            select b.*, s.cancel_cutoff_minutes, (s.sms_enabled and s.plan = 'pro') as sms_enabled, s.timezone, c.sms_opt_out, c.phone_e164
             from public.bookings b
             join public.shops s on s.id = b.shop_id
             left join public.clients c on c.id = b.client_id
@@ -800,7 +809,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     db: Db = sql,
   ): Promise<"confirmed" | "refunding" | "already_paid"> {
     const [b] = await db<(BookingRow & { sms_enabled: boolean; sms_opt_out: boolean | null; phone_e164: string | null })[]>`
-      select b.*, s.sms_enabled, c.sms_opt_out, c.phone_e164
+      select b.*, (s.sms_enabled and s.plan = 'pro') as sms_enabled, c.sms_opt_out, c.phone_e164
       from public.bookings b
       join public.shops s on s.id = b.shop_id
       left join public.clients c on c.id = b.client_id

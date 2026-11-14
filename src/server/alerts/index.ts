@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { Sql } from "postgres";
 import { authorizeForBarber } from "@/server/booking-engine/access";
 import { notFound } from "@/server/booking-engine/errors";
+import { requireProShop } from "@/server/booking-engine/plans";
 import { hashToken as hash } from "@/server/booking-engine";
 import { addDays, toLocal, type LocalDate } from "@/server/booking-engine/time";
 import type { BarberAlert, RefundFailure } from "@/server/dispatch";
@@ -71,7 +72,7 @@ export function createAlerts({ sql, chat, email, config, clock = () => new Date(
       }[]
     >`
       select k.starts_at, s.timezone, sv.name_en as service, c.name as client, br.display_name as barber_name,
-             t.chat_id::text, u.email as barber_email
+             case when s.plan = 'pro' then t.chat_id::text end as chat_id, u.email as barber_email
       from public.bookings k
       join public.shops s on s.id = k.shop_id
       join public.services sv on sv.id = k.service_id
@@ -119,6 +120,7 @@ export function createAlerts({ sql, chat, email, config, clock = () => new Date(
   async function createTelegramLink(args: { userId: string; shopId: string; barberId: string }): Promise<{ url: string; expiresAt: Date }> {
     await authorizeForBarber(sql, args.userId, args.shopId, args.barberId);
     await requireBarberInShop(args.shopId, args.barberId);
+    await requireProShop(sql, args.shopId, "telegram_alerts");
     const token = randomBytes(24).toString("base64url");
     const expiresAt = new Date(clock().getTime() + LINK_VALID_MS);
     await sql`
@@ -146,6 +148,7 @@ export function createAlerts({ sql, chat, email, config, clock = () => new Date(
         update public.barber_telegram
         set chat_id = ${chatId}, linked_at = ${now}, link_token_hash = null, link_expires_at = null
         where link_token_hash = ${hash(match[1])} and link_expires_at > ${now}
+          and exists (select 1 from public.shops p where p.id = barber_telegram.shop_id and p.plan = 'pro')
         returning barber_id, shop_id
       )
       select br.display_name as barber_name, s.name as shop_name

@@ -28,12 +28,13 @@ export const minutesBefore = (d: Date, min: number) => new Date(d.getTime() - mi
 
 export type TestShop = Awaited<ReturnType<typeof makeShop>>;
 
-export async function makeShop(opts: { smsEnabled?: boolean; cutoffMin?: number; onlinePayments?: boolean } = {}) {
+/** Test Shops are on Pro unless a test asks for Free, so older tests keep their meaning (new real Shops start on Free). */
+export async function makeShop(opts: { smsEnabled?: boolean; cutoffMin?: number; onlinePayments?: boolean; plan?: "free" | "pro" } = {}) {
   const slug = `test-${randomUUID().slice(0, 8)}`;
   const [shop] = await sql<{ id: string }[]>`
-    insert into public.shops (slug, name, sms_enabled, cancel_cutoff_minutes, payment_account_id, payments_enabled)
+    insert into public.shops (slug, name, sms_enabled, cancel_cutoff_minutes, payment_account_id, payments_enabled, plan)
     values (${slug}, 'Test Shop', ${opts.smsEnabled ?? false}, ${opts.cutoffMin ?? 60},
-            ${opts.onlinePayments ? "acct_test" : null}, ${opts.onlinePayments ?? false})
+            ${opts.onlinePayments ? "acct_test" : null}, ${opts.onlinePayments ?? false}, ${opts.plan ?? "pro"})
     returning id
   `;
   const shopId = shop.id;
