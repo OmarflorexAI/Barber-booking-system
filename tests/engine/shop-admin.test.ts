@@ -1,6 +1,5 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { isBookingError } from "@/server/booking-engine";
-import { staffRole } from "@/server/booking-engine/access";
 import { createReporting } from "@/server/reporting";
 import { createShopAdmin, normalizeInstagram } from "@/server/shop-admin";
 import {
@@ -580,41 +579,6 @@ describe("client export", () => {
     // A name starting with "=" must not run as a spreadsheet formula.
     expect(lines).toContain("'=HYPERLINK(1),+17185550102,1,0,2027-01-12,no,no");
     await expectCode(reports.exportClientsCsv({ userId: barberUser, shopId: shop.shopId }), "FORBIDDEN");
-  });
-});
-
-describe("Barber logins", () => {
-  it("an Owner connects a new Barber to their login, and that Barber can then manage their own hours", async () => {
-    const { barberId } = await admin.addBarber({ userId: owner, shopId: shop.shopId, displayName: "Cam" });
-    const cam = await makeUser(shop.shopId, "barber"); // the invited account, not yet tied to a Barber
-    await sql`delete from public.shop_members where user_id = ${cam}`;
-
-    await admin.linkBarberLogin({ userId: owner, shopId: shop.shopId, barberId, loginUserId: cam });
-    await expect(
-      admin.setWeeklyHours({ userId: cam, shopId: shop.shopId, barberId, days: [{ weekday: 2, start: "09:00", end: "10:00" }] }),
-    ).resolves.toBeUndefined();
-    await expectCode(
-      admin.setWeeklyHours({ userId: cam, shopId: shop.shopId, barberId: shop.alex, days: [] }),
-      "FORBIDDEN",
-    );
-  });
-
-  it("connecting a new login to a Barber takes access away from the old one", async () => {
-    const newLogin = await makeUser(shop.shopId, "barber");
-    await sql`delete from public.shop_members where user_id = ${newLogin}`;
-
-    await admin.linkBarberLogin({ userId: owner, shopId: shop.shopId, barberId: shop.blake, loginUserId: newLogin });
-    // Blake's previous login (barberUser) is no longer part of the Shop at all.
-    expect(await staffRole(sql, barberUser, shop.shopId)).toBeNull();
-    expect(await staffRole(sql, newLogin, shop.shopId)).toEqual({ owner: false, barberId: shop.blake });
-  });
-
-  it("only the Owner connects logins", async () => {
-    const other = await makeUser(shop.shopId, "barber");
-    await expectCode(
-      admin.linkBarberLogin({ userId: barberUser, shopId: shop.shopId, barberId: shop.alex, loginUserId: other }),
-      "FORBIDDEN",
-    );
   });
 });
 

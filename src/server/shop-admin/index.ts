@@ -11,7 +11,6 @@ import {
   ownBarber,
   PG_BARBER_LIMIT,
   PG_FOREIGN_KEY_VIOLATION,
-  PG_UNIQUE_VIOLATION,
   pgCode,
 } from "@/server/booking-engine/errors";
 import { isLocalDate } from "@/server/booking-engine/time";
@@ -523,45 +522,9 @@ export function createShopAdmin(sql: Sql) {
     if (rows.count === 0) throw notFound("Shop");
   }
 
-  /**
-   * Tie a login (an invited auth user) to a Barber, so they can sign in and see their day.
-   * The invite email itself is sent by the app (Supabase Auth); this only grants access.
-   */
-  async function linkBarberLogin(args: ShopActor & { barberId: string; loginUserId: string }): Promise<void> {
-    await requireOwner(sql, args.userId, args.shopId);
-    try {
-      await sql.begin(async (tx) => {
-        const [b] = await tx<{ user_id: string | null }[]>`
-          select user_id from public.barbers
-          where id = ${args.barberId} and shop_id = ${args.shopId} and active
-          for update
-        `;
-        if (!b) throw notFound("Barber");
-        await tx`update public.barbers set user_id = ${args.loginUserId} where id = ${args.barberId}`;
-        // The login this Barber had before loses access (an Owner keeps owning the Shop).
-        if (b.user_id && b.user_id !== args.loginUserId) {
-          await tx`
-            delete from public.shop_members
-            where shop_id = ${args.shopId} and user_id = ${b.user_id} and role = 'barber'
-          `;
-        }
-        // An existing Owner keeps the owner role; anyone else joins as a Barber.
-        await tx`
-          insert into public.shop_members (shop_id, user_id, role)
-          values (${args.shopId}, ${args.loginUserId}, 'barber')
-          on conflict (shop_id, user_id) do nothing
-        `;
-      });
-    } catch (e) {
-      if (pgCode(e) === PG_UNIQUE_VIOLATION) throw invalid("That login is already connected to another barber in this shop.");
-      throw e;
-    }
-  }
-
   return {
     getShopProfile,
     updateShopProfile,
-    linkBarberLogin,
     blockPhone,
     unblockPhone,
     listBlocked,
