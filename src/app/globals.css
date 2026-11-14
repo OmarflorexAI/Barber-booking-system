@@ -332,6 +332,31 @@ body:has(.landing) {
 }
 
 /*
+ * First-month pile, at rest: the cards stick one 56px tab below the other (under the
+ * 69px header on phones, level with the sticky heading from 768px) and sit at their
+ * dealt tilt. This is also the final state for reduced motion and older browsers.
+ */
+.landing .month-card {
+  top: calc(84px + var(--i) * 56px);
+}
+@media (min-width: 768px) {
+  .landing .month-card {
+    top: calc(128px + var(--i) * 56px);
+  }
+}
+.landing .month-card-face {
+  translate: var(--nudge) 0;
+  rotate: var(--tilt);
+}
+@keyframes month-deal {
+  from {
+    opacity: 0;
+    translate: calc(var(--nudge) * -2) 120px;
+    rotate: calc(var(--tilt) * -2);
+  }
+}
+
+/*
  * Scroll motion (the template's effects, rebuilt in CSS on scroll timelines, no JS):
  * - wide panels open to the full window
  * - the How-it-works photos fade up from almost black
@@ -391,31 +416,14 @@ body:has(.landing) {
       animation-range: cover 0px cover 180px;
     }
     /*
-     * First-month rail (first-month.tsx). The "reading line" sits 60% down the screen
-     * (--rail-at = 40vh above the bottom). The white fill grows with the rail's own view
-     * timeline so its tip stays on that line; each step's bubble pops as the step's top
-     * crosses it, then its when / title / body rise 40px of scroll apart.
+     * First-month pile (first-month.tsx): each card slides up from below and settles at
+     * its dealt tilt while it travels the last 45% of the screen; then it sticks and the
+     * next card arrives over it.
      */
-    .landing .month-rail {
-      --rail-at: 40vh;
-      view-timeline: --month-rail block;
-    }
-    .landing .month-rail-fill {
-      transform-origin: top;
-      animation: month-rail-draw linear both;
-      animation-timeline: --month-rail;
-      animation-range: cover var(--rail-at) cover calc(100% - 100vh + var(--rail-at));
-    }
-    .landing .month-dot {
-      animation: month-dot-pop linear both;
+    .landing .month-card-face {
+      animation: month-deal cubic-bezier(0.16, 1, 0.3, 1) both;
       animation-timeline: view();
-      animation-range: cover calc(var(--rail-at) - 20px) cover calc(var(--rail-at) + 50px);
-    }
-    .landing .month-line {
-      --line: 0;
-      animation: landing-reveal cubic-bezier(0.2, 0.8, 0.2, 1) both;
-      animation-timeline: view();
-      animation-range: cover calc(var(--rail-at) + var(--line) * 40px) cover calc(var(--rail-at) + 140px + var(--line) * 40px);
+      animation-range: cover 0% cover 45vh;
     }
   }
 }
@@ -442,25 +450,6 @@ body:has(.landing) {
 @keyframes landing-fade-in {
   from {
     opacity: 0;
-  }
-}
-@keyframes month-rail-draw {
-  from {
-    scale: 1 0;
-  }
-}
-/* Scroll-linked, so the "pop" is shaped in the keyframes: grow past full size, settle. */
-@keyframes month-dot-pop {
-  0% {
-    opacity: 0;
-    scale: 0;
-  }
-  60% {
-    opacity: 1;
-    scale: 1.35;
-  }
-  100% {
-    scale: 1;
   }
 }
 @keyframes landing-reveal {
