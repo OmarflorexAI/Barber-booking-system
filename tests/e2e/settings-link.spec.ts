@@ -8,8 +8,8 @@ config({ path: ".env.local", quiet: true });
 
 /**
  * Owner Settings on a phone: the index rows, the booking link page with its QR code, the
- * Clients CSV download, and a Barber kept out of both. Builds a throwaway Shop (random slug)
- * with its own sign-ins (magic links minted with the service role) and deletes it afterwards.
+ * Clients CSV download, and nobody signed in kept out of it. Builds a throwaway Shop (random slug)
+ * with the Owner's sign-in (a magic link minted with the service role) and deletes it afterwards.
  */
 const sql = postgres(process.env.DATABASE_URL!, { prepare: false, max: 1, onnotice: () => {} });
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
@@ -17,7 +17,7 @@ const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SU
 });
 
 const shop = { id: "", slug: `e2e-set-${randomUUID().slice(0, 8)}` };
-const emails = { owner: "", barber: "" };
+const emails = { owner: "" };
 const userIds: string[] = [];
 
 async function staffUser(label: string) {
@@ -33,10 +33,8 @@ test.beforeAll(async () => {
     insert into public.shops (slug, name, phone) values (${shop.slug}, 'E2E Settings Shop', '+17185550198') returning id`;
   shop.id = s.id;
   const owner = await staffUser("owner");
-  const barber = await staffUser("barber");
   emails.owner = owner.email;
-  emails.barber = barber.email;
-  await sql`insert into public.shop_members (shop_id, user_id, role) values (${shop.id}, ${owner.id}, 'owner'), (${shop.id}, ${barber.id}, 'barber')`;
+  await sql`insert into public.shop_members (shop_id, user_id, role) values (${shop.id}, ${owner.id}, 'owner')`;
   await sql`insert into public.clients (shop_id, name, phone_e164) values (${shop.id}, 'Maria Lopez', '+13475559001'), (${shop.id}, 'Kevin Diaz', '+13475559002')`;
 });
 
@@ -59,8 +57,8 @@ test("the Owner opens the booking link page and sees the URL and QR code", async
   // Built pages link; the rest are plain rows.
   await expect(page.getByRole("link", { name: /Booking link & QR code/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /Export clients/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Services & prices/ })).toHaveCount(0);
-  await expect(page.getByText("Services & prices")).toBeVisible();
+  await expect(page.getByRole("link", { name: /Hours & closed days/ })).toHaveCount(0);
+  await expect(page.getByText("Hours & closed days")).toBeVisible();
 
   await page.getByRole("link", { name: /Booking link & QR code/ }).click();
   await expect(page.getByRole("heading", { name: "Booking link & QR code" })).toBeVisible();
@@ -87,14 +85,6 @@ test("the Owner downloads the Clients CSV", async ({ page }) => {
   expect(lines[0]).toBe("name,phone,bookings,no_shows,last_booking,texts_opted_out,blocked");
   expect(lines).toHaveLength(3);
   expect(lines[1]).toContain("Kevin Diaz,+13475559002");
-});
-
-test("a Barber is sent to their Day and can't download the CSV", async ({ page }) => {
-  await signIn(page, emails.barber);
-  await page.goto("/app/settings/link");
-  await expect(page).toHaveURL(/\/app\/day/);
-  const res = await page.request.get("/app/settings/export/download");
-  expect(res.status()).toBe(403);
 });
 
 test("nobody signed in gets 403 from the CSV download", async ({ request }) => {

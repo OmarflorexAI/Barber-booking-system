@@ -7,10 +7,11 @@ import postgres from "postgres";
 config({ path: ".env.local", quiet: true });
 
 /**
- * The staff day view (/app/day) on a phone: a Barber's own Day with the now line, marking
- * arrived, adding a Walk-in, moving and cancelling a Booking, and the Owner's Today with
- * Barber filter chips. Builds a throwaway Shop (random slug) and its own sign-ins (magic
- * links minted with the service role), and deletes all of it afterwards.
+ * The Owner's Today (/app/day) on a phone: one Barber's day (the `barber` filter) with the
+ * now line, marking arrived, adding a Walk-in, moving and cancelling a Booking, and every
+ * Barber with filter chips. Barbers never sign in (PLAN.md M6): only the Owner does. Builds a
+ * throwaway Shop (random slug) and the Owner's sign-in (a magic link minted with the service
+ * role), and deletes all of it afterwards.
  */
 const sql = postgres(process.env.DATABASE_URL!, { prepare: false, max: 1, onnotice: () => {} });
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
@@ -20,7 +21,7 @@ const MIN = 60_000;
 const TZ = "America/New_York";
 
 const ids = { shop: "", carlos: "", dre: "", luis: "", cut: "", beard: "" };
-const emails = { owner: "", dre: "" };
+const emails = { owner: "" };
 const userIds: string[] = [];
 const bookingIds: Record<string, string> = {};
 let phoneSeq = 0;
@@ -68,7 +69,7 @@ async function booking(
 
 test.beforeAll(async () => {
   const [s] = await sql<{ id: string }[]>`
-    insert into public.shops (slug, name, phone, sms_enabled) values (${`e2e-day-${randomUUID().slice(0, 8)}`}, 'E2E Day Shop', '+17185550199', true) returning id`;
+    insert into public.shops (slug, name, phone, sms_enabled, plan) values (${`e2e-day-${randomUUID().slice(0, 8)}`}, 'E2E Day Shop', '+17185550199', true, 'pro') returning id`;
   ids.shop = s.id;
   const barber = async (name: string, sort: number) => {
     const [b] = await sql<{ id: string }[]>`insert into public.barbers (shop_id, display_name, sort_order) values (${ids.shop}, ${name}, ${sort}) returning id`;
@@ -91,14 +92,11 @@ test.beforeAll(async () => {
   ids.cut = await service("Haircut", "Corte", 0);
   ids.beard = await service("Beard trim", "Barba", 1);
 
-  // The Owner cuts hair as Carlos; Dre is a Barber.
+  // The Owner cuts hair as Carlos; Dre and Luis are Barbers with no login.
   const owner = await staffUser("owner");
-  const dre = await staffUser("dre");
   emails.owner = owner.email;
-  emails.dre = dre.email;
-  await sql`insert into public.shop_members (shop_id, user_id, role) values (${ids.shop}, ${owner.id}, 'owner'), (${ids.shop}, ${dre.id}, 'barber')`;
+  await sql`insert into public.shop_members (shop_id, user_id, role) values (${ids.shop}, ${owner.id}, 'owner')`;
   await sql`update public.barbers set user_id = ${owner.id} where id = ${ids.carlos}`;
-  await sql`update public.barbers set user_id = ${dre.id} where id = ${ids.dre}`;
 
   // Today's Bookings around now (kept inside today's New York date), on the 5-minute grid.
   const now = Date.now();
@@ -131,19 +129,27 @@ async function signIn(page: Page, email: string) {
 
 const row = (page: Page, name: string) => page.locator("ol").getByRole("button", { name: new RegExp(name) });
 
-test("a Barber sees only their own day, the tags and the now line", async ({ page }) => {
-  await signIn(page, emails.dre);
-  await expect(page.getByRole("heading", { name: "Day", exact: true })).toBeVisible();
+/** The Owner's Today, filtered to Dre (the phone list). */
+async function openDre(page: Page) {
+  await signIn(page, emails.owner);
+  await page.goto(`/app/day?barber=${ids.dre}`);
+  await expect(page.getByRole("navigation", { name: "Show bookings for" }).getByRole("link", { name: "Dre", exact: true })).toHaveAttribute("aria-current", "page");
+}
+
+test("one Barber's day shows only theirs, the tags and the now line", async ({ page }) => {
+  await openDre(page);
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
+  const list = page.locator("ol");
   for (const name of ["Maria Lopez", "Kevin Diaz", "Ana Ruiz", "Rafa Gomez", "Luz Mejia"]) await expect(row(page, name)).toBeVisible();
-  await expect(page.locator("ol").getByText("Walk-in")).toBeVisible();
-  await expect(page.getByText("Tom Rivera")).toHaveCount(0);
-  await expect(page.getByText("Ben Ortiz")).toHaveCount(0);
+  await expect(list.getByText("Walk-in")).toBeVisible();
+  await expect(list.getByText("Tom Rivera")).toHaveCount(0);
+  await expect(list.getByText("Ben Ortiz")).toHaveCount(0);
   // Held for payment: shown, but no actions.
-  await expect(page.getByText("Jay Park")).toBeVisible();
-  await expect(page.getByText("Awaiting payment")).toBeVisible();
+  await expect(list.getByText("Jay Park")).toBeVisible();
+  await expect(list.getByText("Awaiting payment")).toBeVisible();
   await expect(row(page, "Jay Park")).toHaveCount(0);
-  await expect(page.locator("ol").getByText("Paid online").first()).toBeVisible();
-  await expect(page.getByTestId("now-line")).toBeVisible();
+  await expect(list.getByText("Paid online").first()).toBeVisible();
+  await expect(page.getByTestId("now-line").first()).toBeVisible();
   await expect(page.getByRole("img", { name: "New booking" })).toHaveCount(1);
   // The old header's sign-out and Telegram button are gone from this page.
   await expect(page.getByRole("button", { name: /Telegram/ })).toHaveCount(0);
@@ -152,7 +158,7 @@ test("a Barber sees only their own day, the tags and the now line", async ({ pag
 });
 
 test("mark a Booking arrived from its sheet", async ({ page }) => {
-  await signIn(page, emails.dre);
+  await openDre(page);
   await row(page, "Maria Lopez").click();
   const sheet = page.getByRole("dialog", { name: "Maria Lopez" });
   await expect(sheet).toBeVisible();
@@ -168,7 +174,7 @@ test("mark a Booking arrived from its sheet", async ({ page }) => {
 });
 
 test("add a walk-in from the big button", async ({ page }) => {
-  await signIn(page, emails.dre);
+  await openDre(page);
   await page.getByRole("button", { name: "Add walk-in" }).click();
   const sheet = page.getByRole("dialog", { name: "Add a walk-in" });
   await expect(sheet).toBeVisible();
@@ -180,7 +186,7 @@ test("add a walk-in from the big button", async ({ page }) => {
 });
 
 test("move a Booking to another time", async ({ page }) => {
-  await signIn(page, emails.dre);
+  await openDre(page);
   await row(page, "Kevin Diaz").click();
   const sheet = page.getByRole("dialog");
   await sheet.getByRole("button", { name: "Move" }).click();
@@ -199,7 +205,7 @@ test("move a Booking to another time", async ({ page }) => {
 });
 
 test("cancel asks first and says what the Client is told", async ({ page }) => {
-  await signIn(page, emails.dre);
+  await openDre(page);
   await row(page, "Ana Ruiz").click();
   const sheet = page.getByRole("dialog");
   await sheet.getByRole("button", { name: "Cancel booking" }).click();
@@ -214,13 +220,13 @@ test("cancel asks first and says what the Client is told", async ({ page }) => {
   await expect(page.getByText("Booking cancelled.")).toBeVisible();
   await expect(row(page, "Ana Ruiz")).toHaveCount(0);
   const [b] = await sql<{ status: string; cancelled_by: string }[]>`select status, cancelled_by from public.bookings where id = ${bookingIds.ana}`;
-  expect(b).toEqual({ status: "cancelled", cancelled_by: "barber" });
+  expect(b).toEqual({ status: "cancelled", cancelled_by: "owner" });
   const out = await sql<{ type: string }[]>`select type from public.outbox where booking_id = ${bookingIds.ana}`;
   expect(out.map((o) => o.type)).toContain("sms_cancelled");
 });
 
 test("undo a mistaken arrived, and remove a walk-in logged by mistake", async ({ page }) => {
-  await signIn(page, emails.dre);
+  await openDre(page);
   await row(page, "Rafa Gomez").click();
   const sheet = page.getByRole("dialog", { name: "Rafa Gomez" });
   await sheet.getByRole("button", { name: "Arrived" }).click();
@@ -242,7 +248,7 @@ test("undo a mistaken arrived, and remove a walk-in logged by mistake", async ({
   await expect(page.getByText("Walk-in removed.")).toBeVisible();
   await expect(page.locator(`ol [data-row="${bookingIds.walkin}"]`)).toHaveCount(0);
   const [w] = await sql<{ status: string; cancelled_by: string }[]>`select status, cancelled_by from public.bookings where id = ${bookingIds.walkin}`;
-  expect(w).toEqual({ status: "cancelled", cancelled_by: "barber" });
+  expect(w).toEqual({ status: "cancelled", cancelled_by: "owner" });
   expect((await sql`select 1 from public.outbox where booking_id = ${bookingIds.walkin}`).length).toBe(0);
 });
 

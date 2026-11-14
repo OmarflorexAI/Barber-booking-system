@@ -8,8 +8,8 @@ config({ path: ".env.local", quiet: true });
 
 /**
  * The Owner Dashboard on a phone: this week's numbers against last week's from seeded
- * Bookings, the ‹ week › stepper, and a Barber kept out. Builds a throwaway Shop (random
- * slug, 45 minutes per manual booking) with its own sign-ins and deletes it afterwards.
+ * Bookings and the ‹ week › stepper. Builds a throwaway Shop (random
+ * slug, 45 minutes per manual booking) with the Owner's sign-in and deletes it afterwards.
  * Bookings are seeded relative to the real current New York week, since the page reads the clock.
  */
 const sql = postgres(process.env.DATABASE_URL!, { prepare: false, max: 1, onnotice: () => {} });
@@ -19,7 +19,7 @@ const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SU
 
 const TZ = "America/New_York";
 const ids = { shop: "", cut: "", marisol: "", dario: "" };
-const emails = { owner: "", barber: "" };
+const emails = { owner: "" };
 const userIds: string[] = [];
 let phoneSeq = 0;
 
@@ -64,13 +64,11 @@ test.beforeAll(async () => {
     values (${`e2e-dash-${randomUUID().slice(0, 8)}`}, 'E2E Dashboard Shop', '+17185550197', 45) returning id`;
   ids.shop = s.id;
   const owner = await staffUser("owner");
-  const barber = await staffUser("barber");
   emails.owner = owner.email;
-  emails.barber = barber.email;
-  await sql`insert into public.shop_members (shop_id, user_id, role) values (${ids.shop}, ${owner.id}, 'owner'), (${ids.shop}, ${barber.id}, 'barber')`;
+  await sql`insert into public.shop_members (shop_id, user_id, role) values (${ids.shop}, ${owner.id}, 'owner')`;
   const [m] = await sql<{ id: string }[]>`insert into public.barbers (shop_id, display_name, sort_order) values (${ids.shop}, 'Marisol Peña', 0) returning id`;
   const [d] = await sql<{ id: string }[]>`
-    insert into public.barbers (shop_id, user_id, display_name, sort_order) values (${ids.shop}, ${barber.id}, 'Dario Cruz', 1) returning id`;
+    insert into public.barbers (shop_id, display_name, sort_order) values (${ids.shop}, 'Dario Cruz', 1) returning id`;
   ids.marisol = m.id;
   ids.dario = d.id;
   const [sv] = await sql<{ id: string }[]>`
@@ -248,12 +246,6 @@ test("the week stepper moves back a week and stops at this week", async ({ page 
   await expect(range).toHaveText(thisRange);
   await page.goto(`/app/dashboard?week=${plusDays(lastMonday, 1)}`);
   await expect(range).toHaveText(thisRange);
-});
-
-test("a Barber is sent to their Day", async ({ page }) => {
-  await signIn(page, emails.barber);
-  await page.goto("/app/dashboard");
-  await expect(page).toHaveURL(/\/app\/day/);
 });
 
 /**

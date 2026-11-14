@@ -8,8 +8,8 @@ config({ path: ".env.local", quiet: true });
 
 /**
  * Owner Settings → Booking rules and Blocklist on a phone: saving a cutoff over 2 hours shows
- * the reminder warning, blocking then unblocking a number, and a Barber kept out. Builds a
- * throwaway Shop (random slug) with magic-link sign-ins and deletes it afterwards.
+ * the reminder warning, and blocking then unblocking a number. Builds a
+ * throwaway Shop (random slug) with the Owner's magic-link sign-in and deletes it afterwards.
  */
 const sql = postgres(process.env.DATABASE_URL!, { prepare: false, max: 1, onnotice: () => {} });
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
@@ -17,7 +17,7 @@ const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SU
 });
 
 const shop = { id: "", slug: `e2e-rules-${randomUUID().slice(0, 8)}` };
-const emails = { owner: "", barber: "" };
+const emails = { owner: "" };
 const userIds: string[] = [];
 
 async function staffUser(label: string) {
@@ -33,10 +33,8 @@ test.beforeAll(async () => {
     insert into public.shops (slug, name, phone) values (${shop.slug}, 'E2E Rules Shop', '+17185550197') returning id`;
   shop.id = s.id;
   const owner = await staffUser("owner");
-  const barber = await staffUser("barber");
   emails.owner = owner.email;
-  emails.barber = barber.email;
-  await sql`insert into public.shop_members (shop_id, user_id, role) values (${shop.id}, ${owner.id}, 'owner'), (${shop.id}, ${barber.id}, 'barber')`;
+  await sql`insert into public.shop_members (shop_id, user_id, role) values (${shop.id}, ${owner.id}, 'owner')`;
 });
 
 test.afterAll(async () => {
@@ -110,12 +108,4 @@ test("the Owner blocks then unblocks a phone number", async ({ page }) => {
   await expect(page.getByText(/^No blocked numbers\./)).toBeVisible();
   const [u] = await sql<{ blocked: boolean }[]>`select blocked from public.clients where shop_id = ${shop.id} and phone_e164 = '+13475559011'`;
   expect(u.blocked).toBe(false);
-});
-
-test("a Barber is sent to their Day from both pages", async ({ page }) => {
-  await signIn(page, emails.barber);
-  await page.goto("/app/settings/rules");
-  await expect(page).toHaveURL(/\/app\/day/);
-  await page.goto("/app/settings/blocklist");
-  await expect(page).toHaveURL(/\/app\/day/);
 });
