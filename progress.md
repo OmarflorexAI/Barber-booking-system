@@ -4,7 +4,9 @@ Last updated: 2026-11-13, end of session (G, U1, U3a done; U2 partly done; P1, P
 
 ## Where we are
 
-**NEXT (2026-11-14): `PLAN.md`** — Shop profile, Barber profiles, team management, Free/Pro plans; milestones M1–M7 from a grilling session (Q1–Q36). Key reversals of earlier decisions: Barbers never sign in (Me tab, Barber invite and Barber Day view retired in M6); Shop logo/cover uploads are now in; deleting a Barber deletes their past Bookings. Start at M1 once the user confirms the plan.
+**NEXT (2026-11-14): `PLAN.md`** — Shop profile, Barber profiles, team management, Free/Pro plans; milestones M1–M7 from a grilling session (Q1–Q36). Key reversals of earlier decisions: Barbers never sign in (Me tab, Barber invite and Barber Day view retired in M6); Shop logo/cover uploads are now in; deleting a Barber deletes their past Bookings. Plan confirmed by the user 2026-11-14.
+
+- **M1 Photo uploads: DONE 2026-11-14** (`9d826ba` server, `713b0ff` client; not pushed). Bucket `shop-media` (public, 3 MB, WebP + JPEG) via migrations `20261114090000`, `20261114091000`, applied to the dev DB by the orchestrator (node script running the SQL + a row in `supabase_migrations.schema_migrations`, the same history the earlier migrations use). `media()` in engine.ts; actions `createUploadAction(kind, format)` / `deleteMediaAction` in `src/app/app/_media/actions.ts`; `<PhotoInput kind value onChange label locale>` in `src/components/photo-input.tsx`; dev-only harness `/app/dev/photo` (404 in production). QA 10/10 PASS (isolation on real storage, no service key in client JS, anon writes blocked, EN/ES notice, 360px, axe 0, JPEG path). **Open:** test on a real iPhone (camera + Safari's WebP/JPEG fallback) once M3's Add Barber screen exists. **Next: M2 Services & prices.**
 
 **Direction from the user (2026-11-13, after P2, all pushed to `f50e318`):** "we are getting to the final stage." **Next priority: a demo deploy** so the user can show the app to their dad. P3 (calendar), P4 (Settings life) and further polish (animations, components) come **later, in small milestones**.
 
