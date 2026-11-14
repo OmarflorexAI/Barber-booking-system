@@ -169,6 +169,33 @@ export function createShopAdmin(sql: Sql) {
     if (rows.count === 0) throw notFound("Service");
   }
 
+  /**
+   * Put the Shop's active Services in a new order (the order Clients see). The list must be
+   * exactly the Shop's active Services, each once; anything else is refused and nothing changes.
+   */
+  async function reorderServices(args: ShopActor & { serviceIds: string[] }): Promise<void> {
+    await requireOwner(sql, args.userId, args.shopId);
+    const ids = args.serviceIds;
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!Array.isArray(ids) || !ids.every((id) => typeof id === "string" && uuid.test(id)) || new Set(ids).size !== ids.length) {
+      throw invalid("Send each of the Shop's Services once.");
+    }
+    await sql.begin(async (tx) => {
+      const active = await tx<{ id: string }[]>`
+        select id from public.services where shop_id = ${args.shopId} and active for update
+      `;
+      const want = new Set(active.map((r) => r.id));
+      if (ids.length !== want.size || !ids.every((id) => want.has(id.toLowerCase()))) {
+        throw invalid("Send each of the Shop's Services once.");
+      }
+      await tx`
+        update public.services s set sort_order = o.pos - 1
+        from unnest(${ids}::uuid[]) with ordinality as o(id, pos)
+        where s.id = o.id and s.shop_id = ${args.shopId}
+      `;
+    });
+  }
+
   /** What one Barber charges for a Service (and optionally how long it takes them). Owner only. */
   async function setBarberPrice(
     args: ShopActor & { barberId: string; serviceId: string; priceCents: number; durationOverrideMin?: number | null },
@@ -367,6 +394,7 @@ export function createShopAdmin(sql: Sql) {
     removeBarber,
     saveService,
     archiveService,
+    reorderServices,
     setBarberPrice,
     removeBarberPrice,
     setSpecialPrice,

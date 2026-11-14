@@ -116,6 +116,46 @@ describe("Services and prices", () => {
     );
   });
 
+  it("an Owner reorders the Services and Clients see the new order", async () => {
+    await admin.reorderServices({ userId: owner, shopId: shop.shopId, serviceIds: [shop.fade, shop.cut] });
+    expect((await catalog()).services.map((s) => s.id)).toEqual([shop.fade, shop.cut]);
+    const rows = await sql<{ id: string; sort_order: number }[]>`
+      select id, sort_order from public.services where shop_id = ${shop.shopId} order by sort_order`;
+    expect(rows).toEqual([
+      { id: shop.fade, sort_order: 0 },
+      { id: shop.cut, sort_order: 1 },
+    ]);
+  });
+
+  it("only this Shop's Owner reorders its Services", async () => {
+    const other = await makeShop();
+    try {
+      const otherOwner = await makeUser(other.shopId, "owner");
+      await expectCode(
+        admin.reorderServices({ userId: otherOwner, shopId: shop.shopId, serviceIds: [shop.fade, shop.cut] }),
+        "FORBIDDEN",
+      );
+      await expectCode(
+        admin.reorderServices({ userId: barberUser, shopId: shop.shopId, serviceIds: [shop.fade, shop.cut] }),
+        "FORBIDDEN",
+      );
+      // Another Shop's Service in the list, a partial list, a repeat or an archived one: all refused.
+      const as = { userId: owner, shopId: shop.shopId };
+      await expectCode(admin.reorderServices({ ...as, serviceIds: [shop.fade, other.cut] }), "INVALID_INPUT");
+      await expectCode(admin.reorderServices({ ...as, serviceIds: [shop.fade] }), "INVALID_INPUT");
+      await expectCode(admin.reorderServices({ ...as, serviceIds: [shop.fade, shop.fade] }), "INVALID_INPUT");
+      await expectCode(admin.reorderServices({ ...as, serviceIds: [shop.fade, shop.cut, other.fade] }), "INVALID_INPUT");
+      await admin.archiveService({ ...as, serviceId: shop.cut });
+      await expectCode(admin.reorderServices({ ...as, serviceIds: [shop.cut, shop.fade] }), "INVALID_INPUT");
+      await expect(admin.reorderServices({ ...as, serviceIds: [shop.fade] })).resolves.toBeUndefined();
+      // Nothing changed in the other Shop.
+      const otherRows = await sql<{ sort_order: number }[]>`select sort_order from public.services where shop_id = ${other.shopId}`;
+      expect(otherRows.map((r) => r.sort_order)).toEqual([0, 0]);
+    } finally {
+      await dropShop(other);
+    }
+  });
+
   it("a Barber cannot change prices or Services", async () => {
     const as = { userId: barberUser, shopId: shop.shopId };
     await expectCode(admin.setBarberPrice({ ...as, barberId: shop.blake, serviceId: shop.cut, priceCents: 1 }), "FORBIDDEN");
