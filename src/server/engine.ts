@@ -1,7 +1,9 @@
 import "server-only";
+import { createClient } from "@supabase/supabase-js";
 import { createBookingEngine, type BookingEngine } from "./booking-engine";
 import { requireManageLinkSecret } from "./booking-engine/manage-token";
 import { getSql } from "./db";
+import { createMedia, MEDIA_BUCKET, type Media } from "./media";
 import { createPlatformAdmin, type PlatformAdmin } from "./platform-admin";
 import { createReporting, type Reporting } from "./reporting";
 import { createShopAdmin, type ShopAdmin } from "./shop-admin";
@@ -10,6 +12,7 @@ let engine: BookingEngine | undefined;
 let admin: ShopAdmin | undefined;
 let reports: Reporting | undefined;
 let platform: PlatformAdmin | undefined;
+let mediaTools: Media | undefined;
 
 /** The app-wide booking engine, bound to the server's Postgres pool. */
 export function bookingEngine(): BookingEngine {
@@ -33,4 +36,27 @@ export function reporting(): Reporting {
 export function platformAdmin(): PlatformAdmin {
   platform ??= createPlatformAdmin(getSql());
   return platform;
+}
+
+/** Shop pictures (M1): signed uploads into the public `shop-media` bucket, via the service role. */
+export function media(): Media {
+  if (!mediaTools) {
+    const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const bucket = admin.storage.from(MEDIA_BUCKET);
+    mediaTools = createMedia(getSql(), {
+      async createSignedUploadUrl(path) {
+        const { data, error } = await bucket.createSignedUploadUrl(path);
+        if (error || !data) throw new Error(`Could not sign the upload: ${error?.message ?? "unknown error"}`);
+        return { token: data.token };
+      },
+      async remove(paths) {
+        const { error } = await bucket.remove(paths);
+        if (error) throw new Error(`Could not delete the picture: ${error.message}`);
+      },
+      publicUrl: (path) => bucket.getPublicUrl(path).data.publicUrl,
+    });
+  }
+  return mediaTools;
 }
