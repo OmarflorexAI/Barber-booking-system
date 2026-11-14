@@ -415,6 +415,23 @@ const en = {
       },
     },
   },
+  photo: {
+    add: "Add photo",
+    change: "Change photo",
+    remove: "Remove",
+    hint: "Take one now or pick one from your phone. Up to 10 MB.",
+    empty: "No photo yet",
+    uploading: "Uploading photo…",
+    uploaded: "Photo uploaded.",
+    removed: "Photo removed.",
+    errors: {
+      too_big: "That photo is over 10 MB. Pick a smaller one, or take a new one with the camera.",
+      not_image: "That file isn't a photo. Pick a JPG or PNG picture.",
+      decode: "Couldn't open that photo. Try a different one, or take a new one with the camera.",
+      forbidden: "Only the Shop's Owner can add photos. Sign in again and try once more.",
+      upload: "The photo didn't upload. Check your connection and try again.",
+    },
+  },
 };
 
 export type Dictionary = typeof en;
@@ -820,6 +837,23 @@ const es: Dictionary = {
         INVALID_INPUT: "Ese número no parece correcto. Escribe los 10 dígitos, como (718) 555-0123.",
         UNKNOWN: "No se pudo guardar ahora. Revisa tu conexión e inténtalo otra vez.",
       },
+    },
+  },
+  photo: {
+    add: "Agregar foto",
+    change: "Cambiar foto",
+    remove: "Quitar",
+    hint: "Toma una ahora o escoge una de tu teléfono. Hasta 10 MB.",
+    empty: "Todavía no hay foto",
+    uploading: "Subiendo la foto…",
+    uploaded: "Foto subida.",
+    removed: "Foto quitada.",
+    errors: {
+      too_big: "Esa foto pesa más de 10 MB. Escoge una más pequeña o toma una nueva con la cámara.",
+      not_image: "Ese archivo no es una foto. Escoge una imagen JPG o PNG.",
+      decode: "No se pudo abrir esa foto. Prueba con otra o toma una nueva con la cámara.",
+      forbidden: "Solo el dueño de la barbería puede agregar fotos. Vuelve a iniciar sesión e inténtalo otra vez.",
+      upload: "La foto no se subió. Revisa tu conexión e inténtalo otra vez.",
     },
   },
 };
