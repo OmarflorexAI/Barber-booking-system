@@ -41,15 +41,29 @@ describe("Barbers", () => {
     await expectCode(admin.addBarber({ userId: owner, shopId: shop.shopId, displayName: "Gus" }), "BARBER_LIMIT");
   });
 
-  it("removing a Barber waits until their upcoming Bookings are cancelled or moved", async () => {
+  it("deleting a Barber waits until their upcoming Bookings are cancelled or moved", async () => {
     const { booking } = await book(shop, { barberId: shop.blake });
     await expectCode(
-      admin.removeBarber({ userId: owner, shopId: shop.shopId, barberId: shop.blake, now: NOW }),
+      admin.deleteBarber({ userId: owner, shopId: shop.shopId, barberId: shop.blake, now: NOW }),
       "BARBER_HAS_BOOKINGS",
     );
+    const upcoming = await admin.upcomingForBarber({ userId: owner, shopId: shop.shopId, barberId: shop.blake, now: NOW });
+    expect(upcoming).toEqual([
+      expect.objectContaining({
+        bookingId: booking.id,
+        startsAt: at(TOMORROW, 10).toISOString(),
+        kind: "booking",
+        status: "confirmed",
+        clientName: "Test Client",
+        serviceNameEn: "Cut",
+        serviceNameEs: "Cut",
+      }),
+    ]);
 
     await engine.cancelBooking({ bookingId: booking.id, actor: { kind: "staff", userId: owner }, now: NOW });
-    await admin.removeBarber({ userId: owner, shopId: shop.shopId, barberId: shop.blake, now: NOW });
+    expect(await admin.upcomingForBarber({ userId: owner, shopId: shop.shopId, barberId: shop.blake, now: NOW })).toEqual([]);
+    const result = await admin.deleteBarber({ userId: owner, shopId: shop.shopId, barberId: shop.blake, now: NOW });
+    expect(result.loginUserId).toBe(barberUser);
 
     const catalog = await engine.getShopCatalog(shop.slug, NOW);
     expect(catalog?.barbers.map((b) => b.displayName)).toEqual(["Alex"]);
@@ -57,11 +71,61 @@ describe("Barbers", () => {
     await expectCode(admin.addBarber({ userId: barberUser, shopId: shop.shopId, displayName: "X" }), "FORBIDDEN");
   });
 
-  it("a removed Barber frees a place under the limit", async () => {
+  it("deleting a Barber removes their past Bookings, gallery and prices, and returns their photos", async () => {
+    // A past Booking: made "yesterday" relative to a clock a day earlier.
+    const earlier = new Date(NOW.getTime() - 2 * 24 * 60 * 60_000);
+    const { booking } = await book(shop, { barberId: shop.blake, startsAt: at("2027-01-10", 10), now: earlier });
+    const photo = "https://example.com/blake.webp";
+    await admin.updateBarberProfile({
+      userId: owner, shopId: shop.shopId, barberId: shop.blake, displayName: "Blake", bio: "", specialties: [], photoUrl: photo,
+    });
+    await admin.setGallery({ userId: owner, shopId: shop.shopId, barberId: shop.blake, urls: ["https://example.com/g1.webp"] });
+
+    const result = await admin.deleteBarber({ userId: owner, shopId: shop.shopId, barberId: shop.blake, now: NOW });
+    expect(result.photoUrls).toEqual([photo, "https://example.com/g1.webp"]);
+
+    const [{ bookings, gallery, prices, hours, barbers }] = await sql<
+      { bookings: number; gallery: number; prices: number; hours: number; barbers: number }[]
+    >`
+      select (select count(*)::int from public.bookings where id = ${booking.id}) bookings,
+             (select count(*)::int from public.barber_gallery where barber_id = ${shop.blake}) gallery,
+             (select count(*)::int from public.barber_services where barber_id = ${shop.blake}) prices,
+             (select count(*)::int from public.weekly_hours where barber_id = ${shop.blake}) hours,
+             (select count(*)::int from public.barbers where id = ${shop.blake}) barbers
+    `;
+    expect({ bookings, gallery, prices, hours, barbers }).toEqual({ bookings: 0, gallery: 0, prices: 0, hours: 0, barbers: 0 });
+  });
+
+  it("an Owner can't delete their own Barber profile", async () => {
+    await sql`update public.barbers set user_id = ${owner} where id = ${shop.alex}`;
+    await expectCode(admin.deleteBarber({ userId: owner, shopId: shop.shopId, barberId: shop.alex, now: NOW }), "OWN_BARBER");
+  });
+
+  it("only this Shop's Owner deletes a Barber or lists their upcoming Bookings", async () => {
+    const other = await makeShop();
+    try {
+      const otherOwner = await makeUser(other.shopId, "owner");
+      await expectCode(admin.deleteBarber({ userId: otherOwner, shopId: shop.shopId, barberId: shop.alex, now: NOW }), "FORBIDDEN");
+      await expectCode(admin.upcomingForBarber({ userId: otherOwner, shopId: shop.shopId, barberId: shop.alex, now: NOW }), "FORBIDDEN");
+    } finally {
+      await dropShop(other);
+    }
+    await expectCode(admin.deleteBarber({ userId: barberUser, shopId: shop.shopId, barberId: shop.alex, now: NOW }), "FORBIDDEN");
+    await expectCode(admin.upcomingForBarber({ userId: barberUser, shopId: shop.shopId, barberId: shop.blake, now: NOW }), "FORBIDDEN");
+  });
+
+  it("a Barber's phone is stored in E.164 and a bad one is refused", async () => {
+    const { barberId } = await admin.addBarber({ userId: owner, shopId: shop.shopId, displayName: "Cam", phone: "(718) 555-0100" });
+    const [b] = await sql<{ phone_e164: string | null }[]>`select phone_e164 from public.barbers where id = ${barberId}`;
+    expect(b.phone_e164).toBe("+17185550100");
+    await expectCode(admin.addBarber({ userId: owner, shopId: shop.shopId, displayName: "Dee", phone: "123" }), "INVALID_INPUT");
+  });
+
+  it("a deleted Barber frees a place under the limit", async () => {
     for (const name of ["Cam", "Dee", "Eli", "Fin"]) {
       await admin.addBarber({ userId: owner, shopId: shop.shopId, displayName: name });
     }
-    await admin.removeBarber({ userId: owner, shopId: shop.shopId, barberId: shop.alex, now: NOW });
+    await admin.deleteBarber({ userId: owner, shopId: shop.shopId, barberId: shop.alex, now: NOW });
     await expect(admin.addBarber({ userId: owner, shopId: shop.shopId, displayName: "Gus" })).resolves.toBeTruthy();
   });
 

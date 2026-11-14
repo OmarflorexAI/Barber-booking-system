@@ -28,6 +28,7 @@ export type BookingErrorCode =
   | "FORBIDDEN"
   | "BARBER_LIMIT" // a Shop already has its maximum of active Barbers
   | "BARBER_HAS_BOOKINGS" // a Barber with upcoming Bookings cannot be removed yet
+  | "OWN_BARBER" // an Owner cannot delete their own Barber profile
   | "SLUG_TAKEN"; // another Shop already uses that booking link name
 
 export const slotTaken = () => new BookingError("SLOT_TAKEN", "That time was just taken. Please pick another.");
@@ -39,6 +40,7 @@ export const barberLimit = (max: number) =>
 export const slugTaken = () => new BookingError("SLUG_TAKEN", "Another shop already uses that link name.");
 export const barberHasBookings = (upcoming: number) =>
   new BookingError("BARBER_HAS_BOOKINGS", "Cancel or move this barber's upcoming bookings first.", { upcoming });
+export const ownBarber = () => new BookingError("OWN_BARBER", "You can't delete your own barber profile.");
 
 export function isBookingError(e: unknown, code?: BookingErrorCode): e is BookingError {
   return e instanceof BookingError && (code === undefined || e.code === code);

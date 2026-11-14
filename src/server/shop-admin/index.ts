@@ -7,6 +7,7 @@ import {
   barberLimit,
   invalid,
   notFound,
+  ownBarber,
   PG_BARBER_LIMIT,
   PG_FOREIGN_KEY_VIOLATION,
   PG_UNIQUE_VIOLATION,
@@ -67,6 +68,11 @@ function phoneOrThrow(raw: string): string {
   return phone;
 }
 
+/** An optional phone: blank means none; anything else must normalize. */
+function optionalPhone(raw: string | null | undefined): string | null {
+  return raw?.trim() ? phoneOrThrow(raw) : null;
+}
+
 function dateOrThrow(date: string): string {
   if (!isLocalDate(date)) throw invalid("Date must be YYYY-MM-DD.");
   return date;
@@ -82,15 +88,21 @@ const onGrid = (min: number) => Number.isInteger(min) && min > 0 && min % 15 ===
  * numbers and the client export live in reporting.
  */
 export function createShopAdmin(sql: Sql) {
-  async function addBarber(args: ShopActor & { displayName: string }): Promise<{ barberId: string }> {
+  /** A new Barber needs only a name (Q34); photo and phone are optional. Owner only. */
+  async function addBarber(
+    args: ShopActor & { displayName: string; photoUrl?: string | null; phone?: string | null },
+  ): Promise<{ barberId: string }> {
     await requireOwner(sql, args.userId, args.shopId);
     const displayName = args.displayName.trim();
     if (!displayName || displayName.length > 60) throw invalid("Name is required (max 60 characters).");
+    const photoUrl = args.photoUrl || null;
+    if (photoUrl !== null && !httpsUrl(photoUrl)) throw invalid("Photo must be an https link.");
+    const phone = optionalPhone(args.phone);
     try {
       const [b] = await sql<{ id: string }[]>`
-        insert into public.barbers (shop_id, display_name, sort_order)
+        insert into public.barbers (shop_id, display_name, photo_url, phone_e164, sort_order)
         values (
-          ${args.shopId}, ${displayName},
+          ${args.shopId}, ${displayName}, ${photoUrl}, ${phone},
           (select coalesce(max(sort_order) + 1, 0) from public.barbers where shop_id = ${args.shopId})
         )
         returning id
@@ -103,30 +115,83 @@ export function createShopAdmin(sql: Sql) {
   }
 
   /**
-   * Take a Barber off the booking page and remove their access. Refused while they
-   * still have upcoming Bookings: the Owner cancels or moves those first (Clients get texted).
-   * History stays: past Bookings keep pointing at the (now inactive) Barber.
+   * Delete a Barber for good (Q8, Q9, Q16): profile, prices, hours, days off, gallery
+   * and their PAST Bookings go with the row (FK cascades). Refused while they still have
+   * upcoming Bookings (the Owner moves or cancels those first, so Clients get texted), and
+   * for the Owner's own Barber profile (Q20). A tied 'barber' login loses Shop access.
+   * Returns what lives outside the database, for the caller to clean up (see src/server/team.ts).
    */
-  async function removeBarber(args: ShopActor & { barberId: string; now: Date }): Promise<void> {
+  async function deleteBarber(
+    args: ShopActor & { barberId: string; now: Date },
+  ): Promise<{ photoUrls: string[]; loginUserId: string | null }> {
     await requireOwner(sql, args.userId, args.shopId);
-    await sql.begin(async (tx) => {
+    return sql.begin(async (tx) => {
       // Same lock the engine takes before writing this Barber's calendar, so no Booking sneaks in.
       await tx`select pg_advisory_xact_lock(hashtextextended(${args.barberId}, 0))`;
-      const [b] = await tx<{ user_id: string | null }[]>`
-        select user_id from public.barbers where id = ${args.barberId} and shop_id = ${args.shopId} for update
+      const [b] = await tx<{ user_id: string | null; photo_url: string | null }[]>`
+        select user_id, photo_url from public.barbers where id = ${args.barberId} and shop_id = ${args.shopId} for update
       `;
       if (!b) throw notFound("Barber");
+      if (b.user_id === args.userId) throw ownBarber();
       const [{ n }] = await tx<{ n: number }[]>`
         select count(*)::int n from public.bookings
-        where barber_id = ${args.barberId} and status = 'confirmed' and starts_at >= ${args.now}
+        where barber_id = ${args.barberId} and status in ('confirmed', 'pending_payment') and starts_at >= ${args.now}
       `;
       if (n > 0) throw barberHasBookings(n);
-      await tx`update public.barbers set active = false, user_id = null where id = ${args.barberId}`;
-      // An Owner who also cut hair keeps owning the Shop; a plain Barber loses access.
+      const gallery = await tx<{ url: string }[]>`
+        select url from public.barber_gallery where barber_id = ${args.barberId} order by position
+      `;
+      await tx`delete from public.barbers where id = ${args.barberId} and shop_id = ${args.shopId}`;
+      // An Owner keeps owning the Shop; a plain Barber login loses access.
       if (b.user_id) {
         await tx`delete from public.shop_members where shop_id = ${args.shopId} and user_id = ${b.user_id} and role = 'barber'`;
       }
+      const photoUrls = [...(b.photo_url ? [b.photo_url] : []), ...gallery.map((g) => g.url)];
+      return { photoUrls: [...new Set(photoUrls)], loginUserId: b.user_id };
     });
+  }
+
+  /** A Barber's upcoming Bookings, soonest first: what blocks deleting them (Q8). Owner only. */
+  async function upcomingForBarber(args: ShopActor & { barberId: string; now: Date }): Promise<
+    {
+      bookingId: string;
+      startsAt: string;
+      kind: "booking" | "walk_in";
+      status: "confirmed" | "pending_payment";
+      clientName: string | null;
+      serviceNameEn: string;
+      serviceNameEs: string;
+    }[]
+  > {
+    await requireOwner(sql, args.userId, args.shopId);
+    const rows = await sql<
+      {
+        id: string;
+        starts_at: Date;
+        kind: "booking" | "walk_in";
+        status: "confirmed" | "pending_payment";
+        client_name: string | null;
+        name_en: string;
+        name_es: string;
+      }[]
+    >`
+      select bk.id, bk.starts_at, bk.kind, bk.status, c.name client_name, s.name_en, s.name_es
+      from public.bookings bk
+      join public.services s on s.id = bk.service_id
+      left join public.clients c on c.id = bk.client_id
+      where bk.shop_id = ${args.shopId} and bk.barber_id = ${args.barberId}
+        and bk.status in ('confirmed', 'pending_payment') and bk.starts_at >= ${args.now}
+      order by bk.starts_at, bk.id
+    `;
+    return rows.map((r) => ({
+      bookingId: r.id,
+      startsAt: r.starts_at.toISOString(),
+      kind: r.kind,
+      status: r.status,
+      clientName: r.client_name,
+      serviceNameEn: r.name_en,
+      serviceNameEs: r.name_es,
+    }));
   }
 
   /** Create a Service, or edit one when serviceId is given. Durations sit on the 15-minute grid. */
@@ -316,7 +381,15 @@ export function createShopAdmin(sql: Sql) {
 
   /** What Clients see about a Barber. The Barber edits their own; the Owner can edit anyone's. */
   async function updateBarberProfile(
-    args: ShopActor & { barberId: string; displayName: string; bio: string; specialties: string[]; photoUrl: string | null },
+    args: ShopActor & {
+      barberId: string;
+      displayName: string;
+      bio: string;
+      specialties: string[];
+      photoUrl: string | null;
+      /** Owner-only contact (Q27). Left out: unchanged; null or blank: cleared. */
+      phone?: string | null;
+    },
   ): Promise<void> {
     await authorizeForBarber(sql, args.userId, args.shopId, args.barberId);
     const displayName = args.displayName.trim();
@@ -325,9 +398,11 @@ export function createShopAdmin(sql: Sql) {
     if (args.bio.length > 500) throw invalid("Bio is too long (max 500 characters).");
     if (specialties.length > 8 || specialties.some((x) => x.length > 40)) throw invalid("Up to 8 short specialties.");
     if (args.photoUrl !== null && !httpsUrl(args.photoUrl)) throw invalid("Photo must be an https link.");
+    const phone = args.phone === undefined ? undefined : optionalPhone(args.phone);
     await sql`
       update public.barbers
       set display_name = ${displayName}, bio = ${args.bio.trim()}, specialties = ${specialties}, photo_url = ${args.photoUrl}
+        ${phone === undefined ? sql`` : sql`, phone_e164 = ${phone}`}
       where id = ${args.barberId} and shop_id = ${args.shopId}
     `;
   }
@@ -391,7 +466,8 @@ export function createShopAdmin(sql: Sql) {
     updateBarberProfile,
     setGallery,
     addBarber,
-    removeBarber,
+    deleteBarber,
+    upcomingForBarber,
     saveService,
     archiveService,
     reorderServices,
