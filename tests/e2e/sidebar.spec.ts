@@ -110,7 +110,7 @@ test.describe("desktop", () => {
     // Collapsed, the language pill gives way to a two-letter square that still switches.
     await page.getByRole("button", { name: "Hide sidebar" }).click();
     const aside = page.locator("#app-sidebar");
-    const compact = aside.getByRole("button", { name: "Español", exact: true });
+    const compact = aside.getByRole("button", { name: "ES · Español", exact: true });
     await expect(compact).toHaveCount(1);
     await expect(compact).toBeVisible();
     await expect(compact).toHaveText("ES");
@@ -118,7 +118,7 @@ test.describe("desktop", () => {
     // Keyboard, not a click: in dev the Next indicator covers the bottom-left corner.
     await compact.focus();
     await page.keyboard.press("Enter");
-    await expect(aside.getByRole("button", { name: "English", exact: true })).toHaveText("EN");
+    await expect(aside.getByRole("button", { name: "EN · English", exact: true })).toHaveText("EN");
     await expect(page.getByRole("button", { name: "Mostrar menú lateral" })).toBeVisible();
   });
 
