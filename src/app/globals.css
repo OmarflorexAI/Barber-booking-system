@@ -507,6 +507,40 @@ body:has(.landing) {
 }
 
 /*
+ * Dashboard play (still transform + opacity only, still motion-safe only):
+ *   .token   the hero's one-chip-per-Booking row pops in, chip by chip (--t = chip index).
+ *   .crown   the top Barber's crown lands with one small wobble after its tile enters.
+ */
+@keyframes token-pop {
+  from {
+    opacity: 0;
+    scale: 0.2;
+  }
+}
+@keyframes crown-land {
+  0% {
+    opacity: 0;
+    translate: 0 -6px;
+    rotate: -24deg;
+  }
+  60% {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 10deg;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .token {
+    animation: token-pop var(--dur-base) var(--ease-spring) both;
+    animation-delay: calc(200ms + min(var(--t, 0), 40) * 22ms);
+  }
+  .crown {
+    animation: crown-land 560ms var(--ease-out) both;
+    animation-delay: 520ms;
+  }
+}
+
+/*
  * .card-depth — Dashboard and Settings cards only (DESIGN.md → App: the card exception to
  * Tone Not Shadow). Light: one very soft, low shadow under the hairline. Dark: no shadow
  * (the raised tone step and the hairline separate); a faint inner top highlight instead.

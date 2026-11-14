@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { dictionaries, type Locale } from "@/lib/i18n/dictionaries";
 import type { DashboardWeek } from "@/server/reporting";
 import { Avatar, BarberDetail, DrilldownSheet, delay, focusRing, growX } from "./drilldown-sheet";
+import { ranks } from "./week-facts";
 
 /**
  * One row per active Barber in sort order: photo or initials, name, a bar that fills in on
@@ -15,6 +16,7 @@ export function BarberBars({ week, today, locale, className = "" }: { week: Dash
   const { barbers } = week;
   const dates = week.days.map((x) => x.date);
   const max = Math.max(1, ...barbers.map((b) => b.bookings));
+  const rank = ranks(week);
 
   const [selected, setSelected] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -47,10 +49,27 @@ export function BarberBars({ week, today, locale, className = "" }: { week: Dash
                 }}
                 className={`press group flex min-h-16 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-raised ${focusRing}`}
               >
-                <Avatar barber={b} />
+                {/* Rank badge on the avatar: a crown for first place (ties share it), else the place. */}
+                <span className="relative shrink-0">
+                  <Avatar barber={b} />
+                  {rank.get(b.barberId) === 1 ? (
+                    <span aria-hidden="true" className="crown absolute -top-2 -right-1.5 grid h-5 w-5 place-items-center rounded-full bg-ink text-paper ring-2 ring-surface">
+                      <svg focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+                        <path d="M4 17h16M5 17l-1.5-9 5 4L12 6l3.5 6 5-4L19 17" />
+                      </svg>
+                    </span>
+                  ) : rank.has(b.barberId) ? (
+                    <span aria-hidden="true" className="absolute -right-1.5 -bottom-1 grid h-5 min-w-5 place-items-center rounded-full border border-line bg-surface px-1 font-mono text-[0.6875rem] font-semibold text-muted tabular-nums">
+                      {rank.get(b.barberId)}
+                    </span>
+                  ) : null}
+                </span>
                 <span className="flex min-w-0 flex-1 flex-col gap-2">
                   <span className="flex items-baseline justify-between gap-3">
-                    <span className="min-w-0 truncate font-semibold">{b.name}</span>
+                    <span className="min-w-0 truncate font-semibold">
+                      {rank.has(b.barberId) && <span className="sr-only">{d.rank(rank.get(b.barberId)!)}: </span>}
+                      {b.name}
+                    </span>
                     <span className="font-mono font-semibold tabular-nums">
                       <span className="sr-only">{d.bookings}: </span>
                       {b.bookings}

@@ -10,6 +10,10 @@ import { DayChart } from "./day-chart";
 import { DashboardSkeleton } from "./skeleton";
 import { CountUp } from "@/components/motion/count-up";
 import { Delta, StatCard, statCard } from "./stat-card";
+import { Heatmap } from "./heatmap";
+import { Highlights } from "./highlights";
+import { BookingTokens } from "./tokens";
+import { WeekKeys } from "./week-keys";
 
 export const metadata: Metadata = { title: "Dashboard", robots: { index: false } };
 
@@ -72,11 +76,12 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
 
   return (
     <div className="flex flex-col gap-6">
+      <WeekKeys prev={href(addDays(weekStart, -7))} next={isThisWeek ? null : href(addDays(weekStart, 7))} />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold tracking-[-0.015em]">{d.title}</h1>
         {/* One segmented pill: ‹ | this week / range | ›. Hairlines split the segments. */}
         <nav aria-label={d.weekNav} className="card-depth flex h-14 items-center rounded-full border border-line bg-surface p-1 sm:min-w-72">
-          <Link href={href(addDays(weekStart, -7))} scroll={false} className={`${arrow} press hover:bg-raised`} aria-label={d.prevWeek}>
+          <Link href={href(addDays(weekStart, -7))} scroll={false} className={`${arrow} press hover:bg-raised`} aria-label={d.prevWeek} aria-keyshortcuts="ArrowLeft">
             <Chevron dir="left" />
           </Link>
           <span aria-hidden="true" className="h-6 w-px shrink-0 bg-line" />
@@ -92,7 +97,7 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
               <Chevron dir="right" />
             </span>
           ) : (
-            <Link href={href(addDays(weekStart, 7))} scroll={false} className={`${arrow} press hover:bg-raised`} aria-label={d.nextWeek}>
+            <Link href={href(addDays(weekStart, 7))} scroll={false} className={`${arrow} press hover:bg-raised`} aria-label={d.nextWeek} aria-keyshortcuts="ArrowRight">
               <Chevron dir="right" />
             </Link>
           )}
@@ -107,17 +112,22 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_26rem]">
         <div className="flex min-w-0 flex-col gap-4">
           <section aria-labelledby="hero-label" className={`${statCard} enter flex flex-col gap-3`} style={{ "--i": 0 } as React.CSSProperties}>
-            <h2 id="hero-label" className="text-sm font-medium text-muted">
-              {isThisWeek ? d.bookingsThisWeek : d.bookingsThatWeek}
-            </h2>
-            <CountUp
-              value={totals.bookings}
-              locale={locale}
-              duration={800}
-              data-testid="stat-bookings"
-              className="self-start text-5xl leading-none font-semibold tracking-[-0.03em] lg:text-7xl"
-            />
-            <Delta cur={totals.bookings} prev={previous.bookings} d={d} isThisWeek={isThisWeek} />
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex flex-col gap-3">
+                <h2 id="hero-label" className="text-sm font-medium text-muted">
+                  {isThisWeek ? d.bookingsThisWeek : d.bookingsThatWeek}
+                </h2>
+                <CountUp
+                  value={totals.bookings}
+                  locale={locale}
+                  duration={800}
+                  data-testid="stat-bookings"
+                  className="self-start text-5xl leading-none font-semibold tracking-[-0.03em] lg:text-7xl"
+                />
+                <Delta cur={totals.bookings} prev={previous.bookings} d={d} isThisWeek={isThisWeek} />
+              </div>
+              <BookingTokens bookings={totals.bookings} noShows={totals.noShows} d={d} />
+            </div>
             {isEmpty && (
               <p className="mt-2 border-t border-line pt-4 leading-relaxed text-muted">
                 {d.empty}{" "}
@@ -128,9 +138,11 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
             )}
           </section>
 
+          <Highlights week={week} locale={locale} startIndex={1} />
+
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <StatCard
-              index={1}
+              index={4}
               label={d.walkIns}
               testId="stat-walkins"
               value={totals.walkIns}
@@ -141,7 +153,7 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
               isThisWeek={isThisWeek}
             />
             <StatCard
-              index={2}
+              index={5}
               label={d.noShows}
               testId="stat-noshows"
               value={totals.noShows}
@@ -152,7 +164,7 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
               isThisWeek={isThisWeek}
             />
             <StatCard
-              index={3}
+              index={6}
               label={d.timeSaved}
               testId="stat-timesaved"
               value={totals.timeSavedMin}
@@ -170,7 +182,10 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
           <DayChart week={week} today={today} locale={locale} className={card} />
         </div>
 
-        <BarberBars week={week} today={today} locale={locale} className={card} />
+        <div className="flex min-w-0 flex-col gap-4">
+          <BarberBars week={week} today={today} locale={locale} className={card} />
+          <Heatmap week={week} today={today} locale={locale} className={card} />
+        </div>
       </div>
     </div>
   );

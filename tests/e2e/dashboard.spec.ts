@@ -113,9 +113,18 @@ test("the Owner sees this week's numbers against last week", async ({ page }) =>
   await expect(page.getByTestId("stat-walkins")).toHaveText("1");
   await expect(page.getByText("Same as last week")).toBeVisible();
   await expect(page.getByTestId("stat-noshows")).toHaveText("1");
+  // Off-screen numbers wait at 0 until they're scrolled to (CountUp), so bring it into view.
+  await page.getByTestId("stat-timesaved").scrollIntoViewIfNeeded();
   await expect(page.getByTestId("stat-timesaved")).toHaveText("3h 45m");
   await expect(page.getByText("+2h 15m vs last week")).toBeVisible();
   await expect(page.getByText("No bookings this week yet.")).toHaveCount(0);
+
+  // One chip per Booking, highlights read off the real counts (ties go to the earlier day).
+  await expect(page.getByTestId("booking-tokens").locator("span")).toHaveCount(5);
+  await expect(page.getByTestId("highlight-day")).toContainText("Monday");
+  await expect(page.getByTestId("highlight-day")).toContainText("2 bookings");
+  await expect(page.getByTestId("highlight-hour")).toContainText("10 AM");
+  await expect(page.getByTestId("highlight-barber")).toContainText("Marisol Peña");
 
   // Per Barber in sort order, with their counts (the hidden "Bookings:" label is for screen readers).
   const rows = page.getByTestId("barber-row");
@@ -163,6 +172,27 @@ test("a day's bar and a Barber's row open their drill-down", async ({ page }) =>
   await expect(sheet).toBeHidden();
 });
 
+test("the per-day chart switches metric and the busy-hours map reads out each square", async ({ page }) => {
+  await signIn(page, emails.owner);
+  await page.goto("/app/dashboard");
+
+  await page.getByTestId("metric-walkIns").click();
+  await expect(page.getByTestId("metric-walkIns")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("heading", { name: "Walk-ins per day" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^1 Tue, Tuesday\b.*: 1 walk-in, show details$/ })).toBeVisible();
+
+  // Opens on the busiest square (ties: the earliest day, then hour); arrows move through it.
+  const readout = page.getByTestId("busy-readout");
+  await expect(readout).toHaveText("Mon 10 AM: 1 booking");
+  await page.getByRole("group", { name: "Busy hours" }).focus();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown");
+  await expect(readout).toHaveText("Tue 12 PM: 1 walk-in");
+  // The map keeps the arrows; the week didn't change.
+  await expect(page).toHaveURL(/\/app\/dashboard$/);
+});
+
 test("the week stepper moves back a week and stops at this week", async ({ page }) => {
   await signIn(page, emails.owner);
   await page.goto("/app/dashboard");
@@ -175,6 +205,7 @@ test("the week stepper moves back a week and stops at this week", async ({ page 
   await expect(range).not.toHaveText(thisRange);
   await expect(page.getByRole("heading", { name: "Bookings that week" })).toBeVisible();
   await expect(page.getByTestId("stat-bookings")).toHaveText("2");
+  await page.getByTestId("stat-timesaved").scrollIntoViewIfNeeded();
   await expect(page.getByTestId("stat-timesaved")).toHaveText("1h 30m");
 
   // Two weeks back is empty: honest zeros and the booking-link nudge.

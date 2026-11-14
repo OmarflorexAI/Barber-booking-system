@@ -287,6 +287,25 @@ const en = {
     dayEmpty: "No bookings or walk-ins this day.",
     bookingsCount: (n: number) => (n === 1 ? "1 booking" : `${n} bookings`),
     noShowsCount: (n: number) => (n === 1 ? "1 no-show" : `${n} no-shows`),
+    metric: "Show",
+    perDayOf: { bookings: "Bookings per day", walkIns: "Walk-ins per day", noShows: "No-shows per day" },
+    dayMetricButton: (day: string, text: string) => `${day}: ${text}, show details`,
+    highlights: "Highlights",
+    busiestDay: "Busiest day",
+    busiestHour: "Busiest hour",
+    topBarber: "Top Barber",
+    tied: (n: number) => `${n} tied`,
+    visitsCount: (n: number) => (n === 1 ? "1 booking or walk-in" : `${n} bookings & walk-ins`),
+    busyHours: "Busy hours",
+    busyHint: "Bookings and walk-ins by start time. Hover or tap a square.",
+    busyEmpty: "No bookings or walk-ins this week.",
+    busyReadout: (when: string, bookings: number, walkIns: number) =>
+      bookings + walkIns === 0
+        ? `${when}: quiet`
+        : `${when}: ${[bookings ? (bookings === 1 ? "1 booking" : `${bookings} bookings`) : "", walkIns ? (walkIns === 1 ? "1 walk-in" : `${walkIns} walk-ins`) : ""].filter(Boolean).join(", ")}`,
+    less: "Less",
+    more: "More",
+    rank: (n: number) => `Rank ${n}`,
   },
   shell: {
     nav: { day: "Day", today: "Today", dashboard: "Dashboard", settings: "Settings", me: "Me" },
@@ -674,6 +693,25 @@ const es: Dictionary = {
     dayEmpty: "No hubo citas ni clientes sin cita este día.",
     bookingsCount: (n: number) => (n === 1 ? "1 cita" : `${n} citas`),
     noShowsCount: (n: number) => (n === 1 ? "1 ausencia" : `${n} ausencias`),
+    metric: "Mostrar",
+    perDayOf: { bookings: "Citas por día", walkIns: "Sin cita por día", noShows: "Ausencias por día" },
+    dayMetricButton: (day: string, text: string) => `${day}: ${text}, ver detalles`,
+    highlights: "Lo destacado",
+    busiestDay: "Día más lleno",
+    busiestHour: "Hora más llena",
+    topBarber: "Barbero con más citas",
+    tied: (n: number) => `${n} empatados`,
+    visitsCount: (n: number) => (n === 1 ? "1 cita o cliente sin cita" : `${n} citas y clientes sin cita`),
+    busyHours: "Horas con más movimiento",
+    busyHint: "Citas y clientes sin cita por hora de inicio. Pasa el cursor o toca un cuadro.",
+    busyEmpty: "No hubo citas ni clientes sin cita esta semana.",
+    busyReadout: (when: string, bookings: number, walkIns: number) =>
+      bookings + walkIns === 0
+        ? `${when}: tranquilo`
+        : `${when}: ${[bookings ? (bookings === 1 ? "1 cita" : `${bookings} citas`) : "", walkIns ? (walkIns === 1 ? "1 sin cita" : `${walkIns} sin cita`) : ""].filter(Boolean).join(", ")}`,
+    less: "Menos",
+    more: "Más",
+    rank: (n: number) => `Puesto ${n}`,
   },
   shell: {
     nav: { day: "Día", today: "Hoy", dashboard: "Resumen", settings: "Ajustes", me: "Perfil" },

@@ -4,6 +4,7 @@ import { useEffect, useId, useRef } from "react";
 import { CountUp, type CountFormat } from "@/components/motion/count-up";
 import { dictionaries, type Locale } from "@/lib/i18n/dictionaries";
 import type { DashboardWeek } from "@/server/reporting";
+import { hourLabel, intl, noon } from "./week-facts";
 
 /*
  * The Dashboard's drill-down: one native modal <dialog> (the Day view's sheet pattern), a
@@ -20,9 +21,8 @@ export type Day = DashboardWeek["days"][number];
 export type Barber = DashboardWeek["barbers"][number];
 
 export const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
-export const intl = (locale: Locale) => (locale === "es" ? "es-US" : "en-US");
-/** Noon UTC keeps a local date on its own calendar day whatever the zone. */
-export const noon = (date: string) => new Date(`${date}T12:00:00Z`);
+// Pure date helpers live in week-facts.ts so server components can use them too.
+export { intl, noon, hourLabel };
 /** "Mon", "mié": the short weekday without Spanish's trailing period. */
 export const shortWeekday = (date: string, locale: Locale) =>
   new Intl.DateTimeFormat(intl(locale), { timeZone: "UTC", weekday: "short" }).format(noon(date)).replace(".", "");
@@ -126,8 +126,6 @@ function Swatch({ className, label }: { className: string; label: string }) {
   );
 }
 
-const hourLabel = (hour: number, locale: Locale) =>
-  new Intl.DateTimeFormat(intl(locale), { timeZone: "UTC", hour: "numeric" }).format(new Date(Date.UTC(2000, 0, 1, hour)));
 
 /** One day: its four numbers, then Bookings by start hour (Walk-ins stacked lighter) and by Barber. */
 export function DayDetail({ day, hours, barbers, locale }: { day: Day; hours: DashboardWeek["hours"]; barbers: Barber[]; locale: Locale }) {
