@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { getLocale } from "@/lib/i18n/server";
 import { bookingEngine } from "@/server/engine";
 import { BookingFlow } from "./booking-flow";
+import { ShopHeader } from "./shop-header";
 
 export default function ShopBookingPage(props: PageProps<"/b/[shopSlug]">) {
   return (
@@ -18,7 +19,7 @@ async function ShopBooking({ params }: { params: Promise<{ shopSlug: string }> }
   await connection(); // prices depend on "now" (specials end), so never prerender
   const [locale, catalog] = await Promise.all([getLocale(), bookingEngine().getShopCatalog(shopSlug, new Date())]);
   if (!catalog) notFound();
-  return <BookingFlow catalog={catalog} locale={locale} />;
+  return <BookingFlow catalog={catalog} locale={locale} header={<ShopHeader shop={catalog.shop} locale={locale} />} />;
 }
 
 /** Shaped like the first step: the header, the step counter, a ruled list of Services. */

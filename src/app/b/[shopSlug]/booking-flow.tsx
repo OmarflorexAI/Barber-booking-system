@@ -44,7 +44,11 @@ function bioFor(b: Barber, locale: Locale) {
   return mine.trim() || other.trim();
 }
 
-export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Locale }) {
+/**
+ * `header` is the Shop's front (cover, logo, about), rendered on the server. It leads the
+ * first screen; from step 2 on the compact name/address/phone line takes its place.
+ */
+export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; locale: Locale; header?: React.ReactNode }) {
   const t = dictionaries[locale];
   const { shop, services, barbers } = catalog;
 
@@ -145,6 +149,7 @@ export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Loc
     </Notice>
   );
 
+  const showFront = !!header && (step === "service" || !takingBookings);
   const stepNo = STEPS.indexOf(step) + 1;
   const backTo: Partial<Record<Step, Step>> = { barber: "service", time: "barber", details: "time" };
   const stepTitle: Record<Step, string> = {
@@ -156,7 +161,8 @@ export function BookingFlow({ catalog, locale }: { catalog: Catalog; locale: Loc
   };
 
   return (
-    <ClientShell locale={locale} t={t} shop={shop} shopNameAs="h1">
+    <ClientShell locale={locale} t={t} shop={showFront ? null : shop} shopNameAs="h1">
+      {showFront && header}
       {!takingBookings ? (
         <EmptyNotice text={t.errors.SHOP_UNAVAILABLE} phone={shop.phone} t={t} />
       ) : (
