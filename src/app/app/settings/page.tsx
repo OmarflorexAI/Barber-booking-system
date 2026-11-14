@@ -26,7 +26,8 @@ export default function SettingsPage() {
 }
 
 /** The rows, in order, with the pages that exist so far. */
-const ROWS: { key: SettingsKey; href?: string }[] = [
+const ROWS: { key: SettingsKey | "shop"; href?: string }[] = [
+  { key: "shop", href: "/app/settings/shop" },
   { key: "services", href: "/app/settings/services" },
   { key: "hours" },
   { key: "barbers", href: "/app/settings/barbers" },
@@ -57,7 +58,11 @@ async function Settings() {
           const { title, desc } = s.rows[key];
           const body = (
             <>
-              <SettingsIcon name={key} className="h-6 w-6 shrink-0 text-muted" />
+              {key === "shop" ? (
+                <ShopIcon className="h-6 w-6 shrink-0 text-muted" />
+              ) : (
+                <SettingsIcon name={key} className="h-6 w-6 shrink-0 text-muted" />
+              )}
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className={`font-semibold ${href ? "" : "text-muted"}`}>{title}</span>
                 <span className="text-sm leading-snug text-muted">{desc}</span>
@@ -105,5 +110,15 @@ async function Settings() {
 
       <SignOutButton label={t.signOut} />
     </div>
+  );
+}
+
+/** A storefront with an awning, in the Settings icons' 1.5px round-capped stroke. */
+function ShopIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M4 9.5 5.5 4.5h13L20 9.5a2.67 2.67 0 0 1-5.33 0 2.67 2.67 0 0 1-5.34 0A2.67 2.67 0 0 1 4 9.5Z" />
+      <path d="M5.5 12v7.5h13V12M10 19.5v-4.5h4v4.5" />
+    </svg>
   );
 }
