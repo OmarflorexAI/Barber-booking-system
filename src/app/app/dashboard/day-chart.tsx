@@ -111,6 +111,9 @@ export function DayChart({ week, today, locale, className = "" }: { week: Dashbo
                   )}
                 </span>
               </span>
+              {/* A real space between the count and the weekday, so the visible text reads "2 Tue"
+                  and the aria-label above starts with it (WCAG 2.5.3, label in name). */}
+              {" "}
               <span aria-hidden="true" className={`text-sm ${isToday ? "font-semibold text-ink" : "text-muted group-hover:text-ink"}`}>
                 {shortWeekday(x.date, locale)}
               </span>
