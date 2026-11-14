@@ -193,6 +193,31 @@ test("the per-day chart switches metric and the busy-hours map reads out each sq
   await expect(page).toHaveURL(/\/app\/dashboard$/);
 });
 
+test("the theme switcher picks System, Light or Dark and remembers it", async ({ page, context }) => {
+  await signIn(page, emails.owner);
+  await page.goto("/app/dashboard");
+  const group = page.getByRole("radiogroup", { name: "Theme" });
+  const html = page.locator("html");
+
+  await group.getByRole("radio", { name: "Dark" }).click();
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await expect(group.getByRole("radio", { name: "Dark" })).toHaveAttribute("aria-checked", "true");
+  expect((await context.cookies()).find((c) => c.name === "theme")?.value).toBe("dark");
+
+  // Arrows move the choice like a radio group (Dark → wraps to System → Light).
+  await page.keyboard.press("ArrowRight");
+  await expect(html).not.toHaveAttribute("data-theme", /.+/);
+  expect((await context.cookies()).find((c) => c.name === "theme")).toBeUndefined();
+  await page.keyboard.press("ArrowRight");
+  await expect(html).toHaveAttribute("data-theme", "light");
+
+  // Saved across a reload, and right before hydration (the thumb is drawn by CSS).
+  await page.reload();
+  await expect(html).toHaveAttribute("data-theme", "light");
+  await group.getByRole("radio", { name: "Match device" }).click();
+  await expect(html).not.toHaveAttribute("data-theme", /.+/);
+});
+
 test("the week stepper moves back a week and stops at this week", async ({ page }) => {
   await signIn(page, emails.owner);
   await page.goto("/app/dashboard");

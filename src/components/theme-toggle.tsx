@@ -63,6 +63,9 @@ export function ThemeToggle({ label }: { label: string }) {
       title={label}
       onClick={() => {
         const next: Theme = currentTheme() === "dark" ? "light" : "dark";
+        // Same one-frame swap as the theme switcher: no half-faded colors.
+        document.documentElement.classList.add("theme-swap");
+        requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove("theme-swap")));
         document.documentElement.setAttribute("data-theme", next);
         document.cookie = `${THEME_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
         // Browser bar color follows the chosen ground (same values as layout.tsx viewport.themeColor).

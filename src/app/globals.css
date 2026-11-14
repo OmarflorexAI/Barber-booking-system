@@ -117,6 +117,101 @@ body {
   }
 }
 
+/*
+ * Theme switcher (components/ui/theme-switcher.tsx): System · Light · Dark in one pill, 44px
+ * per option. --ts-i (0/1/2) comes from <html data-theme>, so the thumb and the lit icon are
+ * right on first paint. The thumb is a 44px cell scaled to a 36px disc and slid with
+ * translate; the chosen icon wakes up (the sun turns, the moon tips). In the collapsed
+ * sidebar rail (.theme-switch-rail) the pill stands up and the thumb slides down instead.
+ */
+.theme-switch {
+  --ts-i: 0;
+  --ts-axis: row;
+  position: relative;
+  display: inline-flex;
+  flex-direction: var(--ts-axis);
+  flex-shrink: 0;
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+:root[data-theme="light"] .theme-switch {
+  --ts-i: 1;
+}
+:root[data-theme="dark"] .theme-switch {
+  --ts-i: 2;
+}
+.theme-switch-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  background: var(--raised);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    var(--card-depth);
+  scale: 0.82;
+  translate: calc(var(--ts-i) * 100%) 0;
+}
+.theme-switch-opt {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  color: var(--muted);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.theme-switch-opt:hover {
+  color: var(--ink);
+}
+.theme-switch-opt svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+/* The lit option, from <html> (works before hydration). */
+:root:not([data-theme]) .theme-switch-opt[data-opt="system"],
+:root[data-theme="light"] .theme-switch-opt[data-opt="light"],
+:root[data-theme="dark"] .theme-switch-opt[data-opt="dark"] {
+  color: var(--ink);
+}
+:root[data-theme="light"] .theme-switch-sun {
+  rotate: 90deg;
+}
+:root[data-theme="dark"] .theme-switch-moon {
+  rotate: -18deg;
+}
+@media (min-width: 1024px) {
+  :root[data-sidebar="collapsed"] .theme-switch-rail {
+    --ts-axis: column;
+  }
+  :root[data-sidebar="collapsed"] .theme-switch-rail .theme-switch-thumb {
+    translate: 0 calc(var(--ts-i) * 100%);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .theme-switch-thumb {
+    transition: translate var(--dur-slow) var(--ease-spring);
+  }
+  .theme-switch-opt svg {
+    transition:
+      rotate var(--dur-slow) var(--ease-spring),
+      scale var(--dur-fast) var(--ease-spring);
+  }
+  .theme-switch-opt:active svg {
+    scale: 0.85;
+  }
+}
+
+/* While the theme flips (one frame, see freezeTransitions): every color lands at once. */
+:root.theme-swap *:not(.theme-switch-thumb, .theme-switch-opt svg),
+:root.theme-swap *::before,
+:root.theme-swap *::after {
+  transition: none !important;
+}
+
 /* Large, thumb-friendly controls by default. Actions are pills; one focus ring. */
 @utility btn {
   @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-50;

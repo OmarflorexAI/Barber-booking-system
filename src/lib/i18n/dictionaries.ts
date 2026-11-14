@@ -7,6 +7,7 @@ const en = {
   otherLang: "Español",
   // theme toggle (a toggle button: pressed = dark)
   themeDark: "Dark mode",
+  themeSwitch: { group: "Theme", system: "Match device", light: "Light", dark: "Dark" },
   // booking flow
   stepService: "Choose a service",
   stepBarber: "Choose your barber",
@@ -422,6 +423,7 @@ const es: Dictionary = {
   langName: "Español",
   otherLang: "English",
   themeDark: "Modo oscuro",
+  themeSwitch: { group: "Tema", system: "Como el dispositivo", light: "Claro", dark: "Oscuro" },
   stepService: "Elige un servicio",
   stepBarber: "Elige tu barbero",
   stepTime: "Elige la hora",

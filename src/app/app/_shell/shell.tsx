@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { HtmlLang } from "@/app/_landing/html-lang";
 import { Wordmark } from "@/components/brand/logo";
 import { LanguageToggle } from "@/components/language-toggle";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { ShellMain, SidebarAdminLink, SidebarNav, TabBar, type NavItem } from "./nav";
 import { SIDEBAR_COOKIE, SidebarToggle } from "./sidebar";
 import { SignOutButton } from "./sign-out";
@@ -29,7 +29,15 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
   const toggles = (
     <div className="flex shrink-0 items-center gap-2">
       <LanguageToggle locale={locale} label={t.otherLang} />
-      <ThemeToggle label={t.themeDark} />
+      <ThemeSwitcher labels={t.themeSwitch} />
+    </div>
+  );
+
+  // Phone header: the compact EN/ES square leaves room for the three-way theme pill and the Shop name.
+  const phoneToggles = (
+    <div className="flex shrink-0 items-center gap-2">
+      <LanguageToggle compact locale={locale} label={t.otherLang} />
+      <ThemeSwitcher labels={t.themeSwitch} />
     </div>
   );
 
@@ -85,10 +93,10 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
           {staff.isPlatformAdmin && ADMIN_PANEL_READY && <SidebarAdminLink label={t.shell.platformAdmin} initialCollapsed={collapsed} />}
           <div className="flex flex-col gap-3 border-t border-line pt-4">
             {person && <p className="rail-fade truncate px-3 text-sm text-muted">{person}</p>}
-            {/* Theme first: it fits the rail; the language pill doesn't, so it fades out there and
-                a two-letter square takes its place under the theme switch. */}
-            <div className="flex items-center gap-2 pl-0.5 in-data-[sidebar=collapsed]:flex-col in-data-[sidebar=collapsed]:items-start">
-              <ThemeToggle label={t.themeDark} />
+            {/* Theme first: in the rail it stands up (System / Light / Dark stacked); the language
+                pill doesn't fit there, so it fades out and a two-letter square takes its place. */}
+            <div className="flex flex-wrap items-center gap-2 pl-0.5 in-data-[sidebar=collapsed]:flex-col in-data-[sidebar=collapsed]:flex-nowrap in-data-[sidebar=collapsed]:items-start">
+              <ThemeSwitcher rail labels={t.themeSwitch} />
               <div className="rail-hide in-data-[sidebar=collapsed]:hidden">
                 <LanguageToggle locale={locale} label={t.otherLang} />
               </div>
@@ -102,7 +110,7 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
         {/* Phone header. */}
         <header className="flex min-h-14 items-center justify-between gap-3 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 lg:hidden">
           <p className="min-w-0 truncate text-base font-semibold tracking-[-0.01em]">{staff.membership.shopName}</p>
-          {toggles}
+          {phoneToggles}
         </header>
 
         <ShellMain className="flex min-w-0 flex-1 flex-col px-4 pt-2 pb-[calc(var(--shell-bottom)_+_1.5rem)] lg:px-8 lg:py-8">{children}</ShellMain>
