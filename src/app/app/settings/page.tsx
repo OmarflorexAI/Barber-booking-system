@@ -29,7 +29,7 @@ export default function SettingsPage() {
 const ROWS: { key: SettingsKey; href?: string }[] = [
   { key: "services", href: "/app/settings/services" },
   { key: "hours" },
-  { key: "barbers" },
+  { key: "barbers", href: "/app/settings/barbers" },
   { key: "rules", href: "/app/settings/rules" },
   { key: "blocklist", href: "/app/settings/blocklist" },
   { key: "payments" },
