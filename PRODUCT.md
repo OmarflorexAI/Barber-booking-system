@@ -38,7 +38,7 @@ We don't compete on price (booking tools cost a four-Barber Shop $0 to about $90
 ## Brand Commitments
 
 - Name: **Barber Master** (final).
-- Landing page rules: no fake testimonials, customers, logos or numbers; the only price shown is "first month free".
+- Landing page rules: no fake testimonials, customers, logos or numbers; prices shown: "first month free", then Pro at $50 a month (no contract). The Free plan is not advertised.
 - Bilingual EN/ES everywhere, written for real people, not marketing-speak.
 
 ## Evidence on Hand

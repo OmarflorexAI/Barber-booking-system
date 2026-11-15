@@ -18,7 +18,7 @@ const en = {
   heroPill: "For barbershops in the Bronx & upper Manhattan",
   heroTitle: "Stop answering the phone in the middle of a cut.",
   heroBody:
-    "Clients book from your link or the QR code at the counter. Your barbers get an alert on their phone. We set it all up for you, in Spanish and English, and the first month is free.",
+    "Clients book from your link or the QR code at the counter. Your barbers get an alert on their phone or by email. We set it all up for you, in Spanish and English, and the first month is free.",
   heroDemo: "See a real booking page",
 
   // The interactive phone in the hero: a pretend booking at the demo shop (nothing is saved).
@@ -77,7 +77,7 @@ const en = {
   howBody: "Every booking follows the same three steps, so nobody has to pick up the phone.",
   how: [
     { title: "The client books in under a minute", body: "From your link or the QR at the counter. They pick the service, the barber and a free time. No app, no account." },
-    { title: "The barber gets an alert", body: "On Telegram or by email, with a link to their day. Nobody has to pick up the phone to know the schedule." },
+    { title: "The barber gets an alert", body: "On Telegram or by email, once they're connected. Nobody has to pick up the phone to know the schedule." },
     { title: "The client gets a reminder", body: "A text 2 hours before, with a link to cancel or change the time, so the chair doesn't sit empty." },
   ],
   // The small UI cards over the how-it-works photos (example data).
@@ -116,7 +116,7 @@ const en = {
     "We visit the shop and add your services, prices, barbers and hours.",
     "We bring over your client list from your phone or notebook.",
     "You get your booking link and a QR code for the counter and the mirror.",
-    "We show your barbers how to see their day, in 10 minutes.",
+    "We show your barbers how their booking alerts work, in 10 minutes.",
   ],
   setupSupport: "When something doesn't work, you text a real person who answers, in Spanish or English.",
 
@@ -147,13 +147,13 @@ const en = {
     {
       when: "Day 30",
       title: "Review & decide",
-      body: "Your Dashboard shows the month: bookings, walk-ins and time saved. Keep going at one monthly price, agreed with you before the free month ends. Or stop, and take your client list with you.",
+      body: "Your Dashboard shows the month: bookings, walk-ins and time saved. Keep going at $50 a month, with no contract. Or stop, and take your client list with you.",
       tags: ["Your month on the Dashboard", "No contract", "Your client list stays yours"],
     },
   ],
 
   offerTitle: "Your first month is free",
-  offerBody: "Try it at your shop for a month. Then decide.",
+  offerBody: "Try it at your shop for a month. Then $50 a month, no contract, cancel anytime.",
   plans: [
     {
       name: "First month",
@@ -162,14 +162,14 @@ const en = {
         "Setup visit at your shop",
         "Your booking link and QR code",
         "Online payments for your clients",
-        "Each barber's day on their phone",
+        "Each barber's bookings sent to their phone",
         "A short email for the owner every morning",
       ],
     },
     {
       name: "After the first month",
-      price: "One monthly price",
-      items: ["No contract", "Cancel anytime", "Take your client list with you", "Price agreed with you before the free month ends"],
+      price: "$50 a month",
+      items: ["No contract", "Cancel anytime", "Take your client list with you"],
     },
   ],
 
@@ -177,10 +177,10 @@ const en = {
   faq: [
     { q: "Do my clients need to download an app?", a: "No. They open a link or scan the QR code and book in their phone's browser. No account, no password." },
     { q: "Do I need a card reader?", a: "No. Clients who pay online pay on a secure page and the money goes to your account. Everyone else pays at the shop like today." },
-    { q: "What about walk-ins?", a: "Keep taking them. Your barbers add them to their day in two taps, so online clients never get a time that's already taken." },
+    { q: "What about walk-ins?", a: "Keep taking them. Add them from the day screen in two taps, so online clients never get a time that's already taken." },
     {
       q: "How much is it after the free month?",
-      a: "One monthly price, agreed with you before the free month ends. There's no contract: you can cancel anytime, and you take your client list with you.",
+      a: "$50 a month. There's no contract: you can cancel anytime, and you take your client list with you.",
     },
     { q: "Who sees my clients' information?", a: "Only your shop. We never sell it or use it to advertise, and we never store card numbers." },
   ],
@@ -233,7 +233,7 @@ const es: LandingDictionary = {
   heroPill: "Para barberías del Bronx y el Alto Manhattan",
   heroTitle: "Deja de contestar el teléfono en medio de un corte.",
   heroBody:
-    "Tus clientes reservan desde tu enlace o el código QR del mostrador. Tus barberos reciben un aviso en el celular. Lo configuramos todo por ti, en español e inglés, y el primer mes es gratis.",
+    "Tus clientes reservan desde tu enlace o el código QR del mostrador. Tus barberos reciben un aviso en el celular o por correo. Lo configuramos todo por ti, en español e inglés, y el primer mes es gratis.",
   heroDemo: "Ver una página de citas real",
 
   heroPhone: {
@@ -289,7 +289,7 @@ const es: LandingDictionary = {
   howBody: "Cada cita sigue los mismos tres pasos, así nadie tiene que contestar el teléfono.",
   how: [
     { title: "El cliente reserva en menos de un minuto", body: "Desde tu enlace o el QR del mostrador. Elige el servicio, el barbero y una hora libre. Sin app y sin cuenta." },
-    { title: "El barbero recibe un aviso", body: "Por Telegram o por correo, con un enlace a su día. Nadie tiene que contestar el teléfono para saber la agenda." },
+    { title: "El barbero recibe un aviso", body: "Por Telegram o por correo, una vez conectados. Nadie tiene que contestar el teléfono para saber la agenda." },
     { title: "El cliente recibe un recordatorio", body: "Un texto 2 horas antes, con un enlace para cancelar o cambiar la hora, para que la silla no quede vacía." },
   ],
   howStage: {
@@ -327,7 +327,7 @@ const es: LandingDictionary = {
     "Visitamos la barbería y agregamos tus servicios, precios, barberos y horarios.",
     "Pasamos tu lista de clientes desde tu celular o tu libreta.",
     "Recibes tu enlace de citas y un código QR para el mostrador y el espejo.",
-    "Les enseñamos a tus barberos a ver su día, en 10 minutos.",
+    "Les enseñamos a tus barberos cómo funcionan sus avisos de citas, en 10 minutos.",
   ],
   setupSupport: "Cuando algo no funciona, le escribes a una persona de verdad que contesta, en español o inglés.",
 
@@ -357,13 +357,13 @@ const es: LandingDictionary = {
     {
       when: "Día 30",
       title: "Revisión y decisión",
-      body: "Tu Resumen muestra el mes: citas, clientes sin cita y tiempo ahorrado. Sigues con un precio mensual, acordado contigo antes de que termine el mes gratis. O lo dejas y te llevas tu lista de clientes.",
+      body: "Tu Resumen muestra el mes: citas, clientes sin cita y tiempo ahorrado. Sigues por $50 al mes, sin contrato. O lo dejas y te llevas tu lista de clientes.",
       tags: ["Tu mes en el Resumen", "Sin contrato", "Tu lista de clientes es tuya"],
     },
   ],
 
   offerTitle: "Tu primer mes es gratis",
-  offerBody: "Pruébalo un mes en tu barbería. Después decides.",
+  offerBody: "Pruébalo un mes en tu barbería. Luego $50 al mes, sin contrato, cancelas cuando quieras.",
   plans: [
     {
       name: "Primer mes",
@@ -372,14 +372,14 @@ const es: LandingDictionary = {
         "Visita de instalación en tu barbería",
         "Tu enlace de citas y código QR",
         "Pagos en línea para tus clientes",
-        "El día de cada barbero en su celular",
+        "Las citas de cada barbero, en su celular",
         "Un correo corto para el dueño cada mañana",
       ],
     },
     {
       name: "Después del primer mes",
-      price: "Un precio mensual",
-      items: ["Sin contrato", "Cancelas cuando quieras", "Te llevas tu lista de clientes", "Precio acordado contigo antes de que termine el mes gratis"],
+      price: "$50 al mes",
+      items: ["Sin contrato", "Cancelas cuando quieras", "Te llevas tu lista de clientes"],
     },
   ],
 
@@ -387,10 +387,10 @@ const es: LandingDictionary = {
   faq: [
     { q: "¿Mis clientes tienen que bajar una app?", a: "No. Abren un enlace o escanean el QR y reservan en el navegador del celular. Sin cuenta y sin contraseña." },
     { q: "¿Necesito una máquina para tarjetas?", a: "No. Quien paga en línea lo hace en una página segura y el dinero llega a tu cuenta. Los demás pagan en la barbería como hoy." },
-    { q: "¿Y los clientes que llegan sin cita?", a: "Sigue atendiéndolos. Tus barberos los agregan a su día con dos toques, así nadie reserva en línea una hora ya ocupada." },
+    { q: "¿Y los clientes que llegan sin cita?", a: "Sigue atendiéndolos. Los agregas desde la pantalla del día con dos toques, así nadie reserva en línea una hora ya ocupada." },
     {
       q: "¿Cuánto cuesta después del mes gratis?",
-      a: "Un precio mensual, acordado contigo antes de que termine el mes gratis. No hay contrato: cancelas cuando quieras y te llevas tu lista de clientes.",
+      a: "$50 al mes. No hay contrato: cancelas cuando quieras y te llevas tu lista de clientes.",
     },
     { q: "¿Quién ve los datos de mis clientes?", a: "Solo tu barbería. Nunca los vendemos ni los usamos para publicidad, y nunca guardamos números de tarjeta." },
   ],
