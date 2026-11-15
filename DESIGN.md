@@ -216,21 +216,21 @@ The system is flat and tonal. Depth comes from a five-step achromatic ramp (pure
 - **Device frame** (`.hero-phone-*` in globals.css): the hero phone is drawn as a real device after the user's reference (2026-11-15): a 2px graphite rim lit from the top left over a 5px black bezel, side buttons as pseudo-elements, a status bar and home indicator inside the screen, a faint white outer edge so black on black still separates, and a gentle pointer tilt (≤ 5°, fine pointers only, none with reduced motion).
 
 ### Named Rules
-**The Tone Not Shadow Rule.** Separate surfaces by stepping the ramp and drawing a hairline. Drop shadows are not part of the vocabulary, with one exception: the hero phone carries a wide soft shadow so it reads as an object (user, 2026-11-15).
+**The Tone Not Shadow Rule.** Separate surfaces by stepping the ramp and drawing a hairline. Drop shadows are not part of the vocabulary, with exceptions (user, 2026-11-15): the hero phone's wide soft shadow, the contracted nav and its menu, the lead form's focus glow, open select list and the Send pill's hover glow.
 
 ## Shapes
 
 Soft but not bubbly. Panels and cards share one corner (16px). Actions and labels are full pills. Small controls inside cards and text links' focus areas use 6px. The text bubble in the reminder card uses 12px with a 2px tail corner. Wide panels are a background layer clipped with `clip-path: inset(...) round 16px` to the 1152px column; on scroll the clip opens to the full window with square corners (user-accepted approach, 2026-11-12). The scissors mark is drawn in currentColor strokes and fills on a 32px grid; icons are 24px line drawings in one 1.5px round-capped stroke.
 
 ### Named Rules
-**The One Corner Rule.** Anything that holds content (panel, card, photo box, form card) is 16px. Anything you press or read as a tag is a full pill or a 6px control. No other radii outside product depictions.
+**The One Corner Rule.** Anything that holds content (panel, card, photo box, form card) is 16px. Anything you press or read as a tag is a full pill or a 6px control; the lead form's fields, select and error box use 10px (user, 2026-11-15). No other radii outside product depictions.
 
 ## Components
 
 ### Buttons
 Two pills, one meaning each: confident and plain.
 - **Shape:** full pill (9999px), at least 44px tall, 20px side padding, 0.875rem medium, no wrapping.
-- **Primary (white pill):** white fill, black text. "Talk to us" in the nav, the first pricing card, the 404's home links, the form's Send (48px). Hover drops the fill to 85% white over 200ms.
+- **Primary (white pill):** white fill, black text. "Talk to us" in the nav, the first pricing card, the 404's home links, the form's Send (48px). Hover drops the fill to 85% white over 200ms. The form's Send is the premium variant: a top-down white gradient with an inner top highlight; on hover (mouse only) a soft glow fades in, a shine sweeps across and the arrow nudges right; pressed scales to 0.98; sending shows three pulsing dots; nothing moves under reduced motion.
 - **Outline pill:** transparent with a white/30 stroke and white text; hover fills white/10. The quieter action (the second pricing card).
 - **Text link with arrow:** underlined ink text, white/30 underline at offset 4px turning full white on hover, with a 16px up-right arrow (the hero's demo link).
 - **Focus:** one ring everywhere, a 2px solid ink outline at 2px offset on `:focus-visible`.
@@ -241,10 +241,10 @@ Two pills, one meaning each: confident and plain.
 - **Reading card:** panel fill, hairline border, 16px corners, 24 to 32px padding (legal pages' contact box).
 
 ### Inputs / Fields
-- **Style:** ground fill, hairline border, 6px corners, 48px tall, 16px text (prevents iOS zoom), muted placeholder; labels sit above in 0.875rem medium ink with "(optional)" in muted 13px.
+- **Style:** dark inset fill, 1px border brighter along the top, 10px corners, 48px tall, 16px text (prevents iOS zoom), muted placeholder; hover brightens the border, focus adds a brighter border and a soft white ring and glow (200ms); a field left wrong gets a dashed brighter border, not red; labels sit above in 0.875rem medium ink with "(optional)" in muted 13px.
 - **Hover / Focus:** border lifts to white/25 on hover; on focus the border turns ink and the shared 2px focus ring appears.
-- **Select:** native select with appearance removed and a 16px line chevron at the right.
-- **Error:** a neutral notice (raised fill, white/25 border, 6px corners, line icon, `role="alert"`), not red: red stays a live signal.
+- **Select:** native select with appearance removed, a line chevron at the right and a hidden placeholder option. Where `appearance: base-select` is supported the open list is an opaque panel with the nav's rim, 44px rows and a check on the chosen row, 6px from the field; elsewhere the native picker.
+- **Error:** a neutral notice (raised fill, white/25 border, 10px corners, a top highlight, line icon, `role="alert"`), not red: red stays a live signal.
 
 ### Navigation
 Floating glass bar (after raycast.com, user 2026-11-15). The sticky header is a fixed 80px box holding a centered capsule: ground at 80% with an 18px backdrop blur, a 1px rim that is brighter at the top, and a faint top highlight. Wordmark left; four section links centered as muted 0.875rem text with rounded hover fills; the other language as a text link and the white "Talk to us" pill on the right. Scrolling down contracts the bar (64px to 52px tall, 96px narrower on each side from 1024px, 10px below that) and darkens it to 88% with a soft shadow; scrolling up, or being within 24px of the top, opens it again (`nav-scroll.tsx`). The move is 480ms cubic-bezier(0.22, 1, 0.36, 1) on clip and translate only, so nothing in the page shifts; under reduced motion the states swap without animation. Below 768px the links fold into a matching glass card under the bar (48px rows, full-width white pill), closed by Escape, outside tap or a link tap; an open menu holds the bar open. Legal pages and the 404 use a static header with only the wordmark and the language link.
