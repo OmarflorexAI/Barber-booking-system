@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { HeroPhone } from "./hero-phone";
 import type { SectionProps } from "./types";
-import { Container, Pill, WidePanel, focusRing, type } from "./ui";
+import { Container, WidePanel, focusRing, type } from "./ui";
 
 /**
  * The first view: who it's for, the promise, and the booking page itself on a phone
@@ -14,7 +14,6 @@ export function Hero({ t }: SectionProps) {
       <Container>
         <div className="grid grid-cols-1 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <Pill>{t.heroPill}</Pill>
             <h1 id="hero-title" className={type.h1}>
               {t.heroTitle}
             </h1>

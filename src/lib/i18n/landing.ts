@@ -15,7 +15,6 @@ const en = {
   navMenu: "Menu",
   navCta: "Talk to us",
 
-  heroPill: "For barbershops in the Bronx & upper Manhattan",
   heroTitle: "Stop answering the phone in the middle of a cut.",
   heroBody:
     "Clients book from your link or the QR code at the counter. Your barbers get an alert on their phone or by email. We set it all up for you, in Spanish and English, and the first month is free.",
@@ -228,7 +227,6 @@ const es: LandingDictionary = {
   navMenu: "Menú",
   navCta: "Hablemos",
 
-  heroPill: "Para barberías del Bronx y el Alto Manhattan",
   heroTitle: "Deja de contestar el teléfono en medio de un corte.",
   heroBody:
     "Tus clientes reservan desde tu enlace o el código QR del mostrador. Tus barberos reciben un aviso en el celular o por correo. Lo configuramos todo por ti, en español e inglés, y el primer mes es gratis.",
