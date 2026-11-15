@@ -335,7 +335,6 @@ body:has(.landing) {
  * Scroll motion (the template's effects, rebuilt in CSS on scroll timelines, no JS):
  * - wide panels open to the full window
  * - the How-it-works photos fade up from almost black
- * - the nav starts taller and shrinks once the page scrolls
  * - blocks marked data-reveal fade up as they come into view
  * Only where the browser supports scroll timelines and the visitor allows motion.
  * Everywhere else (and with JS off) every element simply sits in its final state.
@@ -358,31 +357,6 @@ body:has(.landing) {
       animation: landing-photo linear both;
       animation-timeline: view();
       animation-range: cover 0% cover 50%;
-    }
-
-    /* Nav: 84px at the top, 69px once scrolled. The header box keeps its height (no
-       layout shift); it slides up 15px while the bar inside slides down half that, so
-       the bar stays centered in what's visible and the mobile menu stays right under it. */
-    #main-nav {
-      padding-block: 1.25rem;
-      animation: landing-nav-bar linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0px 80px;
-    }
-    #main-header {
-      animation: landing-nav-header linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0px 80px;
-    }
-    #main-header::after {
-      content: "";
-      position: absolute;
-      inset: auto 0 0;
-      height: 1px;
-      background: var(--l-border);
-      animation: landing-fade-in linear both;
-      animation-timeline: scroll(root);
-      animation-range: 40px 80px;
     }
 
     .landing [data-reveal] {
@@ -417,19 +391,120 @@ body:has(.landing) {
     opacity: 0.05;
   }
 }
-@keyframes landing-nav-header {
-  to {
-    translate: 0 -15px;
+/*
+ * Nav (nav.tsx, nav-scroll.tsx): a floating glass bar. The header is a fixed 80px box that
+ * never resizes; the bar's look is three clipped layers (a soft shadow, a 1px rim brighter
+ * at the top, the blurred glass) plus the content. `data-compact` (set while scrolling down)
+ * moves the clip in by --nx/--ny and slides the two content groups in by the same amount,
+ * so the bar contracts without any box changing size (paint and transform only, CLS 0).
+ * An open menu holds the bar open. Reduced motion: the states swap without animation.
+ */
+.landing .landing-nav {
+  --nx: 0px;
+  --ny: 0px;
+  --tight: 0px;
+  --nav-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --nav-time: 480ms;
+}
+.landing .landing-nav[data-compact]:not([data-open]) {
+  --nx: 10px;
+  --ny: 6px;
+  --tight: 4px;
+}
+/* From 1024px the links have room to spare: the bar draws in toward them. Between 768 and
+   1023 the centered links nearly touch the ends, so it only gets shorter. */
+@media (min-width: 1024px) {
+  .landing .landing-nav[data-compact]:not([data-open]) {
+    --nx: 96px;
+    --tight: 8px;
   }
 }
-@keyframes landing-nav-bar {
-  to {
-    translate: 0 7.5px;
-  }
+.landing .nav-shadow,
+.landing .nav-shadow > span,
+.landing .nav-rim,
+.landing .nav-glass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
-@keyframes landing-fade-in {
-  from {
-    opacity: 0;
+.landing .nav-rim,
+.landing .nav-glass,
+.landing .nav-shadow > span {
+  clip-path: inset(var(--ny) var(--nx) round 9999px);
+}
+.landing .nav-shadow {
+  top: 14px;
+  inset-inline: 16px;
+  filter: blur(14px);
+  opacity: 0;
+}
+.landing .nav-shadow > span {
+  background: rgb(0 0 0 / 0.55);
+}
+.landing .landing-nav[data-compact] .nav-shadow {
+  opacity: 1;
+}
+.landing .nav-rim {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0.07) 45%, rgb(255 255 255 / 0.1));
+}
+.landing .nav-glass {
+  clip-path: inset(calc(var(--ny) + 1px) calc(var(--nx) + 1px) round 9999px);
+  background-color: color-mix(in oklch, var(--l-bg) 80%, transparent);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0) 55%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+.landing .landing-nav[data-compact]:not([data-open]) .nav-glass {
+  background-color: color-mix(in oklch, var(--l-bg) 88%, transparent);
+}
+.landing .landing-nav[data-compact]:not([data-open]) .nav-bar {
+  translate: 0 -6px;
+}
+.landing .nav-start {
+  translate: calc(var(--nx) - var(--tight)) 0;
+}
+.landing .nav-end {
+  translate: calc(var(--tight) - var(--nx)) 0;
+}
+.landing .nav-menu {
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background-color: color-mix(in oklch, var(--l-bg) 90%, transparent);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0) 40%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: 0 24px 48px -16px rgb(0 0 0 / 0.7);
+  transform-origin: top center;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .landing .nav-bar,
+  .landing .nav-start,
+  .landing .nav-end {
+    transition: translate var(--nav-time) var(--nav-ease);
+  }
+  .landing .nav-rim,
+  .landing .nav-shadow > span {
+    transition: clip-path var(--nav-time) var(--nav-ease);
+  }
+  .landing .nav-glass {
+    transition:
+      clip-path var(--nav-time) var(--nav-ease),
+      background-color var(--nav-time) var(--nav-ease);
+  }
+  .landing .nav-shadow {
+    transition: opacity var(--nav-time) var(--nav-ease);
+  }
+  .landing .nav-menu {
+    transition:
+      opacity 220ms var(--nav-ease),
+      scale 320ms var(--nav-ease),
+      translate 320ms var(--nav-ease);
+  }
+  @starting-style {
+    .landing .nav-menu {
+      opacity: 0;
+      scale: 0.97;
+      translate: 0 -6px;
+    }
   }
 }
 /*
@@ -548,9 +623,11 @@ body:has(.landing) {
 ::view-transition-new(.phone-in-back) {
   animation: 260ms cubic-bezier(0.2, 0.8, 0.2, 1) 60ms both vt-fade-in, 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-from-left;
 }
-/* The sticky header gets its own layer, kept on top and still, so a phone screen moving
-   under it never draws over the nav (snapshots paint above the page). */
-::view-transition-group(landing-header) {
+/* The sticky header's glass, its content row and its menu each get their own layer, kept
+   on top and still, so a phone screen moving under them never draws over the nav (snapshots
+   paint above the page). Not the header box itself: a view-transition-name on an ancestor
+   cuts the glass off from the page behind it, and the backdrop blur would see nothing. */
+::view-transition-group(.landing-header) {
   animation: none;
   z-index: 100;
 }
