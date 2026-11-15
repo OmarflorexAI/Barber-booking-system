@@ -9,15 +9,7 @@ import { ClientShell, PhoneIcon } from "@/components/client-shell";
 import { Notice } from "@/components/notice";
 import { PayTag } from "@/components/pay-tag";
 import { formatPhone } from "@/lib/phone";
-import {
-  dictionaries,
-  formatCutoff,
-  formatMoney,
-  formatShortDate,
-  formatTime,
-  type Dictionary,
-  type Locale,
-} from "@/lib/i18n/dictionaries";
+import { dictionaries, formatCutoff, formatMoney, formatShortDate, formatTime, type Dictionary, type Locale } from "@/lib/i18n/dictionaries";
 import { createBookingAction } from "./actions";
 
 type Catalog = NonNullable<Awaited<ReturnType<BookingEngine["getShopCatalog"]>>>;
@@ -27,7 +19,20 @@ const STEPS: Step[] = ["service", "barber", "time", "details", "done"];
 
 const intl = (l: Locale) => (l === "es" ? "es-US" : "en-US");
 function formatLongDay(iso: string, tz: string, locale: Locale) {
-  return new Date(iso).toLocaleDateString(intl(locale), { timeZone: tz, weekday: "long", month: "long", day: "numeric" });
+  return new Date(iso).toLocaleDateString(intl(locale), {
+    timeZone: tz,
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+}
+function formatDayShort(iso: string, tz: string, locale: Locale) {
+  return new Date(iso).toLocaleDateString(intl(locale), {
+    timeZone: tz,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
 }
 function initials(name: string) {
   return name
@@ -44,15 +49,24 @@ function bioFor(b: Barber, locale: Locale) {
   return mine.trim() || other.trim();
 }
 
+const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
+/** A ruled row inside one .c-card (the recipe in globals.css → "Client pages (premium)"). */
+const rowClass = "c-row press w-full justify-between gap-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink";
+
 /**
  * `header` is the Shop's front (cover, logo, about), rendered on the server. It leads the
  * first screen; from step 2 on the compact name/address/phone line takes its place.
+ * Each step slides in from the side it comes from (.c-step, transform/opacity only); from
+ * step 2 a glass dock pinned to the bottom (.c-dock) carries what is chosen so far, and on
+ * the details step the one primary button.
  */
 export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; locale: Locale; header?: React.ReactNode }) {
   const t = dictionaries[locale];
   const { shop, services, barbers } = catalog;
 
   const [step, setStep] = useState<Step>("service");
+  // 1 = forward (the new step comes in from the right), -1 = back.
+  const [dir, setDir] = useState<1 | -1>(1);
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [barberId, setBarberId] = useState<string | "any" | null>(null);
   const [slot, setSlot] = useState<Slot | null>(null);
@@ -64,7 +78,12 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
   const [turnstileKey, setTurnstileKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [result, setResult] = useState<{ manageToken: string; barberId: string; startsAt: string; priceCents: number } | null>(null);
+  const [result, setResult] = useState<{
+    manageToken: string;
+    barberId: string;
+    startsAt: string;
+    priceCents: number;
+  } | null>(null);
   const [profile, setProfile] = useState<Barber | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -99,6 +118,7 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
 
   function go(to: Step) {
     setError(null);
+    setDir(STEPS.indexOf(to) < STEPS.indexOf(step) ? -1 : 1);
     setStep(to);
   }
 
@@ -128,6 +148,7 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
       }
       if (r.ok) {
         setResult(r);
+        setDir(1);
         setStep("done");
         return;
       }
@@ -138,6 +159,7 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
       if (r.code === "SLOT_TAKEN" || r.code === "OUTSIDE_WINDOW") {
         setSlot(null);
         setRefreshKey((k) => k + 1);
+        setDir(-1);
         setStep("time");
       }
     });
@@ -151,7 +173,11 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
 
   const showFront = !!header && (step === "service" || !takingBookings);
   const stepNo = STEPS.indexOf(step) + 1;
-  const backTo: Partial<Record<Step, Step>> = { barber: "service", time: "barber", details: "time" };
+  const backTo: Partial<Record<Step, Step>> = {
+    barber: "service",
+    time: "barber",
+    details: "time",
+  };
   const stepTitle: Record<Step, string> = {
     service: t.stepService,
     barber: t.stepBarber,
@@ -160,6 +186,25 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
     done: t.booked,
   };
 
+  // What the dock shows: the choices made so far, and the best-known price.
+  const barberLabel = barberId === "any" ? t.anyBarber : (chosenBarber?.displayName ?? null);
+  const dockMeta = [
+    step !== "barber" ? barberLabel : null,
+    slot && (step === "time" || step === "details")
+      ? `${formatDayShort(slot.startsAt, shop.timezone, locale)} · ${formatTime(slot.startsAt, shop.timezone, locale)}`
+      : null,
+  ].filter(Boolean) as string[];
+  const dockPrice = price ? { from: false, cents: price.priceCents } : service ? { from: service.pricesVary, cents: service.fromPriceCents } : null;
+  const dock = service && (
+    <Dock
+      t={t}
+      title={serviceName(service)}
+      meta={dockMeta}
+      price={dockPrice}
+      avatar={step !== "barber" && chosenBarber && barberId !== "any" ? chosenBarber : null}
+    />
+  );
+
   return (
     <ClientShell locale={locale} t={t} shop={showFront ? null : shop} shopNameAs="h1">
       {showFront && header}
@@ -167,36 +212,51 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
         <EmptyNotice text={t.errors.SHOP_UNAVAILABLE} phone={shop.phone} t={t} />
       ) : (
         <>
-          <div className="flex min-h-11 items-center gap-2 border-t border-line pt-2">
-            {backTo[step] && (
-              <button
-                type="button"
-                onClick={() => go(backTo[step]!)}
-                className="-ml-2 inline-flex min-h-11 items-center gap-1 rounded-full pr-3 pl-2 text-sm font-medium text-ink hover:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-              >
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                  <path d="M15 5l-7 7 7 7" />
-                </svg>
-                {t.back}
-              </button>
-            )}
-            <p className="ml-auto text-sm text-muted" aria-live="polite">
-              {t.stepOf(stepNo, STEPS.length, t.stepNames[step])}
-            </p>
+          <div className="flex flex-col gap-2.5 border-t border-line pt-3">
+            <div className="flex min-h-11 items-center gap-2">
+              {backTo[step] && (
+                <button
+                  type="button"
+                  onClick={() => go(backTo[step]!)}
+                  className={`press -ml-2.5 inline-flex min-h-11 items-center gap-1 rounded-full pr-3.5 pl-2 text-sm font-medium text-ink hover:bg-raised ${focusRing}`}
+                >
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-5 w-5"
+                  >
+                    <path d="M15 5l-7 7 7 7" />
+                  </svg>
+                  {t.back}
+                </button>
+              )}
+              <p className="ml-auto text-sm font-medium text-muted" aria-live="polite">
+                {t.stepOf(stepNo, STEPS.length, t.stepNames[step])}
+              </p>
+            </div>
+            <div aria-hidden="true" className="grid grid-cols-5 gap-1.5">
+              {STEPS.map((s, i) => (
+                <span key={s} className="h-1 overflow-hidden rounded-full bg-line">
+                  <span className={`c-progress block h-full rounded-full bg-ink ${i < stepNo ? "is-on" : ""}`} />
+                </span>
+              ))}
+            </div>
           </div>
 
-          <div
-            key={step}
-            className="flex flex-1 flex-col gap-5 pt-3 pb-8 transition-[opacity,translate] duration-200 ease-out starting:translate-y-1 starting:opacity-0 motion-reduce:transition-none"
-          >
+          <div key={step} className="c-step flex flex-1 flex-col gap-6 pt-6 pb-6" style={{ "--dir": dir } as React.CSSProperties}>
             {step !== "done" && (
-              <h2 ref={headingRef} tabIndex={-1} className="text-2xl leading-tight font-semibold tracking-[-0.02em] outline-none">
+              <h2 ref={headingRef} tabIndex={-1} className="c-h2 outline-none">
                 {stepTitle[step]}
               </h2>
             )}
 
             {step === "service" && (
-              <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+              <ul className="c-card divide-y divide-line overflow-hidden">
                 {services.map((s) => (
                   <li key={s.id}>
                     <button
@@ -207,25 +267,32 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
                         setSlot(null);
                         go("barber");
                       }}
-                      className={rowClass}
+                      className={`${rowClass} min-h-[4.5rem]!`}
                     >
-                      <span className="flex min-w-0 flex-col">
-                        <span className="block font-semibold">{serviceName(s)}</span>
-                        <span className="block font-mono text-sm text-muted tabular-nums">
-                          {s.durationMin} {t.min}
-                        </span>
-                        {s.specialEndsAt && (
-                          <span className="block text-sm text-muted">
-                            {t.special} {t.specialUntil} {formatShortDate(s.specialEndsAt, shop.timezone, locale)}
+                      <span className="flex min-w-0 flex-col gap-1">
+                        <span className="block leading-snug font-semibold">{serviceName(s)}</span>
+                        <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-muted">
+                          <span className="inline-flex items-center gap-1.5 font-mono tabular-nums">
+                            <ClockIcon />
+                            {s.durationMin} {t.min}
                           </span>
-                        )}
+                          {s.specialEndsAt && (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="rounded-full border border-line px-2 py-px text-xs font-medium text-ink">{t.special}</span>
+                              {t.specialUntil} {formatShortDate(s.specialEndsAt, shop.timezone, locale)}
+                            </span>
+                          )}
+                        </span>
                       </span>
-                      <span className="flex shrink-0 flex-col items-end">
-                        {s.pricesVary && <span className="block text-xs text-muted">{t.from}</span>}
-                        <span className="block font-mono font-medium tabular-nums">{formatMoney(s.fromPriceCents)}</span>
-                        {s.specialEndsAt && (
-                          <span className="block font-mono text-sm text-muted tabular-nums line-through">{formatMoney(s.regularPriceCents)}</span>
-                        )}
+                      <span className="flex shrink-0 items-center gap-2">
+                        <span className="flex flex-col items-end">
+                          {s.pricesVary && <span className="block text-xs text-muted">{t.from}</span>}
+                          <span className="block font-mono text-[1.0625rem] font-medium tabular-nums">{formatMoney(s.fromPriceCents)}</span>
+                          {s.specialEndsAt && (
+                            <span className="block font-mono text-sm text-muted tabular-nums line-through">{formatMoney(s.regularPriceCents)}</span>
+                          )}
+                        </span>
+                        <Chevron />
                       </span>
                     </button>
                   </li>
@@ -236,14 +303,14 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
             {step === "barber" && service && (
               <>
                 {offering.length === 0 ? (
-                  <div className="flex flex-col items-start gap-3">
-                    <p className="text-muted">{t.noBarbersForService}</p>
-                    <button type="button" className="btn-ghost" onClick={() => go("service")}>
+                  <div className="c-card flex flex-col items-start gap-4 p-5">
+                    <p>{t.noBarbersForService}</p>
+                    <button type="button" className={`c-btn c-btn-secondary press ${focusRing}`} onClick={() => go("service")}>
                       {t.pickAnotherService}
                     </button>
                   </div>
                 ) : (
-                  <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+                  <ul className="c-card divide-y divide-line overflow-hidden">
                     <li>
                       <button
                         type="button"
@@ -252,24 +319,31 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
                           setSlot(null);
                           go("time");
                         }}
-                        className={rowClass}
+                        className={`${rowClass} min-h-[4.75rem]!`}
                       >
-                        <span className="flex min-w-0 items-center gap-3">
-                          <span className="grid size-12 shrink-0 place-items-center rounded-full border border-line bg-raised text-muted">
-                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+                        <span className="flex min-w-0 items-center gap-3.5">
+                          <span className="grid size-14 shrink-0 place-items-center rounded-full border border-line bg-raised text-ink">
+                            <svg
+                              aria-hidden="true"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-6 w-6"
+                            >
                               <circle cx="9" cy="8" r="3.5" />
                               <path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" />
                               <path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8M18 14.4c2.1.7 3.5 2.8 3.5 5.6" />
                             </svg>
                           </span>
-                          <span className="flex min-w-0 flex-col">
+                          <span className="flex min-w-0 flex-col gap-0.5">
                             <span className="block font-semibold">{t.anyBarber}</span>
                             <span className="block text-sm text-muted">{t.anyBarberHint}</span>
                           </span>
                         </span>
-                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0 text-muted">
-                          <path d="M9 5l7 7-7 7" />
-                        </svg>
+                        <Chevron />
                       </button>
                     </li>
                     {offering.map((b) => {
@@ -284,30 +358,28 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
                               setSlot(null);
                               go("time");
                             }}
-                            className={`${rowClass} min-w-0 flex-1 ${hasProfile ? "pr-2" : ""}`}
+                            className={`${rowClass} min-h-[4.75rem]! min-w-0 flex-1 ${hasProfile ? "pr-2!" : ""}`}
                           >
-                            <span className="flex min-w-0 items-center gap-3">
-                              <Avatar barber={b} size="size-12" />
-                              <span className="flex min-w-0 flex-col">
+                            <span className="flex min-w-0 items-center gap-3.5">
+                              <Avatar barber={b} size="size-14" />
+                              <span className="flex min-w-0 flex-col gap-0.5">
                                 <span className="block truncate font-semibold">{b.displayName}</span>
-                                {b.specialties.length > 0 && (
-                                  <span className="block truncate text-sm text-muted">{b.specialties.join(" · ")}</span>
-                                )}
+                                {b.specialties.length > 0 && <span className="block truncate text-sm text-muted">{b.specialties.join(" · ")}</span>}
                               </span>
                             </span>
                             <span className="flex shrink-0 flex-col items-end">
-                              <span className="block font-mono font-medium tabular-nums">{formatMoney(p.priceCents)}</span>
+                              <span className="block font-mono text-[1.0625rem] font-medium tabular-nums">{formatMoney(p.priceCents)}</span>
                               {p.specialEndsAt && (
                                 <span className="block font-mono text-sm text-muted tabular-nums line-through">{formatMoney(p.regularPriceCents)}</span>
                               )}
                             </span>
                           </button>
                           {hasProfile && (
-                            <span className="flex shrink-0 items-center pr-3">
+                            <span className="flex shrink-0 items-center pr-3 pl-1">
                               <button
                                 type="button"
                                 onClick={() => setProfile(b)}
-                                className="inline-flex min-h-11 items-center rounded-full border border-line px-3 text-sm font-medium whitespace-nowrap hover:border-ink/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                                className={`c-chip press px-3.5! text-sm font-medium whitespace-nowrap ${focusRing}`}
                               >
                                 {b.gallery.length > 0 ? t.seeWork : t.aboutBarber}
                               </button>
@@ -322,7 +394,7 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
                   barber={profile}
                   t={t}
                   locale={locale}
-                  priceCents={profile ? profile.services[service.id]?.priceCents ?? null : null}
+                  priceCents={profile ? (profile.services[service.id]?.priceCents ?? null) : null}
                   onClose={() => setProfile(null)}
                   onChoose={(b) => {
                     setProfile(null);
@@ -337,34 +409,37 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
             {step === "time" && service && barberId && (
               <>
                 {notice}
-                <p className="-mt-3 text-sm text-muted">
-                  {serviceName(service)} · {barberId === "any" ? t.anyBarber : chosenBarber?.displayName} · {t.nyTime}
+                <p className="-mt-3 inline-flex items-center gap-1.5 text-sm text-muted">
+                  <ClockIcon />
+                  {t.nyTime}
                 </p>
-                <SlotPicker
-                  shopId={shop.id}
-                  serviceId={service.id}
-                  barberId={barberId}
-                  timezone={shop.timezone}
-                  locale={locale}
-                  selected={slot?.startsAt ?? null}
-                  refreshKey={refreshKey}
-                  onPick={(s) => {
-                    setSlot(s);
-                    go("details");
-                  }}
-                />
+                <div className="c-slots">
+                  <SlotPicker
+                    shopId={shop.id}
+                    serviceId={service.id}
+                    barberId={barberId}
+                    timezone={shop.timezone}
+                    locale={locale}
+                    selected={slot?.startsAt ?? null}
+                    refreshKey={refreshKey}
+                    onPick={(s) => {
+                      setSlot(s);
+                      go("details");
+                    }}
+                  />
+                </div>
               </>
             )}
 
             {step === "details" && service && barberId && slot && (
               <form
-                className="flex flex-1 flex-col gap-5"
+                className="flex flex-1 flex-col gap-6"
                 onSubmit={(e) => {
                   e.preventDefault();
                   submit();
                 }}
               >
-                <dl className="divide-y divide-line rounded-2xl border border-line bg-surface text-sm">
+                <dl className="c-card divide-y divide-line text-sm">
                   <SummaryRow label={t.service} value={serviceName(service)} />
                   <SummaryRow label={t.barber} value={barberId === "any" ? t.anyBarber : (chosenBarber?.displayName ?? "")} />
                   <SummaryRow
@@ -379,51 +454,71 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
                   {price && <SummaryRow label={t.total} value={<span className="font-mono font-medium tabular-nums">{formatMoney(price.priceCents)}</span>} />}
                 </dl>
 
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t.name}</span>
-                  <input className="field" name="name" autoComplete="name" required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
-                </label>
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t.phone}</span>
-                  <input
-                    className="field font-mono tabular-nums"
-                    name="phone"
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
-                  <span className="text-sm text-muted">{t.phoneHint}</span>
-                </label>
+                <div className="flex flex-col gap-4">
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium">{t.name}</span>
+                    <input className="c-field" name="name" autoComplete="name" required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
+                  </label>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium">{t.phone}</span>
+                    <input
+                      className="c-field font-mono tabular-nums"
+                      name="phone"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      required
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
+                    <span className="text-sm text-muted">{t.phoneHint}</span>
+                  </label>
+                </div>
 
                 {shop.onlinePayments ? (
-                  <fieldset className="flex flex-col gap-2">
+                  <fieldset className="flex flex-col">
                     <legend className="mb-2 text-sm font-medium">{t.payment}</legend>
-                    <PayOption checked={payment === "in_person"} onChange={() => setPayment("in_person")} title={t.payInPerson} hint={t.payInPersonHint} icon="shop" />
-                    <PayOption checked={payment === "online"} onChange={() => setPayment("online")} title={t.payOnline} hint={t.payOnlineHint} icon="card" />
+                    <div className="c-card divide-y divide-line overflow-hidden">
+                      <PayOption
+                        checked={payment === "in_person"}
+                        onChange={() => setPayment("in_person")}
+                        title={t.payInPerson}
+                        hint={t.payInPersonHint}
+                        icon="shop"
+                      />
+                      <PayOption checked={payment === "online"} onChange={() => setPayment("online")} title={t.payOnline} hint={t.payOnlineHint} icon="card" />
+                    </div>
                   </fieldset>
                 ) : (
-                  <p className="text-sm">
-                    <span className="font-medium">{t.payment}:</span> {t.payInPerson}
-                  </p>
+                  <div className="c-card flex items-center gap-3 px-4 py-3.5 text-sm">
+                    <ShopIcon />
+                    <p>
+                      <span className="font-medium">{t.payment}:</span> {t.payInPerson}
+                    </p>
+                  </div>
                 )}
 
-                <div className="flex flex-col gap-2 text-sm leading-relaxed text-muted">
-                  <p>{t.refundRule(formatCutoff(shop.cancelCutoffMinutes, locale))}</p>
-                  <p>{t.tipsInPerson}</p>
-                  <p>{t.smsConsent}</p>
-                </div>
+                <ul className="flex flex-col gap-2.5 text-sm leading-relaxed text-muted">
+                  <FinePrint icon="refund">{t.refundRule(formatCutoff(shop.cancelCutoffMinutes, locale))}</FinePrint>
+                  <FinePrint icon="tip">{t.tipsInPerson}</FinePrint>
+                  <FinePrint icon="text">{t.smsConsent}</FinePrint>
+                </ul>
 
                 <Turnstile key={turnstileKey} onToken={setTurnstileToken} lang={locale} />
 
-                <div className="sticky bottom-0 -mx-4 mt-auto flex flex-col gap-3 border-t border-line bg-paper px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                <Dock
+                  t={t}
+                  title={serviceName(service)}
+                  meta={dockMeta}
+                  price={dockPrice}
+                  avatar={chosenBarber && barberId !== "any" ? chosenBarber : null}
+                  compact
+                >
                   {notice}
-                  <button type="submit" className="btn-primary w-full" disabled={pending || !botCheckDone}>
+                  <button type="submit" className={`c-btn c-btn-primary press w-full ${focusRing}`} disabled={pending || !botCheckDone}>
                     {pending ? t.booking : !botCheckDone ? t.verifying : payment === "online" ? t.continueToPay : t.confirm}
                   </button>
-                </div>
+                </Dock>
               </form>
             )}
 
@@ -432,9 +527,9 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
                 t={t}
                 headingRef={headingRef}
                 shop={shop}
+                barber={chosenBarber}
+                serviceName={serviceName(service)}
                 rows={[
-                  [t.service, serviceName(service)],
-                  [t.barber, chosenBarber?.displayName ?? ""],
                   [
                     t.when,
                     <>
@@ -459,25 +554,154 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
               />
             )}
           </div>
+
+          {(step === "barber" || step === "time") && dock}
         </>
       )}
-
     </ClientShell>
   );
 }
 
-const rowClass =
-  "flex min-h-16 w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-raised focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink";
+/**
+ * The glass dock pinned to the bottom of the screen (above the phone's home bar): the Service,
+ * the Barber's face, the other choices so far and the price; `children` (the primary button
+ * and its notice) go under it. `compact` (the details step, whose summary card already says
+ * all of it) drops the summary line so the dock covers as little of the form as possible. It sits last in its column, so `mt-auto` keeps it low on a
+ * short step and `sticky` keeps it in thumb reach on a long one.
+ */
+function Dock(props: {
+  t: Dictionary;
+  title: string;
+  meta: string[];
+  price: { from: boolean; cents: number } | null;
+  avatar: Barber | null;
+  compact?: boolean;
+  children?: React.ReactNode;
+}) {
+  const { t, price } = props;
+  return (
+    <div
+      role="group"
+      aria-label={t.yourBooking}
+      className={`c-dock sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 mt-auto flex flex-col gap-3 ${props.compact ? "rounded-[2rem] p-1.5" : "rounded-[1.75rem] p-2.5"}`}
+    >
+      {!props.compact && (
+        <div className="flex min-h-11 items-center gap-3 pr-2.5 pl-1.5">
+          {props.avatar && <Avatar barber={props.avatar} size="size-9 text-sm" />}
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-sm font-semibold">{props.title}</span>
+            {props.meta.length > 0 && <span className="truncate text-sm text-muted">{props.meta.join(" · ")}</span>}
+          </span>
+          {price && (
+            <span className="flex shrink-0 items-baseline gap-1">
+              {price.from && <span className="text-xs text-muted">{t.from}</span>}
+              <span className="font-mono font-medium tabular-nums">{formatMoney(price.cents)}</span>
+            </span>
+          )}
+        </div>
+      )}
+      {props.children}
+    </div>
+  );
+}
+
+function Chevron() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="c-chevron h-5 w-5 shrink-0 text-muted"
+    >
+      <path d="M9 5l7 7-7 7" />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4 shrink-0"
+    >
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </svg>
+  );
+}
+
+function ShopIcon({ className = "h-6 w-6 shrink-0 text-muted" }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M3.5 9.5 5 4.5h14l1.5 5" />
+      <path d="M3.5 9.5a2.8 2.8 0 0 0 5.6 0 2.8 2.8 0 0 0 5.8 0 2.8 2.8 0 0 0 5.6 0" />
+      <path d="M5 12v7.5h14V12M10 19.5v-4h4v4" />
+    </svg>
+  );
+}
+
+function FinePrint({ icon, children }: { icon: "refund" | "tip" | "text"; children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-2.5">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="mt-0.5 h-4 w-4 shrink-0"
+      >
+        {icon === "refund" ? (
+          <path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v4h4" />
+        ) : icon === "tip" ? (
+          <>
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M14.5 9.5c-.4-.9-1.3-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1.2 0-2.1-.6-2.5-1.5M12 6.5V8M12 16v1.5" />
+          </>
+        ) : (
+          <path d="M4.5 6.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H10l-4 3.5v-3.5h0a1.5 1.5 0 0 1-1.5-1.5Z" />
+        )}
+      </svg>
+      <span className="min-w-0">{children}</span>
+    </li>
+  );
+}
 
 function Avatar({ barber, size }: { barber: Barber; size: string }) {
   if (barber.photoUrl) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element -- photos come from any host the Owner uses
-      <img src={barber.photoUrl} alt="" width={96} height={96} loading="lazy" className={`${size} shrink-0 rounded-full border border-line object-cover`} />
+      <span className={`c-photo ${size} shrink-0 rounded-full border border-line`}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- photos come from any host the Owner uses */}
+        <img src={barber.photoUrl} alt="" width={112} height={112} loading="lazy" className="size-full object-cover" />
+      </span>
     );
   }
   return (
-    <span aria-hidden="true" className={`${size} grid shrink-0 place-items-center rounded-full border border-line bg-raised font-semibold text-ink`}>
+    <span
+      aria-hidden="true"
+      className={`${size} grid shrink-0 place-items-center rounded-full border border-line bg-raised font-semibold tracking-[-0.01em] text-ink`}
+    >
       {initials(barber.displayName)}
     </span>
   );
@@ -485,7 +709,7 @@ function Avatar({ barber, size }: { barber: Barber; size: string }) {
 
 function SummaryRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 px-4 py-3">
+    <div className="flex min-h-12 items-baseline justify-between gap-4 px-4 py-3">
       <dt className="shrink-0 text-muted">{label}</dt>
       <dd className="min-w-0 text-right font-medium">{value}</dd>
     </div>
@@ -495,42 +719,49 @@ function SummaryRow({ label, value }: { label: string; value: React.ReactNode })
 function PayOption(props: { checked: boolean; onChange: () => void; title: string; hint: string; icon: "shop" | "card" }) {
   return (
     <label
-      className={`flex min-h-16 cursor-pointer items-start gap-3 rounded-2xl border bg-surface px-4 py-3.5 transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ink ${
-        props.checked ? "border-ink" : "border-line hover:border-ink/40"
+      className={`c-row min-h-[4.5rem]! cursor-pointer items-start! gap-3.5! py-4! transition-colors has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-ink ${
+        props.checked ? "c-selected" : ""
       }`}
     >
       <input type="radio" name="payment" checked={props.checked} onChange={props.onChange} className="sr-only" />
-      <span aria-hidden="true" className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-[1.5px] ${props.checked ? "border-ink" : "border-muted"}`}>
-        {props.checked && <span className="size-2.5 rounded-full bg-ink" />}
+      <span
+        aria-hidden="true"
+        className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-[1.5px] ${props.checked ? "border-ink" : "border-muted"}`}
+      >
+        <span className={`c-radio-dot size-2.5 rounded-full bg-ink ${props.checked ? "is-on" : ""}`} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="font-semibold">{props.title}</span>
         <span className="text-sm text-muted">{props.hint}</span>
       </span>
-      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 h-6 w-6 shrink-0 text-muted">
-        {props.icon === "card" ? (
-          <>
-            <rect x="2.5" y="5.5" width="19" height="13" rx="2" />
-            <path d="M2.5 10h19M6 15h4" />
-          </>
-        ) : (
-          <>
-            <path d="M3.5 9.5 5 4.5h14l1.5 5" />
-            <path d="M3.5 9.5a2.8 2.8 0 0 0 5.6 0 2.8 2.8 0 0 0 5.8 0 2.8 2.8 0 0 0 5.6 0" />
-            <path d="M5 12v7.5h14V12M10 19.5v-4h4v4" />
-          </>
-        )}
-      </svg>
+      {props.icon === "card" ? (
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="mt-0.5 h-6 w-6 shrink-0 text-muted"
+        >
+          <rect x="2.5" y="5.5" width="19" height="13" rx="2" />
+          <path d="M2.5 10h19M6 15h4" />
+        </svg>
+      ) : (
+        <ShopIcon className="mt-0.5 h-6 w-6 shrink-0 text-muted" />
+      )}
     </label>
   );
 }
 
 function EmptyNotice({ text, phone, t }: { text: string; phone: string | null; t: Dictionary }) {
   return (
-    <section className="flex flex-1 flex-col items-start gap-4 border-t border-line pt-6 pb-8">
-      <p className="text-lg">{text}</p>
+    <section className="c-card c-in flex flex-col items-start gap-4 p-5">
+      <p className="text-lg leading-snug">{text}</p>
       {phone && (
-        <a href={telHref(phone)} className="btn-primary">
+        <a href={telHref(phone)} className={`c-btn c-btn-primary press ${focusRing}`}>
+          <PhoneIcon />
           {t.callShop}
         </a>
       )}
@@ -558,6 +789,19 @@ function BarberSheet(props: {
     if (!b && d.open) d.close();
   }, [b]);
 
+  const closeButton = (
+    <button
+      type="button"
+      aria-label={t.close}
+      onClick={() => ref.current?.close()}
+      className={`press grid size-11 shrink-0 place-items-center rounded-full text-muted hover:bg-raised hover:text-ink ${focusRing}`}
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="h-5 w-5">
+        <path d="M6 6l12 12M18 6 6 18" />
+      </svg>
+    </button>
+  );
+
   return (
     <dialog
       ref={ref}
@@ -566,44 +810,62 @@ function BarberSheet(props: {
       onClick={(e) => {
         if (e.target === e.currentTarget) e.currentTarget.close();
       }}
-      className="m-0 mt-auto max-h-[88dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-2xl border border-b-0 border-line bg-surface p-0 text-ink transition-[opacity,translate] duration-200 ease-out backdrop:bg-black/50 starting:translate-y-full starting:opacity-0 motion-reduce:transition-none sm:m-auto sm:max-w-md sm:rounded-2xl sm:border-b sm:starting:translate-y-3"
+      className="c-sheet m-0 mt-auto max-h-[90dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-[1.5rem] border border-b-0 border-line bg-surface p-0 text-ink transition-[opacity,translate] duration-(--dur-slow) ease-(--ease-out) backdrop:bg-black/55 starting:translate-y-full starting:opacity-0 motion-reduce:transition-none sm:m-auto sm:max-w-md sm:rounded-[1.5rem] sm:border-b sm:starting:translate-y-3"
     >
       {b && (
         <div className="flex flex-col gap-5 px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-6">
           <div aria-hidden="true" className="mx-auto h-1 w-10 rounded-full bg-line sm:hidden" />
-          <div className="flex items-start gap-4">
-            <Avatar barber={b} size="size-20 text-2xl" />
-            <div className="min-w-0 flex-1 pt-1">
-              <h2 id="barber-sheet-name" className="text-xl leading-tight font-semibold tracking-[-0.015em]">
-                {b.displayName}
-              </h2>
-              {b.specialties.length > 0 && <p className="mt-1 text-sm text-muted">{b.specialties.join(" · ")}</p>}
+          {b.photoUrl ? (
+            <>
+              <div className="c-photo relative aspect-[4/3] rounded-2xl">
+                {/* eslint-disable-next-line @next/next/no-img-element -- photos come from any host the Owner uses */}
+                <img src={b.photoUrl} alt="" width={720} height={540} className="c-in-photo size-full object-cover object-[50%_25%]" />
+              </div>
+              <div className="-mt-1 flex items-start gap-3">
+                <div className="min-w-0 flex-1 pt-1">
+                  <h2 id="barber-sheet-name" className="c-h2">
+                    {b.displayName}
+                  </h2>
+                  {b.specialties.length > 0 && <p className="mt-1 text-sm text-muted">{b.specialties.join(" · ")}</p>}
+                </div>
+                {closeButton}
+              </div>
+            </>
+          ) : (
+            <div className="flex items-start gap-4">
+              <Avatar barber={b} size="size-20 text-2xl" />
+              <div className="min-w-0 flex-1 pt-2">
+                <h2 id="barber-sheet-name" className="c-h2">
+                  {b.displayName}
+                </h2>
+                {b.specialties.length > 0 && <p className="mt-1 text-sm text-muted">{b.specialties.join(" · ")}</p>}
+              </div>
+              {closeButton}
             </div>
-            <button
-              type="button"
-              aria-label={t.close}
-              onClick={() => ref.current?.close()}
-              className="-mt-1 grid size-11 shrink-0 place-items-center rounded-full text-muted hover:bg-raised hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-            >
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="h-5 w-5">
-                <path d="M6 6l12 12M18 6 6 18" />
-              </svg>
-            </button>
-          </div>
+          )}
           {bio && <p className="leading-relaxed whitespace-pre-line">{bio}</p>}
           {b.instagram && (
             <a
               href={`https://instagram.com/${b.instagram}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="-my-2 inline-flex min-h-11 items-center gap-2 self-start rounded-md font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className={`-my-2 inline-flex min-h-11 items-center gap-2 self-start rounded-md font-medium ${focusRing}`}
             >
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0 text-muted">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5 shrink-0 text-muted"
+              >
                 <rect x="3" y="3" width="18" height="18" rx="5" />
                 <circle cx="12" cy="12" r="4" />
                 <circle cx="17.5" cy="6.5" r="0.75" fill="currentColor" />
               </svg>
-              <span className="min-w-0 break-all">
+              <span className="c-link min-w-0 break-all">
                 <span className="sr-only">Instagram </span>@{b.instagram}
                 <span className="sr-only"> {t.opensNewTab}</span>
               </span>
@@ -612,16 +874,16 @@ function BarberSheet(props: {
           {b.gallery.length > 0 && (
             <ul className="grid grid-cols-3 gap-2">
               {b.gallery.slice(0, 6).map((url, i) => (
-                <li key={url}>
+                <li key={url} className="c-photo aspect-square rounded-xl">
                   {/* eslint-disable-next-line @next/next/no-img-element -- gallery photos from the Barber's own host */}
-                  <img src={url} alt={t.workPhoto(b.displayName, i + 1)} width={240} height={240} loading="lazy" className="aspect-square w-full rounded-md bg-raised object-cover" />
+                  <img src={url} alt={t.workPhoto(b.displayName, i + 1)} width={240} height={240} loading="lazy" className="size-full object-cover" />
                 </li>
               ))}
             </ul>
           )}
-          <button type="button" className="btn-primary w-full" onClick={() => props.onChoose(b)}>
+          <button type="button" className={`c-btn c-btn-primary press w-full ${focusRing}`} onClick={() => props.onChoose(b)}>
             {t.bookWith(b.displayName)}
-            {props.priceCents !== null && <span className="font-mono tabular-nums opacity-80">· {formatMoney(props.priceCents)}</span>}
+            {props.priceCents !== null && <span className="font-mono tabular-nums opacity-70">· {formatMoney(props.priceCents)}</span>}
           </button>
         </div>
       )}
@@ -633,64 +895,80 @@ function Confirmation(props: {
   t: Dictionary;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   shop: Catalog["shop"];
+  barber: Barber | null;
+  serviceName: string;
   rows: [string, React.ReactNode][];
   manageToken: string;
   onAgain: () => void;
 }) {
-  const { t, shop, headingRef, rows, manageToken, onAgain } = props;
+  const { t, shop, headingRef, rows, manageToken, onAgain, barber } = props;
   const [copied, setCopied] = useState(false);
   const path = `/m/${manageToken}`;
   const url = typeof window === "undefined" ? path : `${window.location.origin}${path}`;
 
   return (
-    <section className="flex flex-col gap-5" aria-live="polite">
-      <div className="flex flex-col items-start gap-3">
+    <section className="flex flex-col gap-6" aria-live="polite">
+      <div className="flex flex-col items-start gap-4">
         {/* The booked check: the one red mark on this page (the Live Signal rule). */}
-        <svg aria-hidden="true" viewBox="0 0 48 48" fill="none" strokeLinecap="round" strokeLinejoin="round" className="h-12 w-12 text-red">
+        <svg aria-hidden="true" viewBox="0 0 48 48" fill="none" strokeLinecap="round" strokeLinejoin="round" className="c-check h-14 w-14 text-red">
           <circle cx="24" cy="24" r="22" fill="currentColor" />
           <path d="M14.5 24.5l6.5 6.5 12.5-13" stroke="white" strokeWidth="3" />
         </svg>
-        <h2 ref={headingRef} tabIndex={-1} className="text-2xl leading-tight font-semibold tracking-[-0.02em] outline-none">
+        <h2 ref={headingRef} tabIndex={-1} className="c-h2 outline-none">
           {t.booked}
         </h2>
       </div>
 
-      <dl className="divide-y divide-line rounded-2xl border border-line bg-surface text-sm">
-        {rows.map(([label, value]) => (
-          <SummaryRow key={label} label={label} value={value} />
-        ))}
-        {(shop.address || shop.phone) && (
-          <SummaryRow
-            label={shop.name}
-            value={
-              <>
-                {shop.address && <span className="block">{shop.address}</span>}
-                {shop.phone && (
-                  <a
-                    href={telHref(shop.phone)}
-                    className="-mr-1 inline-flex min-h-11 items-center gap-1.5 rounded-full px-1 font-mono tabular-nums underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-                  >
-                    <PhoneIcon />
-                    {formatPhone(shop.phone)}
-                  </a>
-                )}
-              </>
-            }
-          />
-        )}
-      </dl>
+      <div className="c-card c-in overflow-hidden" style={{ "--i": 1 } as React.CSSProperties}>
+        <div className="flex items-center gap-3.5 px-4 py-4">
+          {barber && <Avatar barber={barber} size="size-14" />}
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <p className="font-semibold">{props.serviceName}</p>
+            {barber && (
+              <p className="text-sm text-muted">
+                <span className="sr-only">{t.barber}: </span>
+                {t.bookedWith} <span className="font-medium text-ink">{barber.displayName}</span>
+              </p>
+            )}
+          </div>
+        </div>
+        <dl className="divide-y divide-line border-t border-line text-sm">
+          {rows.map(([label, value]) => (
+            <SummaryRow key={label} label={label} value={value} />
+          ))}
+          {(shop.address || shop.phone) && (
+            <SummaryRow
+              label={shop.name}
+              value={
+                <>
+                  {shop.address && <span className="block">{shop.address}</span>}
+                  {shop.phone && (
+                    <a
+                      href={telHref(shop.phone)}
+                      className={`-mr-1 inline-flex min-h-11 items-center gap-1.5 rounded-full px-1 font-mono tabular-nums ${focusRing}`}
+                    >
+                      <PhoneIcon />
+                      <span className="c-link">{formatPhone(shop.phone)}</span>
+                    </a>
+                  )}
+                </>
+              }
+            />
+          )}
+        </dl>
+      </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="c-in flex flex-col gap-3" style={{ "--i": 2 } as React.CSSProperties}>
         {!shop.smsEnabled && <p className="text-sm text-muted">{t.smsPending}</p>}
         <p className="text-sm">{t.saveLink}</p>
-        <a href={path} className="btn-primary w-full">
+        <a href={path} className={`c-btn c-btn-primary press w-full ${focusRing}`}>
           {t.manageBooking}
         </a>
-        <div className="flex items-center gap-2 rounded-full border border-line bg-surface py-1 pr-1 pl-4">
+        <div className="c-card flex items-center gap-2 rounded-full! py-1 pr-1 pl-4">
           <span className="min-w-0 flex-1 truncate font-mono text-sm text-muted">{url}</span>
           <button
             type="button"
-            className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-raised px-4 text-sm font-medium hover:bg-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            className={`press inline-flex min-h-11 shrink-0 items-center rounded-full bg-raised px-4 text-sm font-medium hover:bg-line ${focusRing}`}
             onClick={() => {
               navigator.clipboard?.writeText(url).then(() => setCopied(true));
             }}
@@ -700,7 +978,12 @@ function Confirmation(props: {
         </div>
       </div>
 
-      <button type="button" className="btn-ghost self-start" onClick={onAgain}>
+      <button
+        type="button"
+        className={`c-btn c-btn-secondary press c-in self-start ${focusRing}`}
+        style={{ "--i": 3 } as React.CSSProperties}
+        onClick={onAgain}
+      >
         {t.bookAnother}
       </button>
     </section>
