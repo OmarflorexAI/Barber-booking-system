@@ -14,7 +14,7 @@ const labelText = "text-sm font-medium text-foreground";
 /** The form's strings in the visitor's language. Passed in by the server, so the browser never downloads both languages. */
 export type LeadFormText = Pick<
   LandingDictionary,
-  | "shopName" | "ownerName" | "phone" | "neighborhood" | "optional" | "barbers" | "barbersPick" | "barbersMore"
+  | "shopName" | "ownerName" | "phone" | "optional" | "barbers" | "barbersPick" | "barbersMore"
   | "message" | "messageHint" | "send" | "sending" | "verifying" | "thanksTitle" | "thanksBody" | "errors"
 >;
 
@@ -45,7 +45,6 @@ export function LeadForm({ locale, t }: { locale: Locale; t: LeadFormText }) {
         shopName: text("shopName"),
         ownerName: text("ownerName"),
         phone: text("phone"),
-        neighborhood: text("neighborhood") || undefined,
         barberCount: barbers > 0 ? barbers : undefined,
         message: text("message") || undefined,
         locale,
@@ -128,23 +127,22 @@ export function LeadForm({ locale, t }: { locale: Locale; t: LeadFormText }) {
         e.preventDefault();
         submit(new FormData(e.currentTarget));
       }}
-      onFocus={() => setNearForm(true)} className="flex flex-col gap-5">
-      <label className="flex flex-col gap-1.5">
-        <span className={labelText}>{t.shopName}</span>
-        <input className={field} name="shopName" required maxLength={80} autoComplete="organization" />
-      </label>
-      <label className="flex flex-col gap-1.5">
-        <span className={labelText}>{t.ownerName}</span>
-        <input className={field} name="ownerName" required maxLength={80} autoComplete="name" />
-      </label>
-      <label className="flex flex-col gap-1.5">
-        <span className={labelText}>{t.phone}</span>
-        <input className={field} name="phone" type="tel" inputMode="tel" required maxLength={25} autoComplete="tel" placeholder="(718) 555-0123" />
-      </label>
+      onFocus={() => setNearForm(true)}
+      className="flex flex-col gap-4"
+    >
+      {/* Two columns from 640px: who (shop, owner), then how to reach them and the shop's size. */}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5">
-          <span className={labelText}>{t.neighborhood}{optional}</span>
-          <input className={field} name="neighborhood" maxLength={80} />
+          <span className={labelText}>{t.shopName}</span>
+          <input className={field} name="shopName" required maxLength={80} autoComplete="organization" />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={labelText}>{t.ownerName}</span>
+          <input className={field} name="ownerName" required maxLength={80} autoComplete="name" />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={labelText}>{t.phone}</span>
+          <input className={field} name="phone" type="tel" inputMode="tel" required maxLength={25} autoComplete="tel" placeholder="(718) 555-0123" />
         </label>
         <label className="flex flex-col gap-1.5">
           <span className={labelText}>{t.barbers}{optional}</span>
@@ -164,7 +162,7 @@ export function LeadForm({ locale, t }: { locale: Locale; t: LeadFormText }) {
       </div>
       <label className="flex flex-col gap-1.5">
         <span className={labelText}>{t.message}{optional}</span>
-        <textarea className={field} name="message" maxLength={1000} rows={3} placeholder={t.messageHint} />
+        <textarea className={field} name="message" maxLength={1000} rows={2} placeholder={t.messageHint} />
       </label>
 
       {/* The bot check is dark and invisible unless Cloudflare needs the visitor to act. */}

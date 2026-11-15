@@ -4,8 +4,8 @@ import { CONTACT_ID, FORM_ID, type } from "./ui";
 
 /** Only the form's own strings go to the browser (LeadForm is a client component). */
 function leadFormText(t: SectionProps["t"]): LeadFormText {
-  const { shopName, ownerName, phone, neighborhood, optional, barbers, barbersPick, barbersMore, message, messageHint, send, sending, verifying, thanksTitle, thanksBody, errors } = t;
-  return { shopName, ownerName, phone, neighborhood, optional, barbers, barbersPick, barbersMore, message, messageHint, send, sending, verifying, thanksTitle, thanksBody, errors };
+  const { shopName, ownerName, phone, optional, barbers, barbersPick, barbersMore, message, messageHint, send, sending, verifying, thanksTitle, thanksBody, errors } = t;
+  return { shopName, ownerName, phone, optional, barbers, barbersPick, barbersMore, message, messageHint, send, sending, verifying, thanksTitle, thanksBody, errors };
 }
 
 /** The template's centered contact card, holding our lead form (with the Turnstile bot check). */
