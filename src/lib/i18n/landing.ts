@@ -165,9 +165,15 @@ const en = {
       ],
     },
     {
-      name: "After the first month",
+      name: "After your free month",
       price: "$50 a month",
-      items: ["No contract", "Cancel anytime", "Take your client list with you"],
+      items: [
+        "Everything keeps working, just like month one",
+        "Each client gets a text 2 hours before",
+        "A real person answers, in Spanish or English",
+        "No contract, cancel anytime",
+        "Your client list stays yours if you leave",
+      ],
     },
   ],
 
@@ -209,13 +215,13 @@ const en = {
   footer: "Online booking for barbershops in the Bronx and upper Manhattan.",
   footerLinks: "Legal and staff",
   footerPage: "On this page",
+  footerHome: "Barber Master, home page",
   privacy: "Privacy",
   terms: "Terms",
 };
 
 type LandingDictionary = typeof en;
 
-  footerHome: "Barber Master, home page",
 const es: LandingDictionary = {
   metaTitle: "Barber Master: citas en línea para tu barbería",
   metaDescription:
@@ -374,9 +380,15 @@ const es: LandingDictionary = {
       ],
     },
     {
-      name: "Después del primer mes",
+      name: "Después de tu mes gratis",
       price: "$50 al mes",
-      items: ["Sin contrato", "Cancelas cuando quieras", "Te llevas tu lista de clientes"],
+      items: [
+        "Todo sigue funcionando igual que el primer mes",
+        "Cada cliente recibe un texto 2 horas antes",
+        "Te contesta una persona real, en español o inglés",
+        "Sin contrato, cancelas cuando quieras",
+        "Si te vas, tu lista de clientes se va contigo",
+      ],
     },
   ],
 
@@ -418,10 +430,10 @@ const es: LandingDictionary = {
   footer: "Citas en línea para barberías del Bronx y el Alto Manhattan.",
   footerLinks: "Legal y personal",
   footerPage: "En esta página",
+  footerHome: "Barber Master, página de inicio",
   privacy: "Privacidad",
   terms: "Términos",
 };
 
 export const landingDictionaries: Record<Locale, LandingDictionary> = { en, es };
 export type { LandingDictionary };
-  footerHome: "Barber Master, página de inicio",
