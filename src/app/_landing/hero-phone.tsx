@@ -23,7 +23,7 @@ const c = {
  * slides in from the right, Back slides the previous one in from the left.
  * Nothing is saved. With a mouse, the phone leans a little toward the pointer.
  */
-export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
+export function HeroPhone({ p }: { p: Phone }) {
   const [step, setStep] = useState(0);
   const [service, setService] = useState(1);
   const [barber, setBarber] = useState<number | null>(1);
@@ -77,7 +77,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
 
   const screens: ReactNode[] = [
     // 0. Services
-    <Screen key="s" title={p.chooseService} p={p} lang={lang}>
+    <Screen key="s" title={p.chooseService} p={p}>
       <ul className="flex flex-col gap-2">
         {p.services.map((s, i) => (
           <li key={s.name}>
@@ -108,7 +108,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
     </Screen>,
 
     // 1. Barbers
-    <Screen key="b" title={p.chooseBarber} p={p} lang={lang} onBack={() => go(0)}>
+    <Screen key="b" title={p.chooseBarber} p={p} onBack={() => go(0)}>
       <ul className="flex flex-col gap-2">
         {[null, 0, 1, 2, 3].map((b) => (
           <li key={b ?? "any"}>
@@ -144,7 +144,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
     </Screen>,
 
     // 2. Times
-    <Screen key="t" title={p.pickTime} p={p} lang={lang} onBack={() => go(1)}>
+    <Screen key="t" title={p.pickTime} p={p} onBack={() => go(1)}>
       <p className="mb-2 inline-block rounded-full bg-[#0f0f0f] px-2.5 py-1.5 text-[11px] text-white">{p.day}</p>
       <div className="grid grid-cols-3 gap-1.5">
         {p.times.map((t, i) => {
@@ -169,7 +169,7 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
     </Screen>,
 
     // 3. Booked
-    <Screen key="d" p={p} lang={lang}>
+    <Screen key="d" p={p}>
       <div className="flex h-full flex-col items-center pt-6 text-center">
         <span key={booked} className="landing-pop grid h-12 w-12 place-items-center rounded-full bg-[#cc2827] text-white">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
@@ -275,7 +275,7 @@ function StatusBar() {
 }
 
 /** One screen of the phone: the shop header, an optional Back, a title and its content. */
-function Screen({ title, p, lang, onBack, children }: { title?: string; p: Phone; lang: string; onBack?: () => void; children: ReactNode }) {
+function Screen({ title, p, onBack, children }: { title?: string; p: Phone; onBack?: () => void; children: ReactNode }) {
   return (
     <div className="flex h-full flex-col overflow-y-auto overscroll-contain px-3.5 pb-3 [scrollbar-width:none]">
       <div className="flex items-start justify-between gap-2 pt-2">
@@ -283,7 +283,6 @@ function Screen({ title, p, lang, onBack, children }: { title?: string; p: Phone
           <p className="text-[15px] font-semibold leading-tight tracking-[-0.02em]">{p.shop}</p>
           <p className={`truncate text-[10px] ${c.muted}`}>{p.address}</p>
         </div>
-        <span className={`shrink-0 rounded-full border border-[#dedede] px-2 py-0.5 text-[10px] ${c.muted}`}>{lang}</span>
       </div>
       {onBack && (
         <button

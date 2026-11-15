@@ -27,7 +27,6 @@ const en = {
     hint: "Try it: tap a service",
     shop: "Fresh Cuts Barbershop",
     address: "1234 Grand Concourse, Bronx, NY",
-    lang: "Español",
     chooseService: "Choose a service",
     from: "from",
     services: [
@@ -241,7 +240,6 @@ const es: LandingDictionary = {
     hint: "Pruébala: toca un servicio",
     shop: "Fresh Cuts Barbershop",
     address: "1234 Grand Concourse, Bronx, NY",
-    lang: "English",
     chooseService: "Elige un servicio",
     from: "desde",
     services: [

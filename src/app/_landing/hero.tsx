@@ -48,7 +48,7 @@ export function Hero({ t }: SectionProps) {
             </>
           }
         >
-          <HeroPhone p={t.heroPhone} lang={t.heroPhone.lang} />
+          <HeroPhone p={t.heroPhone} />
         </WidePanel>
       </div>
     </section>
