@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { Turnstile as TurnstileWidget } from "@/components/turnstile";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import type { Locale } from "@/lib/i18n/dictionaries";
 import type { LandingDictionary } from "@/lib/i18n/landing";
 import { focusRing } from "./_landing/ui";
@@ -177,14 +178,12 @@ export function LeadForm({ locale, t }: { locale: Locale; t: LeadFormText }) {
           {error}
         </p>
       )}
-      <button
+      <LiquidMetalButton
         type="submit"
-        className={`lead-send w-full sm:w-auto sm:min-w-52 sm:self-start ${focusRing}`}
+        className="w-full sm:w-auto sm:min-w-52 sm:self-start"
         disabled={busy}
         aria-busy={busy}
       >
-        <span aria-hidden="true" className="lead-send-glow" />
-        <span aria-hidden="true" className="lead-send-shine" />
         {pending ? t.sending : queued ? t.verifying : t.send}
         {busy ? (
           <span aria-hidden="true" className="lead-dots">
@@ -197,7 +196,7 @@ export function LeadForm({ locale, t }: { locale: Locale; t: LeadFormText }) {
             <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
         )}
-      </button>
+      </LiquidMetalButton>
     </form>
   );
 }

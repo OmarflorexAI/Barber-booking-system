@@ -743,54 +743,136 @@ body:has(.landing) {
   border-radius: 10px;
   background-color: var(--l-raised);
 }
-.landing .lead-send {
-  position: relative;
-  isolation: isolate;
+/*
+ * Liquid metal button (src/components/ui/liquid-metal-button.tsx): a black pill inside a 2px
+ * ring of moving liquid metal (a WebGL shader, fetched near the screen). The ring's own
+ * background is a still grayscale metal, shown before the shader draws and wherever WebGL
+ * is missing. Pressing (pointer or Enter/Space) sinks ring and pill 1px under the label.
+ */
+/* In the components layer so a caller's width utilities (w-full, sm:min-w-52) win. */
+@layer components {
+  .lmb {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 142px;
+    min-height: 48px;
+    padding: 0 24px 0 28px;
+    border-radius: 9999px;
+    color: oklch(93% 0 0);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+.lmb:focus-visible {
+  outline: 2px solid oklch(100% 0 0);
+  outline-offset: 3px;
+}
+.lmb:disabled {
+  cursor: wait;
+}
+.lmb-ring,
+.lmb-pill,
+.lmb-ripples {
+  position: absolute;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.lmb-ring {
+  inset: 0;
+  z-index: -3;
+  overflow: hidden;
+  background: conic-gradient(
+    from 210deg,
+    oklch(96% 0 0),
+    oklch(52% 0 0) 14%,
+    oklch(86% 0 0) 28%,
+    oklch(30% 0 0) 44%,
+    oklch(92% 0 0) 60%,
+    oklch(44% 0 0) 76%,
+    oklch(80% 0 0) 90%,
+    oklch(96% 0 0)
+  );
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.3),
+    0 9px 9px rgb(0 0 0 / 0.12),
+    0 2px 5px rgb(0 0 0 / 0.15);
+}
+.lmb-shader {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.lmb-pill {
+  inset: 2px;
+  z-index: -2;
+  background: linear-gradient(180deg, #202020 0%, #000 100%);
+}
+.lmb-ripples {
+  inset: 2px;
+  z-index: -1;
+  overflow: hidden;
+}
+.lmb-ripple {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgb(255 255 255 / 0.4) 0%, rgb(255 255 255 / 0) 70%);
+  translate: -50% -50%;
+  animation: lmb-ripple 600ms ease-out forwards;
+}
+.lmb-label {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
-  min-height: 44px;
-  padding: 0 22px 0 26px;
-  border-radius: 9999px;
-  background: linear-gradient(180deg, oklch(100% 0 0), oklch(87% 0 0));
-  color: oklch(8% 0 0);
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: -0.005em;
-  white-space: nowrap;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+}
+.lmb:not(:disabled):active :is(.lmb-ring, .lmb-pill),
+.lmb[data-pressed]:not(:disabled) :is(.lmb-ring, .lmb-pill) {
+  translate: 0 1px;
+  scale: 0.98;
+}
+.lmb:not(:disabled):active .lmb-ring,
+.lmb[data-pressed]:not(:disabled) .lmb-ring {
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255),
-    inset 0 -1px 0 rgb(0 0 0 / 0.14),
-    0 0 0 1px rgb(255 255 255 / 0.14);
-  cursor: pointer;
+    0 0 0 1px rgb(0 0 0 / 0.5),
+    0 1px 2px rgb(0 0 0 / 0.3);
 }
-/* The glow sits in its own layer so hover changes only its opacity. */
-.landing .lead-send-glow {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  border-radius: inherit;
-  box-shadow: 0 10px 32px -6px rgb(255 255 255 / 0.32);
-  opacity: 0;
-  pointer-events: none;
+.lmb:not(:disabled):active .lmb-pill,
+.lmb[data-pressed]:not(:disabled) .lmb-pill {
+  box-shadow:
+    inset 0 2px 4px rgb(0 0 0 / 0.4),
+    inset 0 1px 2px rgb(0 0 0 / 0.3);
 }
-.landing .lead-send-shine {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  overflow: hidden;
-  pointer-events: none;
+@keyframes lmb-ripple {
+  from {
+    scale: 0;
+    opacity: 0.6;
+  }
+  to {
+    scale: 4;
+    opacity: 0;
+  }
 }
-.landing .lead-send-shine::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 0.9) 48%, transparent 66%);
-  mix-blend-mode: soft-light;
-  translate: -120% 0;
-  pointer-events: none;
+@media (prefers-reduced-motion: no-preference) {
+  .lmb-ring,
+  .lmb-pill {
+    transition:
+      translate 150ms ease-out,
+      scale 150ms ease-out;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lmb-ripple {
+    display: none;
+  }
 }
 .landing .lead-send-arrow {
   width: 18px;
@@ -808,23 +890,10 @@ body:has(.landing) {
   background: currentColor;
   opacity: 0.55;
 }
-.landing .lead-send:disabled {
-  cursor: wait;
-  background: linear-gradient(180deg, oklch(90% 0 0), oklch(80% 0 0));
-}
 @media (hover: hover) {
-  .landing .lead-send:not(:disabled):hover .lead-send-glow {
-    opacity: 1;
-  }
-  .landing .lead-send:not(:disabled):hover .lead-send-shine::after {
-    translate: 120% 0;
-  }
-  .landing .lead-send:not(:disabled):hover .lead-send-arrow {
+  .landing .lmb:not(:disabled):hover .lead-send-arrow {
     translate: 3px 0;
   }
-}
-.landing .lead-send:not(:disabled):active {
-  scale: 0.98;
 }
 @media (prefers-reduced-motion: no-preference) {
   .landing .lead-card::before {
@@ -856,18 +925,6 @@ body:has(.landing) {
       opacity: 0;
       translate: 0 -4px;
     }
-  }
-  .landing .lead-send {
-    transition: scale 150ms ease-out;
-  }
-  .landing .lead-send-glow {
-    transition: opacity 260ms ease-out;
-  }
-  .landing .lead-send-shine::after {
-    transition: translate 0s;
-  }
-  .landing .lead-send:not(:disabled):hover .lead-send-shine::after {
-    transition: translate 900ms cubic-bezier(0.22, 1, 0.36, 1);
   }
   .landing .lead-send-arrow {
     transition: translate 240ms cubic-bezier(0.22, 1, 0.36, 1);
