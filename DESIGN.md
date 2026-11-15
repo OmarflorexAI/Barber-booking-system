@@ -2,11 +2,11 @@
 name: Barber Master
 description: A booking system for barbershops, sold to Owners on a calm near-black page that proves itself with the real product.
 colors:
-  ground: "oklch(6% 0 0)"
-  panel: "oklch(11% 0 0)"
-  raised: "oklch(14% 0 0)"
-  hairline: "oklch(18% 0 0)"
-  muted-ink: "oklch(64% 0 0)"
+  ground: "oklch(13% 0 0)"
+  panel: "oklch(17% 0 0)"
+  raised: "oklch(21% 0 0)"
+  hairline: "oklch(28% 0 0)"
+  muted-ink: "oklch(71% 0 0)"
   ink: "oklch(93% 0 0)"
   barber-red: "oklch(62% 0.2 27)"
   pure-black: "#000000"
@@ -149,7 +149,7 @@ A strictly achromatic dark ramp with a single warm red that only ever means "liv
 - **Back-Room Panel** (`panel`): reading-page contact box, hover fill of the mobile menu button.
 - **Raised Chrome** (`raised`): the highlighted "new" row and the text bubble inside product cards, the form's error notice.
 - **Hairline** (`hairline`): every border in `.landing` by default (set in the base layer), section dividers, the facts grid's 1px gaps, the header's scrolled underline.
-- **Ash Gray** (`muted-ink`): secondary text, nav links at rest, captions, timeline bodies. Lifted from the template's 60% to 64% so it stays at least 6:1 on every dark surface.
+- **Ash Gray** (`muted-ink`): secondary text, nav links at rest, captions, timeline bodies. Lifted to 71% (user: the page felt too dark, 2026-11-15) so it stays at least 6:1 on every landing surface.
 - **Barber-Cape White** (`ink`): primary text, focus ring, selection fill (with ground text).
 - **Pure White** (`pure-white`): the primary pill's fill, headings set on photos, check marks on pricing cards.
 
@@ -209,7 +209,7 @@ Breakpoints are Tailwind's (640, 768, 1024) plus a 400px step for the pill label
 
 ## Elevation & Depth
 
-The system is flat and tonal. Depth comes from a five-step achromatic ramp (pure black, ground, panel, raised, hairline) and from cards sitting on dimmed photographs. The header’s glass capsule is the one translucent surface (ground at 80 to 88% with backdrop blur). Photos are darkened by top-down black gradients (85% on setup, 65% on pricing) or held at 45% opacity on black.
+The system is flat and tonal, lifted off pure black but kept dark (user, 2026-11-15): ground oklch 13%, band 15.5%, panel 17%, raised 21%, hairline 28%. Sections are separated by tone, never by a full-width line: `.l-band` rises from the ground to the band tone and back over 160px at each end, the footer rises into the panel tone (`.l-rise`); photo panels keep their own straight edges and are never faded or masked. Cards on photos are panel-toned with a white/14 hairline, white/24 along the top. Two glass surfaces: the header capsule (ground at about 66 to 70%, blur 24px, saturate 1.7, the backdrop dimmed so links keep 4.5:1 over the white hero phone; a rim brightest at the top left and a glint 1px inside) and the contact card (static: the panel tone at 90% over a 40px blur so nothing behind it visibly moves, white/20 rim rising to about 34% along the top, inner top highlight and bottom shade; no animation, only a 200ms rim brighten on focus-within). FAQ and Contact share one Velaris band (`src/components/ui/velaris.tsx`): a slow WebGL noise gradient in dark graphite and steel only (no red; user, 2026-11-15), reading `--l-bg` so its edges match the ground, pattern anchored to the top and canvas height stepped so opening a FAQ answer never redraws or flashes it, paused off-screen, still under reduced motion, a CSS gradient without WebGL. It is the section background only, never inside a card. Photos are darkened by top-down black gradients or held at 55% opacity on black.
 
 ### Shadow Vocabulary
 - **Top glow** (`box-shadow: 0 -20px 50px -15px rgba(255,255,255,0.05)`): the contact card only, a faint light from above, paired with a radial top highlight (`radial-gradient(80% 50% at 50% 0%, rgb(26,26,26) 0%, transparent 70%)`) that the pricing cards share.
@@ -230,14 +230,14 @@ Soft but not bubbly. Panels and cards share one corner (16px). Actions and label
 ### Buttons
 Two pills, one meaning each: confident and plain.
 - **Shape:** full pill (9999px), at least 44px tall, 20px side padding, 0.875rem medium, no wrapping.
-- **Primary (white pill):** white fill, black text. "Talk to us" in the nav, the first pricing card, the 404's home links, the form's Send (48px). Hover drops the fill to 85% white over 200ms. The form's Send is the premium variant: a top-down white gradient with an inner top highlight; on hover (mouse only) a soft glow fades in, a shine sweeps across and the arrow nudges right; pressed scales to 0.98; sending shows three pulsing dots; nothing moves under reduced motion.
-- **Outline pill:** transparent with a white/30 stroke and white text; hover fills white/10. The quieter action (the second pricing card).
+- **Liquid metal button** (`src/components/ui/liquid-metal-button.tsx`, user's component, 2026-11-15): a black pill inside a moving silver ring (@paper-design/shaders, loaded only near the screen, disposed when it leaves, a still CSS ring without WebGL or under reduced motion). The primary action everywhere on the landing: "Talk to us" in the nav (38px, `size="sm"`, a 44px hit area) and the phone menu, both pricing cards (the second one `tone="quiet"`, its ring at 40% until hover or focus), and the form's Send. A real `<a>` or `<button>` named by its visible text; ripple and a speed burst on press.
+- **White pill:** white fill, black text; the 404's home links. Hover drops the fill to 85% white over 200ms.
 - **Text link with arrow:** underlined ink text, white/30 underline at offset 4px turning full white on hover, with a 16px up-right arrow (the hero's demo link).
 - **Focus:** one ring everywhere, a 2px solid ink outline at 2px offset on `:focus-visible`.
 
 ### Cards / Containers
-- **Black card:** pure black, 16px corners, 32px padding (40px from 768px), used on photo panels. Pricing cards add the hairline border and the radial top highlight; their header and list are split by a white/10 rule.
-- **Mini product card:** ground fill, white/10 hairline, 16px corners, 20px padding, max 260px wide, centered on a black photo box (320px tall, 384px from 768px) whose photo sits at 45% opacity. Holds 10 to 12px text, mono times, 6px chips and a raised highlight row. This is how the real product is shown.
+- **Panel card:** panel fill, white/14 hairline brightening to white/24 along the top, 16px corners, 32px padding (40px from 768px), used on photo panels. Pricing cards add a radial top highlight in the raised tone; their header and list are split by a white/14 rule.
+- **Mini product card:** panel fill, white/14 hairline, 16px corners, 20px padding, max 260px wide, centered on a black photo box (320px tall, 384px from 768px) whose photo sits at 45% opacity. Holds 10 to 12px text, mono times, 6px chips and a raised highlight row. This is how the real product is shown.
 - **Reading card:** panel fill, hairline border, 16px corners, 24 to 32px padding (legal pages' contact box).
 
 ### Inputs / Fields
@@ -247,7 +247,7 @@ Two pills, one meaning each: confident and plain.
 - **Error:** a neutral notice (raised fill, white/25 border, 10px corners, a top highlight, line icon, `role="alert"`), not red: red stays a live signal.
 
 ### Navigation
-Floating glass bar (after raycast.com, user 2026-11-15). The sticky header is a fixed 80px box holding a centered capsule: ground at 80% with an 18px backdrop blur, a 1px rim that is brighter at the top, and a faint top highlight. Wordmark left; four section links centered as muted 0.875rem text with rounded hover fills; the other language as a text link and the white "Talk to us" pill on the right. Scrolling down contracts the bar (64px to 52px tall, 96px narrower on each side from 1024px, 10px below that) and darkens it to 88% with a soft shadow; scrolling up, or being within 24px of the top, opens it again (`nav-scroll.tsx`). The move is 480ms cubic-bezier(0.22, 1, 0.36, 1) on clip and translate only, so nothing in the page shifts; under reduced motion the states swap without animation. Below 768px the links fold into a matching glass card under the bar (48px rows, full-width white pill), closed by Escape, outside tap or a link tap; an open menu holds the bar open. Legal pages and the 404 use a static header with only the wordmark and the language link.
+Floating glass bar (after raycast.com, user 2026-11-15). The sticky header is a fixed 80px box holding a centered capsule: liquid glass: ground at about 66% with a 24px blur, saturate 1.7 and a dimmed backdrop, a 1px rim brightest at the top left, and a glint 1px inside (top highlight line, bottom shade, sheen). Wordmark left; four section links centered as muted 0.875rem text; hover turns a link to ink and draws a 1px line from the centre, 60% of the word wide, 4px below, in 180ms (no hover box); the other language as a text link and the liquid metal "Talk to us" on the right. Scrolling down contracts the bar (64px to 52px tall, 96px narrower on each side from 1024px, 10px below that) and darkens it to about 70% with a soft shadow; scrolling up, or being within 24px of the top, opens it again (`nav-scroll.tsx`). The move is 480ms cubic-bezier(0.22, 1, 0.36, 1) on clip and translate only, so nothing in the page shifts; under reduced motion the states swap without animation. Below 768px the links fold into a matching glass card under the bar (48px rows, full-width white pill), closed by Escape, outside tap or a link tap; an open menu holds the bar open. Legal pages and the 404 use a static header with only the wordmark and the language link.
 
 ### FAQ disclosure
 Native `details` in a hairline-ruled list, one open at a time, the first open on load. Question in 1rem to 1.125rem medium ink; a 20px line plus rotates 45 degrees into a cross and turns ink when open; the answer unfolds to its height over 300ms.
@@ -269,7 +269,7 @@ Easing is a quick-out curve (`cubic-bezier(0.2, 0.8, 0.2, 1)`) for reveals and a
 ### Do:
 - **Do** keep every surface on the achromatic ramp (ground, panel, raised, hairline) and step it to separate layers.
 - **Do** use barber red only for live and status signals: pivot, live dot, "new" dot, booked check.
-- **Do** make the white pill the single primary action in any view, with the outline pill for the quieter alternative.
+- **Do** make the liquid metal button the primary action, with its quiet tone for the second pricing card.
 - **Do** set every heading in Hanken Grotesk with negative tracking (-0.025em to -0.035em) and keep body text in muted ink at 48 to 65ch.
 - **Do** show the real product (booking, alert, reminder screens) as the proof, on dimmed photos under small dark cards.
 - **Do** use the one focus ring (2px solid ink, 2px offset) on every interactive element, and at least 44px targets.
@@ -299,8 +299,8 @@ Six tokens, defined on `:root` in `src/app/globals.css` for light and redefined 
 
 | Token | Role | Dark value (exact) |
 | --- | --- | --- |
-| `--paper` | The page ground behind everything. | `oklch(6% 0 0)` (the landing's ground) |
-| `--surface` | Cards, sheets, the tab bar, the sidebar, inputs' fill where they sit on paper. | `oklch(11% 0 0)` (the landing's panel) |
+| `--paper` | The page ground behind everything. | `oklch(6% 0 0)` |
+| `--surface` | Cards, sheets, the tab bar, the sidebar, inputs' fill where they sit on paper. | `oklch(11% 0 0)` |
 | `--ink` | Primary text, icons, the primary pill's fill in light, the focus ring. | `oklch(93% 0 0)` |
 | `--muted` | Secondary text: durations, labels, captions, finished rows. At least 4.5:1 on both `--paper` and `--surface`. | `oklch(64% 0 0)` |
 | `--line` | Every hairline: row dividers, card and input borders, the tab bar's top edge. | `oklch(18% 0 0)` |
