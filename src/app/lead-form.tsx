@@ -4,12 +4,11 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import type { Turnstile as TurnstileWidget } from "@/components/turnstile";
 import type { Locale } from "@/lib/i18n/dictionaries";
 import type { LandingDictionary } from "@/lib/i18n/landing";
-import { focusRing, whitePill } from "./_landing/ui";
+import { focusRing } from "./_landing/ui";
 import { submitLeadAction } from "./actions";
 
-/** Dark inputs for the landing page (the template's): hairline border on the page ground, a white focus ring. */
-const field =
-  "min-h-12 w-full rounded-md border border-border bg-background px-4 py-3 text-[16px] text-foreground outline-none transition-colors placeholder:text-muted-foreground hover:border-white/25 focus-visible:border-foreground focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-foreground";
+/** Dark inset fields with a rim brighter at the top and a soft white focus ring (`.lead-*` in globals.css). */
+const field = "lead-field";
 const labelText = "text-sm font-medium text-foreground";
 
 /** The form's strings in the visitor's language. Passed in by the server, so the browser never downloads both languages. */
@@ -93,7 +92,7 @@ export function LeadForm({ locale, t }: { locale: Locale; t: LeadFormText }) {
         ref={doneRef}
         tabIndex={-1}
         role="status"
-        className={`rounded-md border border-border bg-background px-5 py-7 text-center outline-none ${focusRing}`}
+        className={`lead-notice px-5 py-7 text-center outline-none ${focusRing}`}
       >
         <p className="flex items-center justify-center gap-2.5 text-2xl font-semibold tracking-[-0.02em] text-foreground">
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 shrink-0">
@@ -109,7 +108,7 @@ export function LeadForm({ locale, t }: { locale: Locale; t: LeadFormText }) {
   function submit(form: FormData) {
     setError(null);
     if (!botCheckDone) {
-      // React clears the fields after the action; the FormData keeps what was typed.
+      // The FormData keeps what was typed until the token arrives.
       setQueued(form);
       setNearForm(true);
       return;
@@ -117,10 +116,19 @@ export function LeadForm({ locale, t }: { locale: Locale; t: LeadFormText }) {
     deliver(form, token);
   }
 
+  const busy = pending || !!queued;
   const optional = <span className="text-[13px] font-normal text-muted-foreground"> ({t.optional})</span>;
 
   return (
-    <form ref={formRef} action={submit} onFocus={() => setNearForm(true)} className="flex flex-col gap-5">
+    <form
+      ref={formRef}
+      // onSubmit, not action={…}: a form action makes React clear the fields, and a visitor
+      // who gets an error back must keep what they typed.
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit(new FormData(e.currentTarget));
+      }}
+      onFocus={() => setNearForm(true)} className="flex flex-col gap-5">
       <label className="flex flex-col gap-1.5">
         <span className={labelText}>{t.shopName}</span>
         <input className={field} name="shopName" required maxLength={80} autoComplete="organization" />
@@ -140,15 +148,15 @@ export function LeadForm({ locale, t }: { locale: Locale; t: LeadFormText }) {
         </label>
         <label className="flex flex-col gap-1.5">
           <span className={labelText}>{t.barbers}{optional}</span>
-          <span className="relative">
-            <select className={`${field} appearance-none pr-11`} name="barberCount" defaultValue="">
-              <option value="">{t.barbersPick}</option>
+          <span className="relative block">
+            <select className={`${field} lead-select`} name="barberCount" defaultValue="">
+              <option value="" hidden>{t.barbersPick}</option>
               {[1, 2, 3, 4, 5, 6].map((n) => (
                 <option key={n} value={n}>{n}</option>
               ))}
               <option value="7">{t.barbersMore}</option>
             </select>
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="lead-chevron">
               <path d="m6 9 6 6 6-6" />
             </svg>
           </span>
@@ -156,14 +164,14 @@ export function LeadForm({ locale, t }: { locale: Locale; t: LeadFormText }) {
       </div>
       <label className="flex flex-col gap-1.5">
         <span className={labelText}>{t.message}{optional}</span>
-        <textarea className={`${field} min-h-24 resize-y py-3 leading-[1.5]`} name="message" maxLength={1000} rows={3} placeholder={t.messageHint} />
+        <textarea className={field} name="message" maxLength={1000} rows={3} placeholder={t.messageHint} />
       </label>
 
       {/* The bot check is dark and invisible unless Cloudflare needs the visitor to act. */}
       {Turnstile && <Turnstile onToken={onToken} lang={locale} />}
 
       {error && (
-        <p ref={errorRef} role="alert" className="flex items-start gap-3 rounded-md border border-white/25 bg-raised px-4 py-3 text-[15px] leading-relaxed text-foreground">
+        <p ref={errorRef} role="alert" className="lead-notice flex items-start gap-3 px-4 py-3 text-[15px] leading-relaxed text-foreground">
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 h-5 w-5 shrink-0">
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7.75v5M12 16.25v.01" />
@@ -173,11 +181,24 @@ export function LeadForm({ locale, t }: { locale: Locale; t: LeadFormText }) {
       )}
       <button
         type="submit"
-        className={`${whitePill} min-h-12 w-full px-6 disabled:cursor-wait disabled:opacity-80 sm:w-auto sm:self-start`}
-        disabled={pending || !!queued}
-        aria-busy={pending || !!queued}
+        className={`lead-send w-full sm:w-auto sm:min-w-52 sm:self-start ${focusRing}`}
+        disabled={busy}
+        aria-busy={busy}
       >
+        <span aria-hidden="true" className="lead-send-glow" />
+        <span aria-hidden="true" className="lead-send-shine" />
         {pending ? t.sending : queued ? t.verifying : t.send}
+        {busy ? (
+          <span aria-hidden="true" className="lead-dots">
+            <span />
+            <span />
+            <span />
+          </span>
+        ) : (
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="lead-send-arrow">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        )}
       </button>
     </form>
   );
