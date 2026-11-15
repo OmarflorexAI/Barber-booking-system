@@ -1,10 +1,26 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-14, end of session (PLAN.md M1–M7 all DONE and pushed; landing rail + hero glow done; next: landing-page grilling session. See "START HERE next session" below). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-15 (landing polish + Barber alert email, all QA PASS, pushed). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-### START HERE next session (written 2026-11-14, end of session)
+### START HERE next session (written 2026-11-15)
+
+**Done 2026-11-15** (landing grilling Q1–Q9 + four UI jobs, each QA PASS):
+
+- Landing copy: first month free, then **$50 a month** (the Free plan is not advertised); Barbers get alerts "on their phone or by email" / "on Telegram or by email, once they're connected"; no Barber day-screen claims; walk-ins "from the day screen". `7cfd529`. PRODUCT.md + CLAUDE.md price rule updated.
+- Equal-size card groups (pricing/setup row subgrid, facts) `4292cbc`; floating glass nav that contracts on scroll down and opens on scroll up (`nav-scroll.tsx`) `6a773b5`; hero phone drawn as a real device + ≤ 5° pointer tilt `39673cd`; hero glow fades in `deeb255`; DESIGN.md `959132c`.
+- **Barber alert email** (user: the Owner adds Barbers' emails): migration `20261115090000_barber_email` (applied to the dev DB), `updateBarberProfile` email + `INVALID_EMAIL`, alerts use `coalesce(barbers.email, login email)` and drop the `/app/day` link for Barbers, field on the Barber profile in Settings. `8a09135` `713ab44` `4058630`.
+
+**Next:**
+
+1. Show the user the landing live; more landing rounds only if they ask ("nothing else yet", 2026-11-15).
+2. **Demo deploy** (checklist under "Demo deploy plan" below).
+3. Telegram alerts for Barbers (Pro), a Settings page for Client texts, real-iPhone photo upload test, P3 calendar, P4 Settings polish.
+
+**Open from QA:** the nav between 768 and 1023px in Spanish only gets shorter, not narrower (tight links); the "How it works" mini cards differ in height on purpose; the How-it-works stage still shows "Dre's Thursday" as an illustration (not asked yet).
+
+### Earlier: START HERE (written 2026-11-14, end of session)
 
 **State:** every PLAN.md milestone (M1–M7) is built, QA'd and pushed to `origin/main`. The dev DB (`barber-booking-dev`) has every migration through `20261114140000_shop_billing_guard`. 162/162 engine tests; e2e green in groups (book-pay-online needs `npm run stripe:listen`; run e2e in groups because of the Supabase sign-in rate limit).
 
@@ -15,7 +31,7 @@ Last updated: 2026-11-14, end of session (PLAN.md M1–M7 all DONE and pushed; l
    - Price: PRODUCT.md says the only price shown is "first month free". Should the landing now mention Pro at $50/month (and Free)? Draft EN/ES and show the user before committing.
    - Hero claim: "Your barbers get an alert on their phone" while Telegram alerts aren't built. Soften it or build Telegram first?
    - Anything else on the landing the user wants polished (they liked the rail; reference sites: truehorizon.ai "How we work", the user's local "moises website").
-2. **DESIGN.md "Navigation per role"** still lists Barber rows and the Me tab: update to Owner tabs only (M6).
+2. ~~DESIGN.md "Navigation per role"~~ done 2026-11-15.
 3. **Demo deploy** (still the user's priority from 2026-11-13: show the app to their dad). Checklist under "Demo deploy" further down; `NEXT_PUBLIC_SITE_URL` must be set at build time.
 4. Later, small milestones: Telegram alerts for Barbers (Pro), a Settings page for Client texts, real-iPhone test of photo uploads (M1 open item), P3 calendar, P4 Settings polish.
 
