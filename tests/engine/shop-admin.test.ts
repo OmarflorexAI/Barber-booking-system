@@ -417,6 +417,42 @@ describe("Barber profile", () => {
     expect(JSON.stringify(catalog)).not.toContain(phone.slice(-7));
   });
 
+  it("the Owner saves a Barber's alert email trimmed and lowercased, keeps it when left out, and clears it", async () => {
+    const as = { userId: owner, shopId: shop.shopId, barberId: shop.blake, displayName: "Blake", bio: "", specialties: [], photoUrl: null };
+    const emailOf = async () =>
+      (await sql<{ email: string | null }[]>`select email from public.barbers where id = ${shop.blake}`)[0].email;
+    await admin.updateBarberProfile({ ...as, email: "  Blake.Cuts@Example.COM " });
+    expect(await emailOf()).toBe("blake.cuts@example.com");
+    await admin.updateBarberProfile({ ...as });
+    expect(await emailOf()).toBe("blake.cuts@example.com");
+    await admin.updateBarberProfile({ ...as, email: "  " });
+    expect(await emailOf()).toBeNull();
+    await admin.updateBarberProfile({ ...as, email: "blake@example.com" });
+    await admin.updateBarberProfile({ ...as, email: null });
+    expect(await emailOf()).toBeNull();
+  });
+
+  it("refuses an alert email that isn't one", async () => {
+    const as = { userId: owner, shopId: shop.shopId, barberId: shop.blake, displayName: "Blake", bio: "", specialties: [], photoUrl: null };
+    for (const bad of ["blake", "blake@", "blake@example", "a b@example.com", `${"a".repeat(250)}@x.com`]) {
+      await expectCode(admin.updateBarberProfile({ ...as, email: bad }), "INVALID_EMAIL");
+    }
+  });
+
+  it("only the Owner sets a Barber's alert email, and the public catalog never carries it", async () => {
+    await expectCode(
+      admin.updateBarberProfile({
+        userId: barberUser, shopId: shop.shopId, barberId: shop.blake, displayName: "Blake", bio: "", specialties: [], photoUrl: null, email: "me@example.com",
+      }),
+      "FORBIDDEN",
+    );
+    await admin.updateBarberProfile({
+      userId: owner, shopId: shop.shopId, barberId: shop.blake, displayName: "Blake", bio: "", specialties: [], photoUrl: null, email: "secret-blake@example.com",
+    });
+    const catalog = (await engine.getShopCatalog(shop.slug, NOW))!;
+    expect(JSON.stringify(catalog)).not.toContain("secret-blake");
+  });
+
   it("a Barber cannot edit another Barber's profile", async () => {
     await expectCode(
       admin.updateBarberProfile({ userId: barberUser, shopId: shop.shopId, barberId: shop.alex, displayName: "X", bio: "", specialties: [], photoUrl: null }),

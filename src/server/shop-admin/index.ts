@@ -1,11 +1,14 @@
 import type { Sql } from "postgres";
 import { normalizePhone } from "@/lib/phone";
 import { normalizeInstagram } from "@/lib/instagram";
+import { normalizeEmail } from "@/lib/email";
 import { RULES } from "@/server/booking-engine";
 import { authorizeForBarber, requireBarberInShop, requireOwner, requireServiceInShop } from "@/server/booking-engine/access";
 import {
+  BookingError,
   barberHasBookings,
   barberLimit,
+  forbidden,
   invalid,
   notFound,
   ownBarber,
@@ -415,9 +418,14 @@ export function createShopAdmin(sql: Sql) {
       phone?: string | null;
       /** Instagram handle, with or without "@". Left out: unchanged; null or blank: cleared. */
       instagram?: string | null;
+      /** Owner-only email for booking alerts. Left out: unchanged; null or blank: cleared. */
+      email?: string | null;
     },
   ): Promise<void> {
-    await authorizeForBarber(sql, args.userId, args.shopId, args.barberId);
+    const role = await authorizeForBarber(sql, args.userId, args.shopId, args.barberId);
+    if (args.email !== undefined && !role.owner) throw forbidden();
+    const email = args.email === undefined ? undefined : normalizeEmail(args.email);
+    if (email === "invalid") throw new BookingError("INVALID_EMAIL", "That email doesn't look right.");
     const displayName = args.displayName.trim();
     const specialties = args.specialties.map((x) => x.trim()).filter(Boolean);
     if (!displayName || displayName.length > 60) throw invalid("Name is required (max 60 characters).");
@@ -433,6 +441,7 @@ export function createShopAdmin(sql: Sql) {
         ${args.bioEs === undefined ? sql`` : sql`, bio_es = ${args.bioEs.trim()}`}
         ${phone === undefined ? sql`` : sql`, phone_e164 = ${phone}`}
         ${instagram === undefined ? sql`` : sql`, instagram = ${instagram}`}
+        ${email === undefined ? sql`` : sql`, email = ${email}`}
       where id = ${args.barberId} and shop_id = ${args.shopId}
     `;
   }

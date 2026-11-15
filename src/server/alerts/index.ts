@@ -11,8 +11,8 @@ import { createReporting } from "@/server/reporting";
 
 /**
  * Barber and Owner alerts (B4). A Booking alert goes to the Barber's Telegram;
- * if they haven't linked it, or Telegram fails, it goes by email (to the Barber's
- * login, or to the Owner when the Barber has none). Also: linking Telegram with a
+ * if they haven't linked it, or Telegram fails, it goes by email (to the alert email
+ * the Owner set for the Barber, else the Barber's login, else the Owners). Also: linking Telegram with a
  * single-use link, and the Owner's daily summary email.
  */
 
@@ -72,7 +72,8 @@ export function createAlerts({ sql, chat, email, config, clock = () => new Date(
       }[]
     >`
       select k.starts_at, s.timezone, sv.name_en as service, c.name as client, br.display_name as barber_name,
-             case when s.plan = 'pro' then t.chat_id::text end as chat_id, u.email as barber_email
+             case when s.plan = 'pro' then t.chat_id::text end as chat_id,
+             coalesce(br.email, u.email) as barber_email
       from public.bookings k
       join public.shops s on s.id = k.shop_id
       join public.services sv on sv.id = k.service_id
@@ -108,7 +109,8 @@ export function createAlerts({ sql, chat, email, config, clock = () => new Date(
     const to = b.barber_email ? [b.barber_email] : await ownerEmails(a.shopId);
     if (to.length === 0) throw new Error(`no Telegram or email to alert barber ${a.barberId}`);
     const subject = `Barber Master: ${headline}` + (b.barber_email ? "" : ` (for ${b.barber_name})`);
-    await email.send({ to, subject, text });
+    // Barbers don't sign in: an email to the Barber leaves out the /app/day link; the Owners' keeps it.
+    await email.send({ to, subject, text: b.barber_email ? headline : text });
   }
 
   async function requireBarberInShop(shopId: string, barberId: string) {

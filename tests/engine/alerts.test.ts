@@ -87,6 +87,27 @@ describe("alerting a Barber", () => {
   });
 });
 
+describe("a Barber's alert email", () => {
+  it("goes to the email the Owner set, without the sign-in link; the Owner's fallback keeps the link", async () => {
+    const { booking } = await book(shop, { client: { name: "Ana Lopez", phone: "7185550101" } });
+    const alert = { shopId: shop.shopId, bookingId: booking.id, barberId: shop.alex, event: "created" as const, details: {} };
+
+    await alerts().send(alert); // no email set, no login: the Owner gets it, with the link
+    expect(f.emails.at(-1)!.to).toEqual([await emailOf(owner)]);
+    expect(f.emails.at(-1)!.text).toContain(`${SITE}/app/day`);
+
+    await sql`update public.barbers set email = 'alex.alerts@example.com' where id = ${shop.alex}`;
+    await makeUser(shop.shopId, "barber", shop.alex); // the set email wins over a login
+    await alerts().send(alert);
+    const sent = f.emails.at(-1)!;
+    expect(sent.to).toEqual(["alex.alerts@example.com"]);
+    expect(sent.subject).toContain("Ana Lopez");
+    expect(sent.text).toContain("Ana Lopez");
+    expect(sent.text).not.toContain("/app/day");
+    expect(sent.text).not.toContain(SITE);
+  });
+});
+
 describe("linking Telegram", () => {
   it("each link works once and expires after a day", async () => {
     const { url } = await alerts().createTelegramLink({ userId: owner, shopId: shop.shopId, barberId: shop.alex });
