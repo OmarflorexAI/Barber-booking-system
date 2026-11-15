@@ -9,8 +9,9 @@ import { shortWhen } from "./format";
 import { ArrowLeftIcon, CardIcon } from "./icons";
 import { Notice } from "@/components/notice";
 
-/** The gray pill for Cancel: never red (DESIGN.md → "App buttons"). */
-const GRAY_PILL = "btn w-full bg-raised text-ink hover:bg-line";
+/** The two pills (globals.css → "Client pages (premium)"). Cancel is the outlined one: never red. */
+const PRIMARY = "c-btn c-btn-primary press w-full";
+const SECONDARY = "c-btn c-btn-secondary press w-full";
 
 type Result = { ok: true } | { ok: false; code: string };
 
@@ -93,8 +94,8 @@ export function ManageActions(props: {
 
   if (mode === "change") {
     return (
-      <section aria-labelledby="change-title" className="flex flex-col gap-4">
-        <div className="flex items-center gap-2">
+      <section aria-labelledby="change-title" className="c-in flex flex-col gap-5">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => {
@@ -104,16 +105,16 @@ export function ManageActions(props: {
               requestAnimationFrame(() => changeButtonRef.current?.focus());
             }}
             aria-label={t.back}
-            className="-ml-2 inline-grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            className="press -ml-1.5 inline-grid h-11 w-11 shrink-0 place-items-center rounded-full border border-line bg-surface text-ink transition-colors hover:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
-            <ArrowLeftIcon className="h-6 w-6" />
+            <ArrowLeftIcon className="h-5 w-5" />
           </button>
           <div className="flex min-w-0 flex-col">
-            <h2 id="change-title" className="text-xl font-semibold tracking-tight">
+            <h2 id="change-title" className="c-h2">
               {m.changeTitle}
             </h2>
             <p className="text-sm text-muted">
-              {m.now}: <span className="tabular-nums">{shortWhen(props.startsAt, props.timezone, props.locale)}</span>
+              {m.now}: <span className="font-medium text-ink tabular-nums">{shortWhen(props.startsAt, props.timezone, props.locale)}</span>
             </p>
           </div>
         </div>
@@ -139,10 +140,10 @@ export function ManageActions(props: {
         />
 
         {/* Stays within thumb reach while the list of times scrolls. */}
-        <div className="sticky bottom-0 -mx-4 flex flex-col gap-3 bg-paper px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="m-dock sticky bottom-0 -mx-4 flex flex-col gap-3 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] empty:hidden">
           {noticeBox}
           {slot && slot.startsAt !== props.startsAt && (
-            <button type="button" className="btn-primary w-full" disabled={pending} aria-busy={pending} onClick={() => move(slot.startsAt)}>
+            <button type="button" className={PRIMARY} disabled={pending} aria-busy={pending} onClick={() => move(slot.startsAt)}>
               {pending ? m.moving : m.moveTo(shortWhen(slot.startsAt, props.timezone, props.locale))}
             </button>
           )}
@@ -157,7 +158,7 @@ export function ManageActions(props: {
       <button
         ref={changeButtonRef}
         type="button"
-        className="btn-primary w-full"
+        className={PRIMARY}
         disabled={pending}
         onClick={() => {
           setNotice(null);
@@ -168,7 +169,7 @@ export function ManageActions(props: {
       </button>
       <button
         type="button"
-        className={GRAY_PILL}
+        className={SECONDARY}
         disabled={pending}
         onClick={() => {
           setNotice(null);
@@ -192,16 +193,17 @@ export function ManageActions(props: {
         onCancel={(e) => {
           if (pending) e.preventDefault();
         }}
-        className="m-0 mt-auto max-h-[90dvh] w-full max-w-full rounded-t-2xl border border-b-0 border-line bg-surface p-0 text-ink backdrop:bg-black/50 open:translate-y-0 motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out starting:open:translate-y-full sm:m-auto sm:w-[28rem] sm:rounded-2xl sm:border-b sm:motion-safe:transition-[transform,opacity] sm:starting:open:translate-y-3 sm:starting:open:opacity-0"
+        className="m-sheet m-0 mt-auto max-h-[90dvh] w-full max-w-full rounded-t-[1.25rem] border border-b-0 border-line bg-surface p-0 text-ink backdrop:bg-black/50 backdrop:backdrop-blur-[2px] open:translate-y-0 motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out starting:open:translate-y-full sm:m-auto sm:w-[28rem] sm:rounded-2xl sm:border-b sm:motion-safe:transition-[transform,opacity] sm:starting:open:translate-y-3 sm:starting:open:opacity-0"
       >
-        <div className="flex flex-col gap-5 px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pt-6">
+        <div className="flex flex-col gap-5 px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6">
           <span aria-hidden="true" className="mx-auto h-1 w-10 rounded-full bg-line sm:hidden" />
-          <div className="flex flex-col gap-2">
-            <h2 id="cancel-title" className="text-xl font-semibold tracking-tight">
+          <div className="flex flex-col gap-3">
+            <h2 id="cancel-title" className="c-h2">
               {m.cancelTitle}
             </h2>
-            <p className="text-muted">
-              {props.recap} · <span className="tabular-nums">{shortWhen(props.startsAt, props.timezone, props.locale)}</span>
+            <p className="flex flex-col gap-0.5 rounded-xl bg-raised px-4 py-3">
+              <span className="text-sm text-muted">{props.recap}</span>
+              <span className="text-lg font-semibold tracking-tight tabular-nums">{shortWhen(props.startsAt, props.timezone, props.locale)}</span>
             </p>
           </div>
           {props.paidOnline ? (
@@ -213,11 +215,11 @@ export function ManageActions(props: {
               <p>{m.nothingToPay}</p>
             </Notice>
           )}
-          <div className="flex flex-col gap-3">
-            <button type="button" className="btn-primary w-full" disabled={pending} aria-busy={pending} onClick={cancel}>
+          <div className="flex flex-col gap-3 sm:flex-row-reverse">
+            <button type="button" className={PRIMARY} disabled={pending} aria-busy={pending} onClick={cancel}>
               {pending ? m.cancelling : t.cancelBooking}
             </button>
-            <button type="button" autoFocus className={GRAY_PILL} disabled={pending} onClick={() => sheet.current?.close()}>
+            <button type="button" autoFocus className={SECONDARY} disabled={pending} onClick={() => sheet.current?.close()}>
               {m.keepIt}
             </button>
           </div>
@@ -258,7 +260,7 @@ export function AwaitingPayment({ locale }: { locale: Locale }) {
       {slow && (
         <button
           type="button"
-          className="btn-primary w-full"
+          className={PRIMARY}
           disabled={pending}
           onClick={() =>
             start(() => {
@@ -315,7 +317,7 @@ export function PayNowButton(props: { token: string; locale: Locale }) {
       )}
       <button
         type="button"
-        className="btn-primary w-full"
+        className={PRIMARY}
         disabled={pending}
         aria-busy={pending}
         onClick={() =>

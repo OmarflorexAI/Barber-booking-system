@@ -61,10 +61,12 @@ async function Manage({
   if (!data) {
     return (
       <Shell locale={locale} t={t} shop={null}>
-        <div className="flex items-start gap-3 pt-6">
-          <CrossCircleIcon className="mt-0.5 h-6 w-6 shrink-0 text-muted" />
-          <h1 className="text-xl font-semibold tracking-tight text-balance">{m.notFound}</h1>
-        </div>
+        <section className="c-card c-in mt-6 flex flex-col items-start gap-4 px-5 py-6">
+          <span className="grid h-12 w-12 place-items-center rounded-full bg-raised text-muted">
+            <CrossCircleIcon className="h-6 w-6" />
+          </span>
+          <h1 className="c-h2">{m.notFound}</h1>
+        </section>
       </Shell>
     );
   }
@@ -85,7 +87,7 @@ async function Manage({
 
       {view === "booked" && (
         <>
-          <p className="px-1 text-sm text-muted">
+          <p className="c-in px-1 text-sm leading-relaxed text-muted" style={stagger(1)}>
             {m.cutoff(
               sameLocalDay(data.cutoffAt, booking.startsAt, tz) ? null : shortDay(data.cutoffAt, tz, locale),
               clock(data.cutoffAt, tz, locale),
@@ -112,7 +114,7 @@ async function Manage({
               >
                 <PhoneIcon className="h-5 w-5" />
                 <span>
-                  {m.callShop} · <span className="font-mono tabular-nums">{phone}</span>
+                  {m.callShop} · <span className="c-link font-mono tabular-nums">{phone}</span>
                 </span>
               </a>
             )}
@@ -126,7 +128,7 @@ async function Manage({
             <p>{phone ? m.tooLate : m.tooLateNoPhone}</p>
           </Notice>
           {shop.phone && phone && (
-            <a href={`tel:${shop.phone}`} className="btn-primary w-full">
+            <a href={`tel:${shop.phone}`} className="c-btn c-btn-primary press w-full">
               <PhoneIcon className="h-5 w-5" />
               <span className="tabular-nums">{m.call(phone)}</span>
             </a>
@@ -159,7 +161,7 @@ async function Manage({
             {booking.paymentStatus === "paid" && <p>{m.lateRefundOnWay(price)}</p>}
             {booking.paymentStatus === "refunded" && <p>{m.lateRefunded(price)}</p>}
           </Notice>
-          <Link href={bookAgainHref} className="btn-primary w-full">
+          <Link href={bookAgainHref} className="c-btn c-btn-primary press w-full">
             {m.pickAgain}
           </Link>
         </Actions>
@@ -172,7 +174,7 @@ async function Manage({
             {booking.paymentMethod === "online" && booking.paymentStatus === "paid" && <p>{m.refundOnWay(price)}</p>}
             {booking.paymentMethod === "online" && booking.paymentStatus === "refunded" && <p>{m.refunded(price)}</p>}
           </Notice>
-          <Link href={bookAgainHref} className="btn-primary w-full">
+          <Link href={bookAgainHref} className="c-btn c-btn-primary press w-full">
             {m.bookAgain}
           </Link>
         </Actions>
@@ -180,7 +182,7 @@ async function Manage({
 
       {view === "past" && (
         <Actions>
-          <Link href={bookAgainHref} className="btn-primary w-full">
+          <Link href={bookAgainHref} className="c-btn c-btn-primary press w-full">
             {m.bookAgain}
           </Link>
         </Actions>
@@ -189,41 +191,65 @@ async function Manage({
   );
 }
 
-/** The shared Client frame (header, footer); here the h1 is the Booking's status, so the Shop name is a <p>. */
+/** The entrance stagger index the .c-in animation reads (60ms a step). */
+const stagger = (i: number) => ({ "--i": i }) as React.CSSProperties;
+
+/** The shared Client frame (glass bar, footer); here the h1 is the Booking's status, so the Shop name is a <p>. */
 function Shell({ locale, t, shop, children }: { locale: Locale; t: Dictionary; shop: { name: string; address: string | null; phone: string | null } | null; children: React.ReactNode }) {
   return (
     <ClientShell locale={locale} t={t} shop={shop} shopNameAs="p">
-      <div className="flex flex-1 flex-col gap-4 border-t border-line pt-4 pb-2">{children}</div>
+      <div className="flex flex-1 flex-col gap-4 pb-2">{children}</div>
     </ClientShell>
   );
 }
 
-/** The action block sits low on phones, within thumb reach, and under the card on desktop. */
+/** The action block sits low on phones, within thumb reach, and right under the ticket on desktop. */
 function Actions({ children }: { children: React.ReactNode }) {
-  return <div className="mt-auto flex flex-col gap-3 pt-4 sm:mt-2">{children}</div>;
-}
-
-function StatusLine({ view, m }: { view: View; m: Dictionary["manage"] }) {
-  const [icon, text] =
-    view === "booked" || view === "tooLate"
-      ? [<BookedCheck key="i" />, m.booked]
-      : view === "awaiting"
-        ? [<ClockIcon key="i" className="h-7 w-7 text-muted" />, m.awaiting]
-        : view === "holding"
-          ? [<ClockIcon key="i" className="h-7 w-7 text-muted" />, m.holding]
-          : view === "expired"
-            ? [<ClockIcon key="i" className="h-7 w-7 text-muted" />, m.expired]
-            : view === "cancelled"
-              ? [<CrossCircleIcon key="i" className="h-7 w-7 text-muted" />, m.cancelled]
-              : [<CalendarIcon key="i" className="h-7 w-7 text-muted" />, m.past];
   return (
-    <div className="flex items-center gap-3 px-5 pt-5 pb-4">
-      <span className="shrink-0">{icon}</span>
-      <h1 className="text-xl font-semibold tracking-tight text-balance">{text}</h1>
+    <div className="c-in mt-auto flex flex-col gap-3 pt-4 sm:mt-2" style={stagger(2)}>
+      {children}
     </div>
   );
 }
 
+function StatusLine({ view, m }: { view: View; m: Dictionary["manage"] }) {
+  const disc = (node: React.ReactNode) => <span className="grid h-10 w-10 place-items-center rounded-full bg-raised text-muted">{node}</span>;
+  const icon =
+    view === "booked" || view === "tooLate" ? (
+      <BookedCheck className="h-10 w-10" />
+    ) : view === "cancelled" ? (
+      disc(<CrossCircleIcon className="h-6 w-6" />)
+    ) : view === "past" ? (
+      disc(<CalendarIcon className="h-6 w-6" />)
+    ) : (
+      disc(<ClockIcon className="h-6 w-6" />)
+    );
+  const text =
+    view === "booked" || view === "tooLate"
+      ? m.booked
+      : view === "awaiting"
+        ? m.awaiting
+        : view === "holding"
+          ? m.holding
+          : view === "expired"
+            ? m.expired
+            : view === "cancelled"
+              ? m.cancelled
+              : m.past;
+  return (
+    <div className="flex items-center gap-3 px-5 pt-5">
+      <span className="shrink-0">{icon}</span>
+      <h1 id="booking-status" className="c-h2">
+        {text}
+      </h1>
+    </div>
+  );
+}
+
+/**
+ * The Booking as a ticket: status on top, the day and time large in mono, a perforated
+ * tear line (a notch bitten out of each edge), then who, what, and how it's paid.
+ */
 function Summary({
   data,
   view,
@@ -245,20 +271,30 @@ function Summary({
   const m = t.manage;
   const tz = shop.timezone;
   const minutes = Math.round((booking.endsAt.getTime() - booking.startsAt.getTime()) / 60_000);
-  const tone = inactive ? "text-muted" : "text-ink";
+  const struck = view === "cancelled" || view === "expired";
   const paidTag =
     booking.paymentMethod === "online" && booking.paymentStatus !== "unpaid" ? (booking.paymentStatus === "refunded" ? m.refundedTag : m.paidOnline) : null;
 
   return (
-    <section aria-labelledby="booking-status" className="card overflow-hidden">
-      <div id="booking-status">
-        <StatusLine view={view} m={m} />
-      </div>
-      <dl className={tone}>
-        <div className="flex items-center gap-3 border-t border-line px-5 py-4">
+    <section aria-labelledby="booking-status" className="c-card c-in relative overflow-hidden" style={stagger(0)}>
+      <StatusLine view={view} m={m} />
+      <dl className={inactive ? "text-muted" : "text-ink"}>
+        <div className="px-5 pt-5 pb-5">
+          <dt className="sr-only">{m.when}</dt>
+          <dd className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-muted">{longDay(booking.startsAt, tz, locale)}</span>
+            <span className={`font-mono text-[2rem] leading-none font-medium tracking-[-0.03em] tabular-nums ${struck ? "line-through decoration-2" : ""}`}>
+              {clock(booking.startsAt, tz, locale)}
+            </span>
+          </dd>
+        </div>
+
+        <Perforation />
+
+        <div className="flex items-center gap-3 px-5 pt-4 pb-4">
           <dt className="sr-only">{m.barber}</dt>
           <dd className="contents">
-            <Avatar name={data.barberName} photoUrl={data.barberPhotoUrl} />
+            <Avatar name={data.barberName} photoUrl={data.barberPhotoUrl} muted={inactive} />
             <span className="flex min-w-0 flex-col">
               <span className="truncate font-semibold">{data.barberName}</span>
               <span className="text-sm text-muted">
@@ -268,75 +304,86 @@ function Summary({
             </span>
           </dd>
         </div>
-        <div className="border-t border-line px-5 py-4">
-          <dt className="sr-only">{m.when}</dt>
-          <dd className="flex flex-col gap-0.5">
-            <span className="text-sm text-muted">{longDay(booking.startsAt, tz, locale)}</span>
-            <span className={`font-mono text-2xl font-medium tracking-tight tabular-nums ${inactive ? "line-through decoration-1" : ""}`}>
-              {clock(booking.startsAt, tz, locale)}
-            </span>
-          </dd>
-        </div>
-        <div className="flex min-h-14 items-center justify-between gap-3 border-t border-line px-5 py-3">
+        <div className="mx-5 flex min-h-14 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-line py-3">
           <dt className="sr-only">{m.price}</dt>
-          <dd className="font-mono text-lg tabular-nums">{price}</dd>
-          <dd>
-            {paidTag ? <PayTag label={paidTag} card /> : booking.paymentMethod === "in_person" ? <PayTag label={m.payAtShop} /> : null}
-          </dd>
+          <dd className="font-mono text-lg font-medium tabular-nums">{price}</dd>
+          <dd>{paidTag ? <PayTag label={paidTag} card /> : booking.paymentMethod === "in_person" ? <PayTag label={m.payAtShop} /> : null}</dd>
         </div>
       </dl>
     </section>
   );
 }
 
-function Avatar({ name, photoUrl }: { name: string; photoUrl: string | null }) {
+/** The ticket's tear line: a dashed rule with a half-circle notch bitten out of each edge. */
+function Perforation() {
+  return (
+    <div aria-hidden="true" className="relative h-5">
+      <span className="m-tear absolute inset-x-6 top-1/2 border-t border-dashed border-line" />
+      <span className="m-notch absolute top-0 -left-2.5 h-5 w-5 rounded-full" />
+      <span className="m-notch absolute top-0 -right-2.5 h-5 w-5 rounded-full" />
+    </div>
+  );
+}
+
+function Avatar({ name, photoUrl, muted }: { name: string; photoUrl: string | null; muted: boolean }) {
   if (photoUrl) {
-    // Barber photos live in Supabase Storage (U3b); a plain <img> avoids configuring remote patterns for one 44px avatar.
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={photoUrl} alt="" width={44} height={44} className="h-11 w-11 shrink-0 rounded-full object-cover" />;
+    // Barber photos live in Supabase Storage (U3b); a plain <img> avoids configuring remote patterns for one 48px avatar.
+    return (
+      <span className={`c-photo h-12 w-12 shrink-0 rounded-full ${muted ? "opacity-60 grayscale" : ""}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={photoUrl} alt="" width={48} height={48} className="c-in-photo h-full w-full object-cover" />
+      </span>
+    );
   }
   return (
-    <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-raised text-sm font-semibold text-ink">
+    <span aria-hidden="true" className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-raised text-sm font-semibold text-ink">
       {initials(name)}
     </span>
   );
 }
 
-/** Shaped like the header, the summary card and the two buttons. Pulses slowly; still under reduced motion. */
+/** Shaped like the glass bar, the Shop's name, the ticket and the two buttons. Pulses slowly; still under reduced motion. */
 function ManageSkeleton() {
   const block = "rounded-full bg-line motion-safe:animate-pulse";
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col px-4 sm:py-6" aria-busy="true">
-      <div className="flex min-h-16 items-center justify-between gap-3 py-3">
-        <div className={`h-5 w-40 ${block}`} />
-        <div className="flex gap-2">
-          <div className={`h-11 w-20 ${block}`} />
-          <div className={`h-11 w-11 ${block}`} />
+    <div className="client-page flex min-h-dvh w-full flex-col" aria-busy="true">
+      <div className="px-3 pt-2.5">
+        <div className="c-bar mx-auto flex h-14 max-w-lg items-center justify-between rounded-full pr-1.5 pl-4">
+          <div className={`h-7 w-7 ${block}`} />
+          <div className="flex gap-1.5">
+            <div className={`h-11 w-16 ${block}`} />
+            <div className={`h-11 w-11 ${block}`} />
+          </div>
         </div>
       </div>
-      <div className="flex flex-1 flex-col gap-4">
-        <div className="card overflow-hidden">
-          <div className="flex items-center gap-3 px-5 pt-5 pb-4">
-            <div className={`h-7 w-7 ${block}`} />
-            <div className={`h-6 w-36 ${block}`} />
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4">
+        <div className="flex flex-col gap-2 pt-6 pb-4">
+          <div className={`h-6 w-48 ${block}`} />
+          <div className={`h-4 w-36 ${block}`} />
+        </div>
+        <div className="c-card overflow-hidden">
+          <div className="flex items-center gap-3 px-5 pt-5">
+            <div className={`h-10 w-10 ${block}`} />
+            <div className={`h-7 w-40 ${block}`} />
           </div>
-          <div className="flex items-center gap-3 border-t border-line px-5 py-4">
-            <div className={`h-11 w-11 ${block}`} />
+          <div className="flex flex-col gap-2 p-5">
+            <div className={`h-4 w-44 ${block}`} />
+            <div className={`h-8 w-32 ${block}`} />
+          </div>
+          <div className="mx-6 my-2.5 border-t border-dashed border-line" />
+          <div className="flex items-center gap-3 p-4 px-5">
+            <div className={`h-12 w-12 ${block}`} />
             <div className="flex flex-col gap-2">
               <div className={`h-4 w-24 ${block}`} />
               <div className={`h-4 w-32 ${block}`} />
             </div>
           </div>
-          <div className="flex flex-col gap-2 border-t border-line px-5 py-4">
-            <div className={`h-4 w-44 ${block}`} />
-            <div className={`h-8 w-28 ${block}`} />
-          </div>
-          <div className="flex min-h-14 items-center justify-between border-t border-line px-5 py-3">
+          <div className="mx-5 flex min-h-14 items-center justify-between border-t border-line py-3">
             <div className={`h-5 w-12 ${block}`} />
             <div className={`h-6 w-24 ${block}`} />
           </div>
         </div>
-        <div className="mt-auto flex flex-col gap-3 pt-4 sm:mt-2">
+        <div className="mt-auto flex flex-col gap-3 pt-4 pb-6 sm:mt-2">
           <div className={`h-12 w-full ${block}`} />
           <div className={`h-12 w-full ${block}`} />
         </div>
