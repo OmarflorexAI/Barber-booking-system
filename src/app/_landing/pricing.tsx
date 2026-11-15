@@ -40,7 +40,6 @@ export function Pricing({ t }: SectionProps) {
                 key={plan.name}
                 data-card="pricing"
                 className={`flex flex-col overflow-hidden rounded-2xl border border-white/14 border-t-white/24 bg-panel md:row-span-3 md:grid md:grid-rows-subgrid md:gap-0`}
-                style={{ backgroundImage: "radial-gradient(80% 50% at 50% 0%, var(--l-raised) 0%, transparent 70%)" }}
               >
                 <div className="border-b border-white/14 p-8 md:p-10">
                   <h3 className="text-balance text-4xl font-semibold tracking-[-0.03em] text-foreground">{plan.price}</h3>
