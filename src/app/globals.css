@@ -1683,3 +1683,392 @@ body:has(.landing) {
     transform: translateX(-3px) rotate(-45deg);
   }
 }
+
+/* ══ Client pages (premium) ═══════════════════════════════════════════════════════════════
+ * /b/<shopSlug> and /m/<token>: the frame is src/components/client-shell.tsx, the Shop's
+ * front is src/app/b/[shopSlug]/shop-header.tsx. RECIPE for every Client screen:
+ * - Ground: --paper, flat. Column max-w-lg, 16px gutters (px-4), sections gap-6/pt-8.
+ * - Card: .c-card = --surface fill, 16px radius (rounded-2xl), a --c-rim border whose top
+ *   edge is brighter (--c-rim-top), a 1px inner glint. Light only adds --c-depth (a very
+ *   soft low shadow, DESIGN.md's card exception); dark has none.
+ * - List: ONE .c-card holding ruled rows (divide-y divide-line), never a card per row.
+ *   Row: .c-row = min-h-16 px-4 py-3, hover tints --raised (fine pointers), .press on tap.
+ * - Selected (row, chip, Barber): .c-selected or aria-pressed/aria-checked="true" on a
+ *   .c-row/.c-chip = --raised fill + 1.5px --ink ring. A chosen time pill fills --ink.
+ * - Chip / time pill: .c-chip = 48px full pill, --line border, mono label for times.
+ * - Buttons: .c-btn.c-btn-primary (48px pill, --ink fill, --paper text, one per view)
+ *   and .c-btn.c-btn-secondary (outlined, hover fills --raised). Add .press. Never red.
+ * - Section heading: .c-h2 = 1.5rem semibold, -0.025em, text-balance; a muted 0.875rem
+ *   medium line (step counter, meta) sits above or below it, never a pill label.
+ * - Mono: `font-mono tabular-nums` for times, durations, prices, phone numbers, counts only.
+ * - Photos: wrap in .c-photo (overflow clip, --raised fill); a linked photo zooms 1.02.
+ *   Initials disc when a person or Shop has no photo, never an empty box.
+ * - Motion: .c-in rises 12px + fades once on load (stagger with style="--i: n", 60ms);
+ *   .c-in-photo settles from 1.04 scale. Hover: .lift (cards rise 2px), .c-link (underline
+ *   draws). Only transform/opacity animate; reduced motion shows the final state.
+ * - Red: only the booked check (and /m's confirmed check). Errors use <Notice>.
+ */
+.client-page {
+  --cbar-h: 4.5rem;
+  /* Light: a rim one step firmer than --line, its top edge back at --line (lit from above),
+     and a very soft depth so white cards hold their edge on the near-white ground. */
+  --c-rim: color-mix(in oklch, var(--line), var(--ink) 8%);
+  --c-rim-top: var(--line);
+  --c-depth: 0 1px 2px oklch(0% 0 0 / 0.04), 0 8px 24px -14px oklch(0% 0 0 / 0.14);
+  --c-glint: oklch(100% 0 0 / 0.7);
+  --c-glass: color-mix(in oklch, var(--paper) 72%, transparent);
+  background: var(--paper);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .client-page {
+    --c-rim: var(--line);
+    --c-depth: 0 0 #0000;
+    --c-rim-top: color-mix(in oklch, var(--line), var(--ink) 9%);
+    --c-glint: oklch(100% 0 0 / 0.05);
+    --c-glass: color-mix(in oklch, var(--paper) 68%, transparent);
+  }
+}
+:root[data-theme="dark"] .client-page {
+  --c-rim: var(--line);
+  --c-depth: 0 0 #0000;
+  --c-rim-top: color-mix(in oklch, var(--line), var(--ink) 9%);
+  --c-glint: oklch(100% 0 0 / 0.05);
+  --c-glass: color-mix(in oklch, var(--paper) 68%, transparent);
+}
+.client-page ::selection {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* The sticky glass capsule (after the landing nav): blurred paper, top-lit rim, inner glint. */
+.c-bar {
+  background-color: var(--c-glass);
+  border: 1px solid var(--c-rim);
+  border-top-color: var(--c-rim-top);
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    0 10px 30px -16px oklch(0% 0 0 / 0.28);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
+}
+
+.c-card {
+  background: var(--surface);
+  border: 1px solid var(--c-rim);
+  border-top-color: var(--c-rim-top);
+  border-radius: 1rem;
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    var(--c-depth);
+}
+.c-row {
+  display: flex;
+  min-height: 4rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+.c-selected,
+.c-row[aria-pressed="true"],
+.c-row[aria-checked="true"],
+.c-chip[aria-pressed="true"],
+.c-chip[aria-checked="true"] {
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+.c-chip {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 9999px;
+  padding: 0 1rem;
+  background: var(--surface);
+  font-size: 0.9375rem;
+}
+.c-btn {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.c-btn:disabled,
+.c-btn[aria-disabled="true"] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.c-btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.14);
+}
+.c-btn-secondary {
+  border: 1px solid var(--c-rim);
+  border-top-color: var(--c-rim-top);
+  background: var(--surface);
+  color: var(--ink);
+}
+.c-h2 {
+  font-size: 1.5rem;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.c-photo {
+  overflow: clip;
+  background: var(--raised);
+}
+.c-link {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+}
+@media (hover: hover) and (pointer: fine) {
+  .c-row:hover:not(:disabled, .c-selected, [aria-pressed="true"], [aria-checked="true"]),
+  .c-chip:hover:not(:disabled, [aria-pressed="true"], [aria-checked="true"]),
+  .c-btn-secondary:hover {
+    background: var(--raised);
+  }
+  .c-chip:hover:not(:disabled) {
+    border-color: color-mix(in oklch, var(--ink) 35%, var(--line));
+  }
+  .c-btn-primary:hover {
+    background: color-mix(in oklch, var(--ink) 86%, var(--paper));
+  }
+  .c-link:hover,
+  .c-link:focus-visible {
+    background-size: 100% 1px;
+  }
+}
+
+@keyframes c-in {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}
+@keyframes c-in-photo {
+  from {
+    opacity: 0;
+    scale: 1.04;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .c-in {
+    animation: c-in 560ms var(--ease-out) both;
+    animation-delay: calc(min(var(--i, 0), 10) * 60ms + 80ms);
+  }
+  .c-in-photo {
+    animation: c-in-photo 900ms var(--ease-out) both;
+  }
+  .c-btn {
+    transition:
+      translate var(--dur-fast) var(--ease-out),
+      scale var(--dur-fast) var(--ease-spring),
+      background-color var(--dur-fast) var(--ease-out);
+  }
+  .c-row,
+  .c-chip {
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out),
+      scale var(--dur-fast) var(--ease-spring);
+  }
+  .c-link {
+    transition: background-size 220ms var(--ease-out);
+  }
+  .c-photo img {
+    transition: scale 500ms var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .c-btn:hover:not(:disabled) {
+      translate: 0 -1px;
+    }
+    a:hover > .c-photo img,
+    a.c-photo:hover img,
+    button:hover > .c-photo img {
+      scale: 1.02;
+    }
+  }
+}
+
+/* /m/<token>: the ticket's tear-line notches (paper showing through), the cancel sheet's
+   top-lit rim, and the sticky dock under the time picker (paper fading in above it). */
+.m-notch {
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--c-rim);
+}
+/* The tear line: in light a firmer dash so it reads on white (dark keeps --line). */
+.m-tear {
+  border-color: var(--c-rim);
+}
+.m-sheet {
+  border-top-color: var(--c-rim-top);
+  box-shadow: inset 0 1px 0 var(--c-glint);
+}
+.m-dock {
+  background: linear-gradient(to bottom, transparent, var(--paper) 1rem);
+}
+
+/* ── /b booking flow (booking-flow.tsx) ──────────────────────────────────────────────────
+ * .c-step: each step slides in 24px from the side it comes from (--dir: 1 forward, -1 back).
+ * .c-progress: the five step segments fill left to right. .c-dock: the glass booking dock
+ * pinned above the home bar. .c-field: inputs. .c-slots: the shared SlotPicker in the recipe
+ * look (day tabs, mono time pills, the day strip fading at its edges). .c-check: the booked
+ * check lands once.
+ */
+.c-progress {
+  scale: 0 1;
+  transform-origin: left;
+}
+.c-progress.is-on {
+  scale: 1 1;
+}
+.c-dock {
+  /* More solid than the top bar's glass: times and text scroll under it and must not read through. */
+  background-color: color-mix(in oklch, var(--surface) 90%, transparent);
+  border: 1px solid var(--c-rim);
+  border-top-color: var(--c-rim-top);
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    0 16px 40px -18px oklch(0% 0 0 / 0.35);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
+}
+.c-field {
+  min-height: 3rem;
+  width: 100%;
+  scroll-margin-bottom: 7rem; /* a focused field scrolls clear of the dock */
+  border: 1px solid var(--c-rim);
+  border-top-color: var(--c-rim-top);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: inset 0 1px 0 var(--c-glint);
+  padding: 0 1rem;
+  font-size: 1rem;
+  color: var(--ink);
+}
+.c-field:focus {
+  border-color: var(--ink);
+}
+.c-field:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.c-field:user-invalid {
+  border-style: dashed;
+  border-color: color-mix(in oklch, var(--ink) 55%, var(--line));
+}
+.c-radio-dot {
+  scale: 0;
+}
+/* Waiting (bot check, booking): a calm outlined pill, plainly not pressable. */
+.c-btn-primary:disabled {
+  opacity: 1;
+  background: var(--raised);
+  color: var(--muted);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.c-radio-dot.is-on {
+  scale: 1;
+}
+.c-slots [role="tablist"] {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 1rem, #000 calc(100% - 1.5rem), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 1rem, #000 calc(100% - 1.5rem), transparent);
+}
+.c-slots [role="tab"],
+.c-slots button[aria-pressed] {
+  border-color: var(--line);
+  border-top-color: var(--c-rim-top);
+  box-shadow: inset 0 1px 0 var(--c-glint);
+}
+.c-slots [role="tab"] {
+  border-radius: 1.125rem;
+}
+.c-slots [role="tab"][aria-selected="true"],
+.c-slots button[aria-pressed="true"] {
+  border-color: var(--ink);
+  box-shadow: none;
+}
+.c-slots h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.c-slots h3::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.c-slots [aria-busy] > div {
+  border-radius: 9999px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .c-slots [role="tab"]:hover:not([aria-selected="true"]),
+  .c-slots button[aria-pressed="false"]:hover {
+    border-color: color-mix(in oklch, var(--ink) 35%, var(--line));
+    background: var(--raised);
+  }
+}
+@keyframes c-step {
+  from {
+    opacity: 0;
+    translate: calc(var(--dir, 1) * 24px) 0;
+  }
+}
+@keyframes c-check {
+  from {
+    opacity: 0;
+    scale: 0.5;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .c-step {
+    animation: c-step var(--dur-slow) var(--ease-out) backwards;
+  }
+  .c-progress {
+    transition: scale var(--dur-slow) var(--ease-out);
+  }
+  .c-radio-dot {
+    transition: scale var(--dur-fast) var(--ease-spring);
+  }
+  .c-field {
+    transition:
+      border-color var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-fast) var(--ease-out);
+  }
+  .c-check {
+    animation: c-check var(--dur-slow) var(--ease-spring) 60ms backwards;
+  }
+  .c-chevron {
+    transition: translate var(--dur-fast) var(--ease-out);
+  }
+  .c-slots [role="tab"],
+  .c-slots button[aria-pressed] {
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out),
+      scale var(--dur-fast) var(--ease-spring);
+  }
+  .c-slots [role="tab"]:active,
+  .c-slots button[aria-pressed]:active {
+    scale: 0.96;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .c-row:hover .c-chevron {
+      translate: 2px 0;
+    }
+    .c-field:hover:not(:focus) {
+      border-color: color-mix(in oklch, var(--ink) 30%, var(--line));
+    }
+  }
+}
