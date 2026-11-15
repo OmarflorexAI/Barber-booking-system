@@ -39,6 +39,7 @@ type BarberRow = {
   instagram?: string | null;
   specialties: string[] | null;
   phone_e164: string | null;
+  email?: string | null;
 };
 
 async function BarberProfile({ params }: { params: Promise<{ barberId: string }> }) {
@@ -113,6 +114,7 @@ async function BarberProfile({ params }: { params: Promise<{ barberId: string }>
             specialties: b.specialties ?? [],
             instagram: (b.instagram ?? "").replace(/^@/, ""),
             phone: b.phone_e164 ? formatPhone(b.phone_e164) : "",
+            email: b.email ?? "",
           }}
         />
       </section>

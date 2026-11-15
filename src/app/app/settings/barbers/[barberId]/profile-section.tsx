@@ -5,6 +5,7 @@ import { useId, useRef, useState, useTransition } from "react";
 import { deleteMediaAction } from "@/app/app/_media/actions";
 import { Notice } from "@/components/notice";
 import { PhotoInput } from "@/components/photo-input";
+import { normalizeEmail } from "@/lib/email";
 import { dictionaries, type Locale } from "@/lib/i18n/dictionaries";
 import { normalizeInstagram } from "@/lib/instagram";
 import { formatPhone, normalizePhone } from "@/lib/phone";
@@ -19,13 +20,15 @@ export type ProfileInitial = {
   instagram: string;
   /** Already formatted for reading, e.g. "(718) 555-0123"; empty when none. */
   phone: string;
+  /** The alert email; empty when none. */
+  email: string;
 };
 
 const MAX_BIO = 500;
 const MAX_SPECIALTIES = 8;
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 
-type Field = "name" | "instagram" | "phone" | "specialty";
+type Field = "name" | "instagram" | "phone" | "email" | "specialty";
 
 /** "@fresh.cuts", "fresh.cuts" or empty; the engine runs the same check on save. */
 const instagramOk = (v: string) => normalizeInstagram(v) !== "invalid";
@@ -58,6 +61,7 @@ export function ProfileSection({
   const [draft, setDraft] = useState("");
   const [instagram, setInstagram] = useState(initial.instagram);
   const [phone, setPhone] = useState(initial.phone);
+  const [email, setEmail] = useState(initial.email);
   const [error, setError] = useState<{ text: string; field?: Field } | null>(null);
   const [status, setStatus] = useState("");
   const [pending, start] = useTransition();
@@ -121,6 +125,10 @@ export function ProfileSection({
       setError({ text: p.errors.PHONE_INVALID, field: "phone" });
       return;
     }
+    if (normalizeEmail(email) === "invalid") {
+      setError({ text: p.errors.INVALID_EMAIL, field: "email" });
+      return;
+    }
     setError(null);
     start(async () => {
       const res = await updateProfileAction({
@@ -132,12 +140,13 @@ export function ProfileSection({
         specialties: list,
         photoUrl: photo,
         phone,
+        email,
         instagram: instagram.trim().replace(/^@/, ""),
       }).catch(() => ({ ok: false as const, code: "UNKNOWN" }));
       if (!res.ok) {
         setError({
           text: errText(res.code),
-          field: res.code === "PHONE_INVALID" ? "phone" : undefined,
+          field: res.code === "PHONE_INVALID" ? "phone" : res.code === "INVALID_EMAIL" ? "email" : undefined,
         });
         return;
       }
@@ -300,6 +309,36 @@ export function ProfileSection({
         />
         <span id={`${id}-phone-hint`} className="text-sm text-muted">
           {p.phoneHint}
+        </span>
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium">{p.email}</span>
+        <input
+          className="field"
+          name="email"
+          type="email"
+          inputMode="email"
+          autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          maxLength={254}
+          value={email}
+          aria-invalid={error?.field === "email" || undefined}
+          aria-describedby={describe("email", `${id}-email-hint`)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            touched("email");
+          }}
+          onBlur={() => {
+            const v = normalizeEmail(email);
+            if (v === "invalid") setError({ text: p.errors.INVALID_EMAIL, field: "email" });
+            else setEmail(v ?? "");
+          }}
+        />
+        <span id={`${id}-email-hint`} className="text-sm text-muted">
+          {p.emailHint}
         </span>
       </label>
 

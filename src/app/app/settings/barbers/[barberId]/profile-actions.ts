@@ -18,16 +18,21 @@ const Input = z.object({
   photoUrl: z.url().max(1000).nullable(),
   phone: z.string().trim().max(40),
   instagram: z.string().trim().max(40),
+  email: z.string().trim().max(254),
 });
 
 /**
- * Save what Clients see about a Barber (PLAN.md M4 · Profile), plus the Owner-only phone (Q27).
- * The engine checks the caller owns the Shop and the Barber is in it, and validates Instagram.
+ * Save what Clients see about a Barber (PLAN.md M4 · Profile), plus the Owner-only phone (Q27)
+ * and alert email. The engine checks the caller owns the Shop and the Barber is in it, and
+ * validates Instagram and the email (INVALID_EMAIL).
  */
 export async function updateProfileAction(input: z.input<typeof Input>): Promise<ProfileResult> {
   const parsed = Input.safeParse(input);
-  if (!parsed.success) return { ok: false, code: "INVALID_INPUT" };
-  const { phone, instagram, ...rest } = parsed.data;
+  if (!parsed.success) {
+    const emailBad = parsed.error.issues.some((i) => i.path[0] === "email");
+    return { ok: false, code: emailBad ? "INVALID_EMAIL" : "INVALID_INPUT" };
+  }
+  const { phone, instagram, email, ...rest } = parsed.data;
   const phoneE164 = phone ? normalizePhone(phone) : null;
   if (phone && !phoneE164) return { ok: false, code: "PHONE_INVALID" };
   const supabase = await createClient();
@@ -35,7 +40,7 @@ export async function updateProfileAction(input: z.input<typeof Input>): Promise
   const userId = data.user?.id;
   if (!userId) return { ok: false, code: "FORBIDDEN" };
   try {
-    await shopAdmin().updateBarberProfile({ userId, ...rest, phone: phoneE164, instagram: instagram || null });
+    await shopAdmin().updateBarberProfile({ userId, ...rest, phone: phoneE164, instagram: instagram || null, email: email || null });
     return { ok: true };
   } catch (e) {
     if (isBookingError(e)) return { ok: false, code: e.code };
