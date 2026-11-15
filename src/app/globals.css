@@ -630,7 +630,8 @@ body:has(.landing) {
  * Hero glow (hero.tsx): two large soft lights in the hero panel, a cool gray-blue one low
  * left and a faint warm white one high right, plain radial gradients (no filters). With
  * motion allowed they drift slowly on long alternating loops, transform only; under reduced
- * motion they rest where they start. Grayscale-leaning so barber red stays the only accent.
+ * motion they rest where they start. On load they fade in (opacity + a slight scale settle on
+ * the wrapper); eased multi-stop falloff so the rims never band. Grayscale-leaning so barber red stays the only accent.
  */
 .landing .hero-glow > span {
   position: absolute;
@@ -643,19 +644,49 @@ body:has(.landing) {
 .landing .hero-glow > span:first-child {
   left: -18%;
   bottom: -55%;
-  background: radial-gradient(closest-side, rgba(150, 164, 190, 0.32), rgba(150, 164, 190, 0.1) 55%, transparent);
+  background: radial-gradient(
+    closest-side,
+    rgba(150, 164, 190, 0.32),
+    rgba(150, 164, 190, 0.29) 15%,
+    rgba(150, 164, 190, 0.22) 30%,
+    rgba(150, 164, 190, 0.145) 45%,
+    rgba(150, 164, 190, 0.08) 60%,
+    rgba(150, 164, 190, 0.035) 75%,
+    rgba(150, 164, 190, 0.01) 88%,
+    rgba(150, 164, 190, 0)
+  );
 }
 .landing .hero-glow > span:last-child {
   right: -20%;
   top: -50%;
-  background: radial-gradient(closest-side, rgba(236, 228, 218, 0.16), rgba(236, 228, 218, 0.05) 55%, transparent);
+  background: radial-gradient(
+    closest-side,
+    rgba(236, 228, 218, 0.16),
+    rgba(236, 228, 218, 0.145) 15%,
+    rgba(236, 228, 218, 0.11) 30%,
+    rgba(236, 228, 218, 0.072) 45%,
+    rgba(236, 228, 218, 0.04) 60%,
+    rgba(236, 228, 218, 0.017) 75%,
+    rgba(236, 228, 218, 0.005) 88%,
+    rgba(236, 228, 218, 0)
+  );
 }
 @media (prefers-reduced-motion: no-preference) {
+  /* Load: the wrapper fades in and settles from a touch larger; the spans keep their own drift. */
+  .landing .hero-glow {
+    animation: hero-glow-in 1.6s cubic-bezier(0.33, 0, 0.15, 1) 0.1s both;
+  }
   .landing .hero-glow > span:first-child {
     animation: hero-drift-a 19s ease-in-out infinite alternate;
   }
   .landing .hero-glow > span:last-child {
     animation: hero-drift-b 23s ease-in-out infinite alternate;
+  }
+}
+@keyframes hero-glow-in {
+  from {
+    opacity: 0;
+    scale: 1.06;
   }
 }
 @keyframes hero-drift-a {
