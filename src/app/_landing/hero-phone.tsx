@@ -29,8 +29,10 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
   const [barber, setBarber] = useState<number | null>(1);
   const [time, setTime] = useState(10);
   const [booked, setBooked] = useState(0); // counts bookings, so the check mark replays each time
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const box = useRef<HTMLDivElement>(null);
+  const device = useRef<HTMLDivElement>(null);
+  const aim = useRef({ x: 0, y: 0 });
+  const frame = useRef(0);
   const screen = useRef<HTMLDivElement>(null);
   const moved = useRef(false);
 
@@ -54,10 +56,23 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
   const barberName = barber === null ? p.barbers[1] : p.barbers[barber];
   const svc = p.services[service];
 
+  // The lean: at most 5deg sideways and 4deg up/down, written straight to the style once
+  // per frame (no re-render); the CSS transition eases it. Mouse only, never under reduced motion.
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  function paint() {
+    frame.current = 0;
+    const { x, y } = aim.current;
+    // Resting straight drops the 3D layer so the screen stays pin-sharp.
+    if (device.current) device.current.style.transform = x === 0 && y === 0 ? "none" : `perspective(1400px) rotateY(${x * 10}deg) rotateX(${-y * 8}deg)`;
+  }
+  function aimAt(x: number, y: number) {
+    aim.current = { x, y };
+    if (!frame.current) frame.current = requestAnimationFrame(paint);
+  }
   function lean(e: PointerEvent) {
-    if (e.pointerType !== "mouse" || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (e.pointerType !== "mouse" || !matchMedia("(pointer: fine)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const r = box.current!.getBoundingClientRect();
-    setTilt({ x: (e.clientX - r.left) / r.width - 0.5, y: (e.clientY - r.top) / r.height - 0.5 });
+    aimAt((e.clientX - r.left) / r.width - 0.5, (e.clientY - r.top) / r.height - 0.5);
   }
 
   const screens: ReactNode[] = [
@@ -187,33 +202,32 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
     <div
       ref={box}
       onPointerMove={lean}
-      onPointerLeave={() => setTilt({ x: 0, y: 0 })}
+      onPointerLeave={() => aimAt(0, 0)}
       className="relative mx-auto w-full max-w-[288px]"
     >
-      <div
-        className="transition-transform duration-500 ease-out motion-reduce:transition-none"
-        style={{
-          transform: `perspective(1400px) rotateY(${tilt.x * 10}deg) rotateX(${-tilt.y * 8}deg)`,
-        }}
-      >
-        <div className="rounded-[2.4rem] bg-black p-[7px] shadow-[0_0_0_1px_rgba(255,255,255,.14)]">
-          <div
-            role="group"
-            aria-label={p.label}
-            className={`relative h-[440px] overflow-hidden rounded-[2rem] ${c.paper} ${c.ink} sm:h-[500px]`}
-          >
-            <span aria-hidden className="absolute left-1/2 top-2 z-10 h-[15px] w-[64px] -translate-x-1/2 rounded-full bg-black" />
-            <ViewTransition
-              key={step}
-              default="none"
-              enter={{ "phone-forward": "phone-in-fwd", "phone-back": "phone-in-back", default: "none" }}
-              exit={{ "phone-forward": "phone-out-fwd", "phone-back": "phone-out-back", default: "none" }}
-              update={{ "lang-switch": "lang-swap", default: "none" }}
+      <div ref={device} className="hero-phone-tilt">
+        {/* The device: a graphite rim lit from the top left, side buttons, a black bezel. */}
+        <div className="hero-phone-frame">
+          <div className="hero-phone-bezel">
+            <div
+              role="group"
+              aria-label={p.label}
+              className={`relative h-[440px] overflow-hidden rounded-[2.15rem] ${c.paper} ${c.ink} sm:h-[500px]`}
             >
-              <div ref={screen} className="absolute inset-0 pt-7">
-                {screens[step]}
-              </div>
-            </ViewTransition>
+              <StatusBar />
+              <ViewTransition
+                key={step}
+                default="none"
+                enter={{ "phone-forward": "phone-in-fwd", "phone-back": "phone-in-back", default: "none" }}
+                exit={{ "phone-forward": "phone-out-fwd", "phone-back": "phone-out-back", default: "none" }}
+                update={{ "lang-switch": "lang-swap", default: "none" }}
+              >
+                <div ref={screen} className="absolute inset-0 pt-7">
+                  {screens[step]}
+                </div>
+              </ViewTransition>
+              <span aria-hidden className="pointer-events-none absolute bottom-[7px] left-1/2 z-10 h-[4px] w-[96px] -translate-x-1/2 rounded-full bg-[#0f0f0f]/85" />
+            </div>
           </div>
         </div>
       </div>
@@ -228,6 +242,34 @@ export function HeroPhone({ p, lang }: { p: Phone; lang: string }) {
           p.hint
         )}
       </p>
+    </div>
+  );
+}
+
+/** The phone's status bar: clock, the camera island, signal, wifi and battery. Decoration only. */
+function StatusBar() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 flex h-[31px] items-center justify-between pl-6 pr-5 text-[#0f0f0f]">
+      <span className="text-[11px] font-semibold tabular-nums tracking-[-0.01em]">9:41</span>
+      <span className="absolute left-1/2 top-2 h-[15px] w-[64px] -translate-x-1/2 rounded-full bg-black" />
+      <span className="flex items-center gap-[5px]">
+        <svg viewBox="0 0 17 11" className="h-[9px] w-auto" fill="currentColor">
+          <rect x="0" y="7" width="3" height="4" rx="0.8" />
+          <rect x="4.6" y="5" width="3" height="6" rx="0.8" />
+          <rect x="9.2" y="2.5" width="3" height="8.5" rx="0.8" />
+          <rect x="13.8" y="0" width="3" height="11" rx="0.8" />
+        </svg>
+        <svg viewBox="0 0 15 11" className="h-[9px] w-auto" fill="currentColor">
+          <path d="M7.5 2.3c2.1 0 4 .8 5.5 2.1l1.1-1.1A9.4 9.4 0 0 0 7.5.7 9.4 9.4 0 0 0 .9 3.3L2 4.4a7.8 7.8 0 0 1 5.5-2.1Z" />
+          <path d="M7.5 5.4c1.2 0 2.3.4 3.2 1.2l1.1-1.1a6.3 6.3 0 0 0-8.6 0l1.1 1.1c.9-.8 2-1.2 3.2-1.2Z" />
+          <path d="M7.5 8.4c.4 0 .8.2 1.1.4L7.5 10 6.4 8.8c.3-.3.7-.4 1.1-.4Z" />
+        </svg>
+        <svg viewBox="0 0 25 12" className="h-[10px] w-auto" fill="none">
+          <rect x="0.5" y="0.5" width="21" height="11" rx="3.2" stroke="currentColor" strokeOpacity="0.4" />
+          <rect x="2" y="2" width="15" height="8" rx="1.8" fill="currentColor" />
+          <path d="M23 4v4c.8-.3 1.3-1.1 1.3-2S23.8 4.3 23 4Z" fill="currentColor" fillOpacity="0.45" />
+        </svg>
+      </span>
     </div>
   );
 }
