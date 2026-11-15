@@ -702,22 +702,77 @@ body:has(.landing) {
  * a glow and a shine that sweeps on hover (opacity/transform only), and pulsing dots
  * while it works. Reduced motion: everything swaps without moving.
  */
+/*
+ * Contact card (contact.tsx): static premium glass, never animated. The fill is the panel tone
+ * at 90% over a 40px blur, so the moving band behind it is imperceptible; a white/20 rim that
+ * the ::before ring lifts to ~34% along the top, an inner top highlight line and a soft inner
+ * bottom shade. Focus inside the form brightens the ring (opacity, 200ms).
+ */
+.landing .lead-card {
+  border: 1px solid rgb(255 255 255 / 0.2);
+  background-color: color-mix(in oklch, var(--l-panel) 90%, transparent);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0) 35%, rgb(0 0 0 / 0.16));
+  -webkit-backdrop-filter: blur(40px) saturate(1.2);
+  backdrop-filter: blur(40px) saturate(1.2);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 -24px 32px -24px rgb(0 0 0 / 0.45),
+    0 30px 60px -30px rgb(0 0 0 / 0.8);
+}
 .landing .lead-card::before {
   content: "";
   position: absolute;
   inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.22), rgb(255 255 255 / 0.04) 35%, transparent 60%);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.34), rgb(255 255 255 / 0.08) 28%, transparent 55%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  opacity: 0.45;
+  opacity: 0.75;
   pointer-events: none;
 }
-.landing .lead-card:hover::before,
 .landing .lead-card:focus-within::before {
   opacity: 1;
+}
+/*
+ * Velaris band (landing.tsx, components/ui/velaris.tsx): the slow brand gradient behind FAQ
+ * and Contact. Under it, a static CSS gradient in the same colours shows until the canvas has
+ * drawn (and stays when WebGL is missing); the canvas then fades in over 600ms (opacity). The
+ * top and bottom ~120px feather into the page ground, so there are no hard edges.
+ */
+.landing .velaris-band {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background-color: var(--l-bg);
+  background-image:
+    radial-gradient(45% 30% at 50% 40%, rgb(58 61 68 / 0.45), transparent 75%),
+    radial-gradient(40% 26% at 22% 24%, rgb(46 49 55 / 0.6), transparent 70%),
+    radial-gradient(40% 28% at 80% 62%, rgb(46 49 55 / 0.55), transparent 70%),
+    radial-gradient(55% 30% at 38% 82%, rgb(26 27 31 / 0.85), transparent 70%);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 120px, #000 calc(100% - 120px), transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 120px, #000 calc(100% - 120px), transparent);
+}
+.landing .velaris-canvas {
+  /* Pinned to the top; velaris.tsx sets its height in 640px steps (>= the band). */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+}
+.landing .velaris-canvas[data-ready] {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .landing .velaris-canvas {
+    transition: opacity 600ms ease-out;
+  }
 }
 .landing .lead-field {
   display: block;
@@ -793,16 +848,23 @@ body:has(.landing) {
   .landing .lead-select {
     display: flex;
     align-items: center;
+    height: 46px;
   }
   .landing .lead-select::picker-icon {
     display: none;
   }
+  /* The open list: as wide as the field, compact rows, scrolls past ~8 rows. */
   .landing .lead-select::picker(select) {
+    box-sizing: border-box;
+    width: anchor-size(width);
+    min-width: 0;
+    max-height: min(296px, 50dvh);
+    overflow-y: auto;
     margin-block: 6px;
     padding: 6px;
     border: 1px solid rgb(255 255 255 / 0.1);
     border-top-color: rgb(255 255 255 / 0.18);
-    border-radius: 14px;
+    border-radius: 12px;
     background-color: var(--l-panel);
     background-image: linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0) 40%);
     -webkit-backdrop-filter: blur(20px) saturate(150%);
@@ -813,13 +875,14 @@ body:has(.landing) {
   .landing .lead-select option {
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-height: 44px;
-    padding: 0 12px;
-    border-radius: 8px;
+    gap: 8px;
+    min-height: 35px;
+    padding: 0 10px;
+    border-radius: 6px;
     background: transparent;
     color: var(--l-fg);
-    font-size: 15px;
+    font-size: 14px;
+    line-height: 1.25;
     cursor: pointer;
   }
   .landing .lead-select option[hidden] {
@@ -827,7 +890,7 @@ body:has(.landing) {
   }
   .landing .lead-select option:hover,
   .landing .lead-select option:focus-visible {
-    background: rgb(255 255 255 / 0.08);
+    background: rgb(255 255 255 / 0.07);
     outline: none;
   }
   .landing .lead-select option:checked {
@@ -837,8 +900,8 @@ body:has(.landing) {
     order: 1;
     margin-left: auto;
     content: "";
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     background: currentColor;
     -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.75l6 6 9-13.5'/%3E%3C/svg%3E") center / contain no-repeat;
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.75l6 6 9-13.5'/%3E%3C/svg%3E") center / contain no-repeat;
@@ -1053,7 +1116,7 @@ body:has(.landing) {
 }
 @media (prefers-reduced-motion: no-preference) {
   .landing .lead-card::before {
-    transition: opacity 320ms ease-out;
+    transition: opacity 200ms ease-out;
   }
   .landing .lead-field {
     transition:

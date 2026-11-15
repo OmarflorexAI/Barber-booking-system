@@ -3,6 +3,7 @@ import { ViewTransition } from "react";
 import type { Locale } from "@/lib/i18n/dictionaries";
 import { landingDictionaries } from "@/lib/i18n/landing";
 import { SITE_URL } from "@/lib/site";
+import { Velaris } from "@/components/ui/velaris";
 import { Contact } from "./contact";
 import { Facts } from "./facts";
 import { Faq } from "./faq";
@@ -110,8 +111,12 @@ export function Landing({ locale }: { locale: Locale }) {
           <Setup {...props} />
           <FirstMonth {...props} />
           <Pricing {...props} />
-          <Faq {...props} />
-          <Contact {...props} />
+          {/* FAQ and Contact share one slow brand gradient behind them (decorative, no text). */}
+          <div className="relative isolate">
+            <Velaris className="velaris-band" height="100%" speed={1} />
+            <Faq {...props} />
+            <Contact {...props} />
+          </div>
         </main>
         <Footer {...props} />
       </div>

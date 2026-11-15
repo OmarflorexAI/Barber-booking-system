@@ -8,18 +8,11 @@ function leadFormText(t: SectionProps["t"]): LeadFormText {
   return { shopName, ownerName, phone, optional, barbers, barbersPick, barbersMore, message, messageHint, send, sending, verifying, thanksTitle, thanksBody, errors };
 }
 
-/** The template's centered contact card, holding our lead form (with the Turnstile bot check). */
+/** The centered glass contact card (over the FAQ/Contact Velaris band), holding our lead form (with the Turnstile bot check). */
 export function Contact({ locale, t }: SectionProps) {
   return (
     <section id={CONTACT_ID} aria-labelledby="contact-title" className="scroll-mt-20 px-4 py-[calc(48px+8vh)] sm:px-6">
-      <div
-        className="lead-card relative mx-auto max-w-2xl rounded-2xl border border-border bg-black p-6 sm:p-8 md:p-12"
-        style={{
-          boxShadow: "0 -20px 50px -15px rgba(255,255,255,0.05)",
-          backgroundImage: "radial-gradient(80% 50% at 50% 0%, rgb(26,26,26) 0%, transparent 70%)",
-        }}
-        data-reveal
-      >
+      <div className="lead-card relative mx-auto max-w-2xl rounded-2xl p-6 sm:p-8 md:p-12" data-reveal>
         <div className="text-center">
           <h2 id="contact-title" className={type.h2}>
             {t.formTitle}
