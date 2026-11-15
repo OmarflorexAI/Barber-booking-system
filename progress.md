@@ -1,12 +1,32 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-15 (landing polish + Barber alert email, all QA PASS, pushed). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-15, end of session (landing polish rounds, Barber alert email; everything committed and pushed). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-### START HERE next session (written 2026-11-15)
+### START HERE next session (written 2026-11-15, end of session)
 
-**Done 2026-11-15** (landing grilling Q1–Q9 + four UI jobs, each QA PASS):
+**Tomorrow, in order (user, 2026-11-15):**
+
+1. **Finish polishing the landing:**
+   - Make sure no photograph gets glitched or cut by the new section transitions (setup, pricing, How photo boxes, hero panel). Check at 1440/1024/768/390, EN and ES.
+   - **Remove the glowing circle inside the pricing cards** (the radial top highlight on both cards, `pricing.tsx` + its rules in `globals.css`).
+   - Then show the user the whole landing and ask what else needs polish.
+2. **Discuss the DEMO** (showing the app to the user's dad). Open questions already put to the user: where it runs (Vercel `*.vercel.app` recommended), what data (shared dev DB + demo-shop, or a real Shop for the dad), what he does (watch, sign in as Owner, book as a Client), what must be real (Resend works; Stripe stays test; texts/Telegram log-only?), and when (decides the every-minute cron). Checklist under "Demo deploy plan" below.
+
+**Done 2026-11-15, second half (all committed and pushed):**
+
+- Hero: removed the service-area pill above the title `fede333`; no language label inside the hero phone `7f4a9c1`; the page scrolls over the hero phone `c82d77f`.
+- Lead form: Neighborhood field removed (server still accepts it), compact two-column layout, 44–46px fields `4ca9c78`; keeps input after a server error (`onSubmit`, not a form action) `3888583`.
+- **Liquid metal button** (user's component, `src/components/ui/liquid-metal-button.tsx`, `@paper-design/shaders@0.0.82`): the form's Send `f2446c2`; "Talk to us" in the nav and phone menu, both pricing cards (second one `tone="quiet"`) `9856405`. The shader mounts only near the screen and drops its WebGL context when it leaves (≤ 3 live contexts on the page).
+- Nav: hover box replaced by a centred 1px underline; glass rim + glint; the CTA keeps an even inset (13px open, 7px contracted) `9856405`.
+- Look: darker grey ramp (ground oklch 13%, band 15.5%, panel 17%, raised 21%, hairline 28%, muted 71%), sections meet by tone (`.l-band`, footer `.l-rise`) instead of lines, cards on photos panel-toned with a lit top rim, text on photos ≥ 4.8:1, paddings aligned `a6029b5`.
+- **Velaris band** (user's WebGL gradient, `src/components/ui/velaris.tsx`): dark graphite/steel only (user: no red), behind FAQ + Contact only, reads `--l-bg`; the contact card is static glass (panel 90% over a 40px blur, no animation). Fixed the FAQ "glitch": opening an answer resized and re-faded the canvas; now the canvas height is stepped and the pattern anchored to the top `0269a5d`. DESIGN.md `6ef3a9c`, `1b3803a`.
+- `src/components/ui/` is new (shadcn convention) for pasted components; no shadcn CLI, no lucide/clsx/tailwind-merge installed.
+
+**Not QA'd by a separate bm-qa pass (only the workers' own checks + orchestrator's typecheck/lint/landing e2e 12/12/screenshots):** the last round (`a6029b5` `9856405` `0269a5d`). Run one full-page QA tomorrow before the demo.
+
+**Done 2026-11-15, first half** (landing grilling Q1–Q9 + four UI jobs, each QA PASS):
 
 - Landing copy: first month free, then **$50 a month** (the Free plan is not advertised); Barbers get alerts "on their phone or by email" / "on Telegram or by email, once they're connected"; no Barber day-screen claims; walk-ins "from the day screen". `7cfd529`. PRODUCT.md + CLAUDE.md price rule updated.
 - Equal-size card groups (pricing/setup row subgrid, facts) `4292cbc`; floating glass nav that contracts on scroll down and opens on scroll up (`nav-scroll.tsx`) `6a773b5`; hero phone drawn as a real device + ≤ 5° pointer tilt `39673cd`; hero glow fades in `deeb255`; DESIGN.md `959132c`.
@@ -14,11 +34,7 @@ Last updated: 2026-11-15 (landing polish + Barber alert email, all QA PASS, push
 
 - Later the same day: no language label inside the hero phone `7f4a9c1`; the page scrolls over the hero phone (screens never scroll, 476px tall below 640px) `c82d77f`; premium lead form (inset fields, restyled select, gradient Send) and it keeps the input after a server error `3888583`; DESIGN.md `1b3803a`. All QA PASS.
 
-**Next:**
-
-1. **Demo deploy: the user wants to discuss how to make the first demo** (next conversation topic). Show the user the landing live; more landing rounds only if they ask ("nothing else yet", 2026-11-15).
-2. **Demo deploy** (checklist under "Demo deploy plan" below).
-3. Telegram alerts for Barbers (Pro), a Settings page for Client texts, real-iPhone photo upload test, P3 calendar, P4 Settings polish.
+**Later (after the demo):** Telegram alerts for Barbers (Pro), a Settings page for Client texts, real-iPhone photo upload test, P3 calendar, P4 Settings polish.
 
 **Open from QA:** the nav between 768 and 1023px in Spanish only gets shorter, not narrower (tight links); the "How it works" mini cards differ in height on purpose; the How-it-works stage still shows "Dre's Thursday" as an illustration (not asked yet).
 
