@@ -208,6 +208,7 @@ const en = {
 
   footer: "Online booking for barbershops in the Bronx and upper Manhattan.",
   footerLinks: "Legal and staff",
+  footerPage: "On this page",
   privacy: "Privacy",
   terms: "Terms",
 };
@@ -415,6 +416,7 @@ const es: LandingDictionary = {
 
   footer: "Citas en línea para barberías del Bronx y el Alto Manhattan.",
   footerLinks: "Legal y personal",
+  footerPage: "En esta página",
   privacy: "Privacidad",
   terms: "Términos",
 };
