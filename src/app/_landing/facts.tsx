@@ -12,11 +12,11 @@ export function Facts({ t }: SectionProps) {
   return (
     <section aria-label={t.factsLabel} className="border-y border-border py-[calc(24px+4vh)]">
       <Container>
-        <ul className="grid grid-cols-2 gap-px bg-border md:grid-cols-3" data-reveal>
+        <ul className="grid auto-rows-fr grid-cols-2 gap-px bg-border md:grid-cols-3" data-reveal>
           {t.facts.map((fact, i) => {
             const Icon = ICONS[i];
             return (
-              <li key={fact} className="flex flex-col items-center gap-4 bg-background px-3 py-8 text-center sm:px-6">
+              <li key={fact} data-card="fact" className="flex flex-col items-center gap-4 bg-background px-3 py-8 text-center sm:px-6">
                 <Icon className="h-6 w-6 text-foreground" />
                 <p className="max-w-[24ch] text-pretty text-[15px] leading-snug text-foreground/90">{fact}</p>
               </li>

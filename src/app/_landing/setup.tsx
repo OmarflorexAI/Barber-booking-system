@@ -24,32 +24,35 @@ export function Setup({ t }: SectionProps) {
       >
 
         <div className="mx-auto max-w-5xl md:px-10">
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-3" data-reveal>
-            <div className="flex items-center">
-              <div>
-                <h2 id="setup-title" className={`${type.h2} text-white`}>
-                  {t.setupTitle}
-                </h2>
-                <p className="mt-4 leading-relaxed text-white/80">{t.setupBody}</p>
-              </div>
+          {/* Same grid as Pricing: the two cards are row subgrids, equal in height, icon, title and list aligned. */}
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-y-0 lg:grid-cols-3" data-reveal>
+            <div className="md:col-span-2 md:mb-12 lg:col-span-1 lg:row-span-2 lg:mb-0 lg:self-center">
+              <h2 id="setup-title" className={`${type.h2} text-white`}>
+                {t.setupTitle}
+              </h2>
+              <p className="mt-4 leading-relaxed text-white/80">{t.setupBody}</p>
             </div>
 
             {t.setupCards.map((card, i) => {
               const Icon = CARD_ICONS[i];
               return (
-                <div key={card.title} className={i === 0 ? "md:pt-12" : "md:pb-12"}>
-                  <div className="rounded-2xl bg-black p-8 md:p-10">
+                <div
+                  key={card.title}
+                  data-card="setup"
+                  className={`flex flex-col rounded-2xl bg-black p-8 md:row-span-2 md:grid md:grid-rows-subgrid md:gap-0 md:p-10`}
+                >
+                  <div>
                     <Icon className="h-6 w-6 text-foreground" />
                     <h3 className="mt-6 text-lg font-semibold tracking-[-0.02em] text-foreground">{card.title}</h3>
-                    <ul className="mt-4 space-y-3">
-                      {card.steps.map((n) => (
-                        <li key={n} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
-                          <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full bg-foreground/60" />
-                          {t.setup[n]}
-                        </li>
-                      ))}
-                    </ul>
                   </div>
+                  <ul className="mt-4 space-y-3">
+                    {card.steps.map((n) => (
+                      <li key={n} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
+                        <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full bg-foreground/60" />
+                        {t.setup[n]}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               );
             })}

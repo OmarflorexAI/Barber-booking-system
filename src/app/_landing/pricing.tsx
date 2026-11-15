@@ -4,7 +4,7 @@ import { CONTACT_ID, Check, WidePanel, outlinePill, type, whitePill } from "./ui
 
 /**
  * Pricing: the template's two cards on a photo (red barber chairs, darkened from the top).
- * The only price on the page is "free"; after that it's one monthly price, agreed in person.
+ * Prices: the first month is free, then $50 a month (Pro). The Free plan isn't advertised.
  */
 export function Pricing({ t }: SectionProps) {
   return (
@@ -21,8 +21,13 @@ export function Pricing({ t }: SectionProps) {
       >
 
         <div className="mx-auto max-w-5xl md:px-10">
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-3" data-reveal>
-            <div>
+          {/*
+            Phones: heading, then the cards stacked. From 768px the two cards sit side by side
+            under the heading; from 1024px the heading takes the first third. The cards are row
+            subgrids, so both are the same height and their price, list and button line up.
+          */}
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-y-0 lg:grid-cols-3" data-reveal>
+            <div className="md:col-span-2 md:mb-12 lg:col-span-1 lg:row-span-3 lg:mb-0">
               <h2 id="pricing-title" className={`${type.h2} text-white`}>
                 {t.offerTitle}
               </h2>
@@ -30,28 +35,28 @@ export function Pricing({ t }: SectionProps) {
             </div>
 
             {t.plans.map((plan, i) => (
-              <div key={plan.name} className={i === 1 ? "md:pb-12" : ""}>
-                <div
-                  className="h-full overflow-hidden rounded-2xl border border-border bg-black"
-                  style={{ backgroundImage: "radial-gradient(80% 50% at 50% 0%, rgb(26,26,26) 0%, transparent 70%)" }}
-                >
-                  <div className="border-b border-white/10 p-8 md:p-10">
-                    <h3 className="text-balance text-4xl font-semibold tracking-[-0.03em] text-foreground md:min-h-[2lh]">{plan.price}</h3>
-                    <p className="mt-3 text-sm text-muted-foreground">{plan.name}</p>
-                  </div>
-                  <div className="px-8 py-8 md:px-10">
-                    <ul className="flex flex-col gap-3">
-                      {plan.items.map((item) => (
-                        <li key={item} className="flex items-start gap-3 text-sm leading-snug text-muted-foreground">
-                          <Check className="mt-px h-4 w-4 text-white" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                    <a href={`#${CONTACT_ID}`} className={`${i === 0 ? whitePill : outlinePill} mt-8`}>
-                      {t.navCta}
-                    </a>
-                  </div>
+              <div
+                key={plan.name}
+                data-card="pricing"
+                className={`flex flex-col overflow-hidden rounded-2xl border border-border bg-black md:row-span-3 md:grid md:grid-rows-subgrid md:gap-0`}
+                style={{ backgroundImage: "radial-gradient(80% 50% at 50% 0%, rgb(26,26,26) 0%, transparent 70%)" }}
+              >
+                <div className="border-b border-white/10 p-8 md:p-10">
+                  <h3 className="text-balance text-4xl font-semibold tracking-[-0.03em] text-foreground">{plan.price}</h3>
+                  <p className="mt-3 text-sm text-muted-foreground">{plan.name}</p>
+                </div>
+                <ul className="flex flex-col gap-3 px-8 pt-8 md:px-10">
+                  {plan.items.map((item) => (
+                    <li key={item} className="flex items-start gap-3 text-sm leading-snug text-muted-foreground">
+                      <Check className="mt-px h-4 w-4 text-white" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <div className="px-8 pb-8 pt-8 md:px-10 md:pb-10">
+                  <a href={`#${CONTACT_ID}`} className={i === 0 ? whitePill : outlinePill}>
+                    {t.navCta}
+                  </a>
                 </div>
               </div>
             ))}

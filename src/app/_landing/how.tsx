@@ -72,7 +72,7 @@ function PhotoPanel({ photo, className, children }: { photo: (typeof PHOTOS)[num
 
 /** The template's mini card: a small dark panel with hairline border. */
 function MiniCard({ children }: { children: ReactNode }) {
-  return <div className="rounded-2xl border border-white/10 bg-background p-5">{children}</div>;
+  return <div data-card="mini" className="rounded-2xl border border-white/10 bg-background p-5">{children}</div>;
 }
 
 function BookingCard({ s }: { s: Stage }) {
