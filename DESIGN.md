@@ -194,7 +194,7 @@ Sizes step up at breakpoints rather than fluidly; the frontmatter holds the phon
 A centered 1024px column (`max-w-5xl`) with 24px gutters holds text, nav and footer. Wide panels run on a separate 1152px column with a 16px pad (24px from 640px). Section rhythm is viewport-aware: compact bands use `calc(24px + 4vh)` top and bottom, major sections `calc(48px + 8vh)`. Anchor targets carry `scroll-mt-20` so the sticky header never covers a heading.
 
 Recurring arrangements, all from the template's one-page grammar:
-- **1/3 + 2/3 split:** heading in the first column, content in the other two (Why, FAQ, setup and pricing on photos where the two cards take the second and third thirds, offset vertically by 48px).
+- **1/3 + 2/3 split:** heading in the first column, content in the other two (Why, FAQ, setup and pricing on photos where the two cards take the second and third thirds at the same size, rows aligned by subgrid; from 768 to 1023px the heading spans the width with the cards side by side below).
 - **Zigzag rows:** text and a photo panel side by side from 1024px, the middle row flipped; text first in the DOM and on phones.
 - **Bordered grid:** 2 columns on phones, 3 from 768px, hairlines drawn by 1px gaps over the border color.
 - **Sticky-heading timeline:** the heading column sticks at 128px from the top from 768px while the timeline scrolls.
@@ -203,20 +203,20 @@ Recurring arrangements, all from the template's one-page grammar:
 Breakpoints are Tailwind's (640, 768, 1024) plus a 400px step for the pill label's padding. Every interactive target is at least 44px tall; form fields and the send button 48px. No sideways scroll at 360 to 1440px in either language.
 
 ### Named Rules
-**The Still Layout Rule.** Scroll effects move only opacity, translate and clip. Content boxes never change size or position in flow; the nav "shrinks" by translating, not by changing height.
+**The Still Layout Rule.** Scroll effects move only opacity, translate and clip. Content boxes never change size or position in flow; the nav contracts by clip and translate, not by changing its box.
 
 **The Final State Rule.** Every animated element is defined at rest first. Without scroll-timeline support, under reduced motion or with JS off, the page shows each element in its final state.
 
 ## Elevation & Depth
 
-The system is flat and tonal. Depth comes from a five-step achromatic ramp (pure black, ground, panel, raised, hairline) and from cards sitting on dimmed photographs. The sticky header is the one translucent surface: ground at 80% with a medium backdrop blur, gaining a hairline underline after 40 to 80px of scroll. Photos are darkened by top-down black gradients (85% on setup, 65% on pricing) or held at 45% opacity on black.
+The system is flat and tonal. Depth comes from a five-step achromatic ramp (pure black, ground, panel, raised, hairline) and from cards sitting on dimmed photographs. The header’s glass capsule is the one translucent surface (ground at 80 to 88% with backdrop blur). Photos are darkened by top-down black gradients (85% on setup, 65% on pricing) or held at 45% opacity on black.
 
 ### Shadow Vocabulary
 - **Top glow** (`box-shadow: 0 -20px 50px -15px rgba(255,255,255,0.05)`): the contact card only, a faint light from above, paired with a radial top highlight (`radial-gradient(80% 50% at 50% 0%, rgb(26,26,26) 0%, transparent 70%)`) that the pricing cards share.
-- **Bezel ring** (`box-shadow: 0 0 0 1px rgba(255,255,255,.14)`): the hero phone's frame, so black on black still has an edge.
+- **Device frame** (`.hero-phone-*` in globals.css): the hero phone is drawn as a real device after the user's reference (2026-11-15): a 2px graphite rim lit from the top left over a 5px black bezel, side buttons as pseudo-elements, a status bar and home indicator inside the screen, a faint white outer edge so black on black still separates, and a gentle pointer tilt (≤ 5°, fine pointers only, none with reduced motion).
 
 ### Named Rules
-**The Tone Not Shadow Rule.** Separate surfaces by stepping the ramp and drawing a hairline. Drop shadows are not part of the vocabulary; the two above are light-edge effects, not elevation.
+**The Tone Not Shadow Rule.** Separate surfaces by stepping the ramp and drawing a hairline. Drop shadows are not part of the vocabulary, with one exception: the hero phone carries a wide soft shadow so it reads as an object (user, 2026-11-15).
 
 ## Shapes
 
@@ -247,7 +247,7 @@ Two pills, one meaning each: confident and plain.
 - **Error:** a neutral notice (raised fill, white/25 border, 6px corners, line icon, `role="alert"`), not red: red stays a live signal.
 
 ### Navigation
-Sticky header, ground at 80% with backdrop blur. Wordmark left; four section links centered as muted 0.875rem text turning ink on hover; the other language as a text link and the white "Talk to us" pill on the right. With scroll timelines the bar starts at 84px and settles to 69px over the first 80px of scroll by translation. Below 768px the links fold into a disclosure under the bar (48px rows, full-width white pill), closed by Escape, outside tap or a link tap. Legal pages and the 404 use a static header with only the wordmark and the language link.
+Floating glass bar (after raycast.com, user 2026-11-15). The sticky header is a fixed 80px box holding a centered capsule: ground at 80% with an 18px backdrop blur, a 1px rim that is brighter at the top, and a faint top highlight. Wordmark left; four section links centered as muted 0.875rem text with rounded hover fills; the other language as a text link and the white "Talk to us" pill on the right. Scrolling down contracts the bar (64px to 52px tall, 96px narrower on each side from 1024px, 10px below that) and darkens it to 88% with a soft shadow; scrolling up, or being within 24px of the top, opens it again (`nav-scroll.tsx`). The move is 480ms cubic-bezier(0.22, 1, 0.36, 1) on clip and translate only, so nothing in the page shifts; under reduced motion the states swap without animation. Below 768px the links fold into a matching glass card under the bar (48px rows, full-width white pill), closed by Escape, outside tap or a link tap; an open menu holds the bar open. Legal pages and the 404 use a static header with only the wordmark and the language link.
 
 ### FAQ disclosure
 Native `details` in a hairline-ruled list, one open at a time, the first open on load. Question in 1rem to 1.125rem medium ink; a 20px line plus rotates 45 degrees into a cross and turns ink when open; the answer unfolds to its height over 300ms.
@@ -356,12 +356,12 @@ Everything else is grayscale. In particular the **"Paid online" tag is gray**, w
 
 | Role | Phone | Desktop (≥ 1024px) | Sign out |
 | --- | --- | --- | --- |
-| Barber | Bottom tabs **Day · Me** | The same two items in the shared `/app` left sidebar | Bottom of **Me** |
-| Owner | Bottom tabs **Today · Dashboard · Settings**, plus **Me** when the Owner also cuts hair | A **left sidebar** with the same items | Bottom of **Settings** |
+| Owner | Bottom tabs **Today · Dashboard · Settings** | A **left sidebar** with the same items | Bottom of **Settings** |
 | Platform admin | `/admin` top nav **Shops · Failures · Access log** (wraps or scrolls on a phone) | Same top nav | In the top nav |
 
-- A Platform admin who is also Shop staff gets a switch between `/admin` and `/app` in the top nav (and in Me/Settings on the `/app` side).
-- **After sign-in:** Barber → Day, Owner → Today, Platform admin → `/admin` (or `/app` when also Shop staff).
+- Barbers don't sign in (retired in PLAN.md M6). The Owner manages each Barber's profile, hours and photos from Settings. `/app/me` redirects to Settings, and a leftover Barber-only login sees an "ask your Owner" screen.
+- A Platform admin who is also Shop staff gets a switch between `/admin` and `/app` in the top nav (and in Settings on the `/app` side).
+- **After sign-in:** Owner → Today, Platform admin → `/admin` (or `/app` when also Shop staff).
 - Tabs: icon (24px line) plus a label in both languages, the active tab in `--ink` with a filled icon, the others `--muted`. The tab bar sits on `--surface` with a `--line` top edge and respects the phone's safe area.
 - Every app header holds: the page or Shop name on the left; the language toggle and the theme switch on the right.
 
