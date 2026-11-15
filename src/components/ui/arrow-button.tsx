@@ -11,8 +11,8 @@ type Props = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "className" | "childr
 
 /**
  * A full-width pill link with a label and an arrow (`.arrow-btn` in globals.css). At rest the
- * arrow is only a chevron; on hover or focus its shaft appears and the chevron slides right.
- * Under reduced motion only the colors change. It is a plain `<a>` because it points at a
+ * arrow is only a chevron; on hover or focus the chevron slides right and the shaft grows out of
+ * it, joined on every frame. Under reduced motion nothing slides: the shaft just appears. It is a plain `<a>` because it points at a
  * section on the same page.
  */
 export function ArrowButton({ href, tone = "primary", className = "", children, ...rest }: Props) {

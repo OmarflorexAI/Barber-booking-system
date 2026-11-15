@@ -1668,22 +1668,32 @@ body:has(.landing) {
 .arrow-btn:hover,
 .arrow-btn:focus-visible {
   background: var(--ab-hover);
+/* Reduced motion: no slide. The shaft appears at once behind the resting chevron. */
 }
+  .arrow-btn__arrow::after,
 .arrow-btn__arrow {
   position: relative;
   display: inline-block;
+  .arrow-btn:hover .arrow-btn__arrow::after,
+  .arrow-btn:focus-visible .arrow-btn__arrow::after {
+    transform: translateX(-3px) scaleX(0.7);
+  }
   width: 10px;
   height: 2px;
   flex: none;
 }
-/* The shaft: hidden at rest, the text color on hover. */
+/*
+ * The shaft: always the text color, hidden at rest by scaleX(0). It grows from its right end
+ * while moving with the chevron (same distance, duration and easing), so its end stays inside
+ * the chevron's stroke on every frame and the two read as one arrow, never a bar beside a chevron.
+ */
 .arrow-btn__arrow::after {
   content: "";
   position: absolute;
   inset: 0;
   background: currentColor;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  transform-origin: right center;
+  transform: translateX(-3px) scaleX(0);
 }
 /* The chevron: a bordered square turned 45deg, 3px left of the tip at rest. */
 .arrow-btn__arrow::before {
@@ -1695,11 +1705,16 @@ body:has(.landing) {
   border: solid currentColor;
   border-width: 0 2px 2px 0;
   transform: translateX(-3px) rotate(-45deg);
-  transition: transform 0.2s ease;
+}
+/* Kept on their own layers so the end of the move doesn't re-rasterize and blur. */
+.arrow-btn__arrow::after,
+.arrow-btn__arrow::before {
+  will-change: transform;
+  transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 .arrow-btn:hover .arrow-btn__arrow::after,
 .arrow-btn:focus-visible .arrow-btn__arrow::after {
-  opacity: 1;
+  transform: translateX(0) scaleX(1);
 }
 .arrow-btn:hover .arrow-btn__arrow::before,
 .arrow-btn:focus-visible .arrow-btn__arrow::before {
