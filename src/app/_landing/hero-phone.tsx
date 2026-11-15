@@ -212,7 +212,7 @@ export function HeroPhone({ p }: { p: Phone }) {
             <div
               role="group"
               aria-label={p.label}
-              className={`relative h-[440px] overflow-hidden rounded-[2.15rem] ${c.paper} ${c.ink} sm:h-[500px]`}
+              className={`relative h-[476px] overflow-hidden rounded-[2.15rem] ${c.paper} ${c.ink} sm:h-[500px]`}
             >
               <StatusBar />
               <ViewTransition
@@ -276,8 +276,10 @@ function StatusBar() {
 
 /** One screen of the phone: the shop header, an optional Back, a title and its content. */
 function Screen({ title, p, onBack, children }: { title?: string; p: Phone; onBack?: () => void; children: ReactNode }) {
+  // The screen never scrolls on its own (every screen fits), so a wheel or swipe over the
+  // phone always moves the page.
   return (
-    <div className="flex h-full flex-col overflow-y-auto overscroll-contain px-3.5 pb-3 [scrollbar-width:none]">
+    <div className="flex h-full flex-col overflow-y-hidden px-3.5 pb-3 [scrollbar-width:none]">
       <div className="flex items-start justify-between gap-2 pt-2">
         <div className="min-w-0">
           <p className="text-[15px] font-semibold leading-tight tracking-[-0.02em]">{p.shop}</p>
