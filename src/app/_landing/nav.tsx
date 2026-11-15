@@ -6,15 +6,17 @@ import { addTransitionType, startTransition, useEffect, useId, useRef, useState 
 import { Wordmark } from "@/components/brand/logo";
 import { LOCALE_COOKIE, type Locale } from "@/lib/i18n/dictionaries";
 import type { LandingDictionary } from "@/lib/i18n/landing";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { useCompactOnScroll } from "./nav-scroll";
-import { CONTACT_ID, focusRing, whitePill } from "./ui";
+import { CONTACT_ID, focusRing } from "./ui";
 
 /** Only the nav's own strings: this is a client component, so everything it gets is sent to the browser. */
 type NavText = Pick<LandingDictionary, "nav" | "navLabel" | "navMenu" | "navCta" | "otherLang">;
 
 /**
- * A floating glass bar: wordmark left, section links centered, the language switch and a
- * white "Talk to us" pill on the right. Scrolling down contracts it (narrower and shorter),
+ * A floating glass bar (rim, glint and glass layers, see the `.nav-*` rules): wordmark left,
+ * section links centered (hover: muted to ink and a hairline drawn from the centre), the
+ * language switch and a liquid metal "Talk to us" on the right. Scrolling down contracts it (narrower and shorter),
  * scrolling up opens it again (`useCompactOnScroll` + `.nav-*` rules in globals.css). The
  * header box itself never changes size; only clip and translate move, so nothing below shifts.
  * Below md the links move into a glass card under the bar: Escape or a link tap closes it,
@@ -54,7 +56,8 @@ export function Nav({ locale, t }: { locale: Locale; t: NavText }) {
     };
   }, [open]);
 
-  const linkClass = `inline-flex min-h-11 items-center justify-center rounded-full px-2.5 text-sm text-muted-foreground transition-colors duration-200 hover:bg-white/[0.06] lg:px-3.5 hover:text-foreground ${focusRing}`;
+  // The 44px box is the hit area; the visible hover is only the text and its hairline (`.nav-link`).
+  const linkClass = `nav-link inline-flex min-h-11 items-center justify-center rounded-full px-2.5 text-sm text-muted-foreground lg:px-3.5 ${focusRing}`;
 
   return (
     <header
@@ -69,9 +72,10 @@ export function Nav({ locale, t }: { locale: Locale; t: NavText }) {
             <span />
           </span>
           <span aria-hidden="true" className="nav-rim" />
+          <span aria-hidden="true" className="nav-glint" />
           <span aria-hidden="true" className="nav-glass [view-transition-class:landing-header] [view-transition-name:landing-nav-glass]" />
 
-          <div id="main-nav" className="relative flex [view-transition-class:landing-header] [view-transition-name:landing-nav-row] h-full items-center justify-between gap-2 pl-4 pr-2.5 md:px-2.5">
+          <div id="main-nav" className="relative flex [view-transition-class:landing-header] [view-transition-name:landing-nav-row] h-full items-center justify-between gap-2 pl-4 pr-2.5 md:pl-[7px] md:pr-[13px]">
             <div className="nav-start">
               <Link href={locale === "es" ? "/es" : "/"} className={`flex min-h-11 items-center rounded-full px-1.5 ${focusRing}`}>
                 <Wordmark />
@@ -83,7 +87,7 @@ export function Nav({ locale, t }: { locale: Locale; t: NavText }) {
                 {links.map((l) => (
                   <li key={l.href}>
                     <a href={l.href} className={linkClass}>
-                      {l.label}
+                      <span className="nav-link-label">{l.label}</span>
                     </a>
                   </li>
                 ))}
@@ -109,14 +113,14 @@ export function Nav({ locale, t }: { locale: Locale; t: NavText }) {
                 }}
                 hrefLang={other}
                 lang={other}
-                className={`inline-flex min-h-11 items-center rounded-full px-3 text-sm text-muted-foreground transition-colors duration-200 hover:bg-white/[0.06] hover:text-foreground ${focusRing}`}
+                className={`nav-link inline-flex min-h-11 items-center rounded-full px-3 text-sm text-muted-foreground ${focusRing}`}
               >
-                {t.otherLang}
+                <span className="nav-link-label">{t.otherLang}</span>
               </Link>
               <span className="hidden md:block">
-                <a href={`#${CONTACT_ID}`} className={whitePill}>
+                <LiquidMetalButton href={`#${CONTACT_ID}`} size="sm">
                   {t.navCta}
-                </a>
+                </LiquidMetalButton>
               </span>
               <button
                 ref={button}
@@ -148,9 +152,9 @@ export function Nav({ locale, t }: { locale: Locale; t: NavText }) {
                 </li>
               ))}
             </ul>
-            <a href={`#${CONTACT_ID}`} onClick={() => setOpen(false)} className={`${whitePill} mt-2 min-h-12 w-full`}>
+            <LiquidMetalButton href={`#${CONTACT_ID}`} onClick={() => setOpen(false)} className="mt-2 w-full">
               {t.navCta}
-            </a>
+            </LiquidMetalButton>
           </nav>
         </div>
       </div>

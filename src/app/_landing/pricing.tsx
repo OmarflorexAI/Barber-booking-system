@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { SectionProps } from "./types";
-import { CONTACT_ID, Check, WidePanel, outlinePill, type, whitePill } from "./ui";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
+import { CONTACT_ID, Check, WidePanel, type } from "./ui";
 
 /**
  * Pricing: the template's two cards on a photo (red barber chairs, darkened from the top).
@@ -20,7 +21,7 @@ export function Pricing({ t }: SectionProps) {
         }
       >
 
-        <div className="mx-auto max-w-5xl md:px-10">
+        <div className="mx-auto max-w-5xl md:px-10 min-[1152px]:px-6">
           {/*
             Phones: heading, then the cards stacked. From 768px the two cards sit side by side
             under the heading; from 1024px the heading takes the first third. The cards are row
@@ -31,17 +32,17 @@ export function Pricing({ t }: SectionProps) {
               <h2 id="pricing-title" className={`${type.h2} text-white`}>
                 {t.offerTitle}
               </h2>
-              <p className="mt-4 leading-relaxed text-white/80">{t.offerBody}</p>
+              <p className="mt-4 leading-relaxed text-white">{t.offerBody}</p>
             </div>
 
             {t.plans.map((plan, i) => (
               <div
                 key={plan.name}
                 data-card="pricing"
-                className={`flex flex-col overflow-hidden rounded-2xl border border-border bg-black md:row-span-3 md:grid md:grid-rows-subgrid md:gap-0`}
-                style={{ backgroundImage: "radial-gradient(80% 50% at 50% 0%, rgb(26,26,26) 0%, transparent 70%)" }}
+                className={`flex flex-col overflow-hidden rounded-2xl border border-white/14 border-t-white/24 bg-panel md:row-span-3 md:grid md:grid-rows-subgrid md:gap-0`}
+                style={{ backgroundImage: "radial-gradient(80% 50% at 50% 0%, var(--l-raised) 0%, transparent 70%)" }}
               >
-                <div className="border-b border-white/10 p-8 md:p-10">
+                <div className="border-b border-white/14 p-8 md:p-10">
                   <h3 className="text-balance text-4xl font-semibold tracking-[-0.03em] text-foreground">{plan.price}</h3>
                   <p className="mt-3 text-sm text-muted-foreground">{plan.name}</p>
                 </div>
@@ -54,9 +55,10 @@ export function Pricing({ t }: SectionProps) {
                   ))}
                 </ul>
                 <div className="px-8 pb-8 pt-8 md:px-10 md:pb-10">
-                  <a href={`#${CONTACT_ID}`} className={i === 0 ? whitePill : outlinePill}>
+                  {/* Both liquid metal; the second card's ring stays dim until hover, so the first leads. */}
+                  <LiquidMetalButton href={`#${CONTACT_ID}`} tone={i === 0 ? "metal" : "quiet"} className="w-full">
                     {t.navCta}
-                  </a>
+                  </LiquidMetalButton>
                 </div>
               </div>
             ))}

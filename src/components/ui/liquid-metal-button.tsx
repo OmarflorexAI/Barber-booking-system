@@ -1,7 +1,19 @@
 "use client";
 
 import type { ShaderMount } from "@paper-design/shaders";
-import { useEffect, useRef, useState, type ButtonHTMLAttributes, type KeyboardEvent, type MouseEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type AnchorHTMLAttributes,
+  type FocusEvent,
+  type PointerEvent,
+  type RefObject,
+  type ButtonHTMLAttributes,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 
 /** Shader speeds: at rest, under the mouse, and the short burst after a press. */
 const SPEED = { rest: 0.6, hover: 1, burst: 2.4 } as const;
@@ -24,18 +36,33 @@ const UNIFORMS = {
   u_offsetY: -0.1,
 };
 
-type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> & { type?: "button" | "submit" };
+type Look = {
+  /** `md` is 48px tall (forms, cards); `sm` is 38px (the nav bar), with a 44px hit area. */
+  size?: "md" | "sm";
+  /** `quiet` dims the ring until hover: the second of two side-by-side actions. */
+  tone?: "metal" | "quiet";
+  className?: string;
+  children?: ReactNode;
+};
+type AsButton = Look & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type" | "className" | "children"> & { href?: undefined; type?: "button" | "submit" };
+type AsLink = Look & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "className" | "children"> & { href: string };
+type Props = AsButton | AsLink;
+
+type Handler<E> = ((e: E) => void) | undefined;
 
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /**
- * A black pill inside a moving liquid metal ring (`.lmb-*` in globals.css).
- * The WebGL shader is fetched only when the button comes near the screen; until then, and
- * wherever WebGL is missing, a still metallic gradient draws the ring. The shader stops under
- * reduced motion, pauses off screen (ShaderMount's own IntersectionObserver) and is freed on unmount.
+ * A black pill inside a moving liquid metal ring (`.lmb-*` in globals.css). With `href` it is
+ * a real link (`<a>`), otherwise a `<button>`. The WebGL shader is fetched and mounted only
+ * while the control is near the screen, and freed (its WebGL context released) when it moves
+ * away or is hidden, so a page holds only a few live contexts at once. Until it draws, and
+ * wherever WebGL is missing, a still metallic gradient draws the ring. Under reduced motion
+ * the shader stands still and there is no ripple.
  */
-export function LiquidMetalButton({ type = "button", className = "", children, onClick, onKeyDown, onKeyUp, onBlur, ...rest }: Props) {
-  const buttonRef = useRef<HTMLButtonElement>(null);
+export function LiquidMetalButton(props: Props) {
+  const { size = "md", tone = "metal", className = "", children, onClick, onKeyDown, onKeyUp, onBlur, onPointerEnter, onPointerLeave, ...rest } = props;
+  const hostRef = useRef<HTMLElement>(null);
   const shaderRef = useRef<HTMLSpanElement>(null);
   const mount = useRef<ShaderMount | null>(null);
   const hovered = useRef(false);
@@ -43,34 +70,48 @@ export function LiquidMetalButton({ type = "button", className = "", children, o
   const rippleId = useRef(0);
   const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([]);
   const [keyPressed, setKeyPressed] = useState(false);
+  const isLink = typeof props.href === "string";
 
   useEffect(() => {
     const host = shaderRef.current;
-    const button = buttonRef.current;
-    if (!host || !button) return;
+    const el = hostRef.current;
+    if (!host || !el) return;
     let live = true;
+    let near = false;
+    let loading = false;
+
+    const free = () => {
+      mount.current?.dispose();
+      mount.current = null;
+      host.querySelector("canvas")?.remove();
+    };
 
     const start = async () => {
+      if (mount.current || loading) return;
+      loading = true;
       try {
         const { ShaderMount, liquidMetalFragmentShader } = await import("@paper-design/shaders");
-        if (!live) return;
+        // Moved away (or unmounted) while the module loaded: don't take a context.
+        if (!live || !near) return;
         mount.current = new ShaderMount(host, liquidMetalFragmentShader, UNIFORMS, undefined, reducedMotion() ? 0 : SPEED.rest);
       } catch {
         // No WebGL: drop the half-made canvas and keep the CSS ring.
-        host.querySelector("canvas")?.remove();
+        free();
+      } finally {
+        loading = false;
       }
     };
 
-    // Fetch the shader only once the button is near the screen.
+    // Mount near the screen, free when it leaves (a hidden control never intersects).
     const io = new IntersectionObserver(
       ([e]) => {
-        if (!e.isIntersecting) return;
-        io.disconnect();
-        void start();
+        near = e.isIntersecting;
+        if (near) void start();
+        else free();
       },
-      { rootMargin: "400px 0px" },
+      { rootMargin: "200px 0px" },
     );
-    io.observe(button);
+    io.observe(el);
 
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const onMotion = () => mount.current?.setSpeed(motion.matches ? 0 : SPEED.rest);
@@ -81,9 +122,7 @@ export function LiquidMetalButton({ type = "button", className = "", children, o
       io.disconnect();
       motion.removeEventListener("change", onMotion);
       window.clearTimeout(burstTimer.current);
-      mount.current?.dispose();
-      mount.current = null;
-      host.querySelector("canvas")?.remove();
+      free();
     };
   }, []);
 
@@ -91,7 +130,7 @@ export function LiquidMetalButton({ type = "button", className = "", children, o
     if (!reducedMotion()) mount.current?.setSpeed(speed);
   };
 
-  const burst = (e: MouseEvent<HTMLButtonElement>) => {
+  const burst = (e: MouseEvent<HTMLElement>) => {
     if (reducedMotion()) return;
     setSpeed(SPEED.burst);
     window.clearTimeout(burstTimer.current);
@@ -108,41 +147,47 @@ export function LiquidMetalButton({ type = "button", className = "", children, o
     window.setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== ripple.id)), 600);
   };
 
-  const isPressKey = (key: string) => key === "Enter" || key === " ";
+  // A link activates on Enter only; a button on Enter and Space.
+  const isPressKey = (key: string) => key === "Enter" || (!isLink && key === " ");
 
-  return (
-    <button
-      ref={buttonRef}
-      type={type}
-      className={`lmb ${className}`}
-      data-pressed={keyPressed || undefined}
-      onClick={(e) => {
-        burst(e);
-        onClick?.(e);
-      }}
-      onPointerEnter={(e) => {
-        if (e.pointerType !== "mouse") return;
+  // The caller's handlers, typed for whichever element this renders.
+  const call = <E,>(fn: unknown, e: E) => (fn as Handler<E>)?.(e);
+
+  const shared = {
+    className: `lmb${size === "sm" ? " lmb-sm" : ""}${tone === "quiet" ? " lmb-quiet" : ""} ${className}`,
+    "data-pressed": keyPressed || undefined,
+    onClick: (e: MouseEvent<HTMLElement>) => {
+      burst(e);
+      call(onClick, e);
+    },
+    onPointerEnter: (e: PointerEvent<HTMLElement>) => {
+      if (e.pointerType === "mouse") {
         hovered.current = true;
         setSpeed(SPEED.hover);
-      }}
-      onPointerLeave={() => {
-        hovered.current = false;
-        setSpeed(SPEED.rest);
-      }}
-      onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => {
-        if (isPressKey(e.key) && !e.repeat) setKeyPressed(true);
-        onKeyDown?.(e);
-      }}
-      onKeyUp={(e: KeyboardEvent<HTMLButtonElement>) => {
-        if (isPressKey(e.key)) setKeyPressed(false);
-        onKeyUp?.(e);
-      }}
-      onBlur={(e) => {
-        setKeyPressed(false);
-        onBlur?.(e);
-      }}
-      {...rest}
-    >
+      }
+      call(onPointerEnter, e);
+    },
+    onPointerLeave: (e: PointerEvent<HTMLElement>) => {
+      hovered.current = false;
+      setSpeed(SPEED.rest);
+      call(onPointerLeave, e);
+    },
+    onKeyDown: (e: KeyboardEvent<HTMLElement>) => {
+      if (isPressKey(e.key) && !e.repeat) setKeyPressed(true);
+      call(onKeyDown, e);
+    },
+    onKeyUp: (e: KeyboardEvent<HTMLElement>) => {
+      if (isPressKey(e.key)) setKeyPressed(false);
+      call(onKeyUp, e);
+    },
+    onBlur: (e: FocusEvent<HTMLElement>) => {
+      setKeyPressed(false);
+      call(onBlur, e);
+    },
+  };
+
+  const inner = (
+    <>
       <span aria-hidden="true" className="lmb-ring">
         <span ref={shaderRef} className="lmb-shader" />
       </span>
@@ -153,6 +198,22 @@ export function LiquidMetalButton({ type = "button", className = "", children, o
         ))}
       </span>
       <span className="lmb-label">{children}</span>
+    </>
+  );
+
+  if (isLink) {
+    const linkRest = rest as Omit<AsLink, keyof Look | "onClick" | "onKeyDown" | "onKeyUp" | "onBlur" | "onPointerEnter" | "onPointerLeave">;
+    return (
+      <a ref={hostRef as RefObject<HTMLAnchorElement>} {...linkRest} {...shared}>
+        {inner}
+      </a>
+    );
+  }
+  // `href` is undefined here and spreads as nothing.
+  const { type = "button", ...buttonRest } = rest as Omit<AsButton, keyof Look | "onClick" | "onKeyDown" | "onKeyUp" | "onBlur" | "onPointerEnter" | "onPointerLeave">;
+  return (
+    <button ref={hostRef as RefObject<HTMLButtonElement>} type={type} {...buttonRest} {...shared}>
+      {inner}
     </button>
   );
 }
