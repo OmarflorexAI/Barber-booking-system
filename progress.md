@@ -14,6 +14,8 @@ Last updated: 2026-11-15, end of session (landing polish rounds, Barber alert em
    - Then show the user the whole landing and ask what else needs polish.
 2. **Discuss the DEMO** (showing the app to the user's dad). Open questions already put to the user: where it runs (Vercel `*.vercel.app` recommended), what data (shared dev DB + demo-shop, or a real Shop for the dad), what he does (watch, sign in as Owner, book as a Client), what must be real (Resend works; Stripe stays test; texts/Telegram log-only?), and when (decides the every-minute cron). Checklist under "Demo deploy plan" below.
 
+**Done 2026-11-16:** removed the radial glow inside both pricing cards (`pricing.tsx`; the glow was an inline style, nothing in `globals.css`). Photo check: viewport screenshots while the hero, setup and pricing panels and the three How photos cross the screen, at 1440/1024/768/390, EN and ES. No photo is cut, gapped or glitched by the tonal joins or the widen clip. Noted, not changed: at 390px the setup photo is a narrow vertical crop (mostly building, the pole shows at the left edge). Next: show the user the whole landing and ask what else to polish, then the demo talk.
+
 **Done 2026-11-15, second half (all committed and pushed):**
 
 - Hero: removed the service-area pill above the title `fede333`; no language label inside the hero phone `7f4a9c1`; the page scrolls over the hero phone `c82d77f`.
