@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { Velaris } from "@/components/ui/velaris";
 import { HeroPhone } from "./hero-phone";
 import type { SectionProps } from "./types";
 import { Container, WidePanel, focusRing, type } from "./ui";
 
 /**
  * The first view: who it's for, the promise, and the booking page itself on a phone
- * inside the template's wide gradient panel, lit by two slow-drifting soft lights so the
- * panel feels alive. Visitors can book a pretend cut right here.
+ * inside the template's wide panel, over the same slow Velaris gradient as the FAQ band (in the
+ * panel tone). Visitors can book a pretend cut right here.
  */
 export function Hero({ t }: SectionProps) {
   return (
@@ -39,12 +40,8 @@ export function Hero({ t }: SectionProps) {
           background={
             <>
               <div className="absolute inset-0 bg-panel" />
-              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(128,134,145,0.3), transparent)" }} />
-              {/* Two soft lights drifting behind the phone (globals.css → "Hero glow"). */}
-              <div className="hero-glow absolute inset-0">
-                <span />
-                <span />
-              </div>
+              {/* A CSS gradient shows at once; the canvas fades in over it (globals.css → "Hero gradient"). */}
+              <Velaris className="hero-velaris" speed={1} releaseOffscreen />
             </>
           }
         >

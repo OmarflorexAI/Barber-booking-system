@@ -10,7 +10,8 @@ import { useEffect, useRef, type CSSProperties } from "react";
  * - Under prefers-reduced-motion it draws one still frame and stops.
  * - Without WebGL (or if a shader fails to compile/link) the static CSS gradient underneath
  *   stays; with WebGL the canvas fades in over it once its first frame is drawn (opacity only).
- * - Each mount makes its own canvas; the GL context is released and the canvas removed on unmount.
+ * - Each mount makes its own canvas; the GL context is released and the canvas removed on unmount
+ *   (and, with `releaseOffscreen`, whenever the element moves well off screen).
  * - The output is clamped to a maximum luminance (~34% lightness) so muted text keeps 4.5:1.
  * - The pattern is anchored to the top in pixel space and the canvas height moves in 640px
  *   steps, so the band growing or shrinking (FAQ answers) never flashes or rescales it.
@@ -27,6 +28,12 @@ export type VelarisProps = {
   /** Highest relative luminance (0 to 1) any pixel may reach. */
   maxLuminance?: number;
   height?: string;
+  /**
+   * Take the WebGL context only while the element is near the screen (200px margin) and
+   * release it when it moves away, so a band at the top of the page doesn't hold a context
+   * while the visitor reads further down. The CSS gradient underneath shows meanwhile.
+   */
+  releaseOffscreen?: boolean;
   className?: string;
   style?: CSSProperties;
 };
@@ -143,6 +150,146 @@ function cssToRgb(css: string): [number, number, number] | null {
   return [d[0] / 255, d[1] / 255, d[2] / 255];
 }
 
+/** Makes the canvas and its GL context; returns the teardown that releases both. */
+type GlOptions = { colorKey: string; bg?: string; speed: number; grain: number; maxLuminance: number };
+
+function mountGl(root: HTMLDivElement, { colorKey, bg, speed, grain, maxLuminance }: GlOptions): () => void {
+  const noop = () => {};
+  // A fresh canvas per mount: a context lost on unmount can't be reused (Strict Mode remounts).
+  const canvas = document.createElement("canvas");
+  canvas.className = "velaris-canvas";
+  root.appendChild(canvas);
+  const gl = canvas.getContext("webgl", { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: "low-power", premultipliedAlpha: false });
+  if (!gl) {
+    canvas.remove();
+    return noop; // The CSS gradient underneath stays.
+  }
+
+  const vs = compile(gl, gl.VERTEX_SHADER, VERT);
+  const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
+  const program = gl.createProgram();
+  const lose = () => {
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    canvas.remove();
+  };
+  if (!vs || !fs || !program) {
+    lose();
+    return noop;
+  }
+  gl.attachShader(program, vs);
+  gl.attachShader(program, fs);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    lose();
+    return noop;
+  }
+  gl.useProgram(program);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const aPos = gl.getAttribLocation(program, "aPos");
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  const u = (name: string) => gl.getUniformLocation(program, name);
+  const uRes = u("u_resolution");
+  const uTime = u("u_time");
+  gl.uniform1f(u("u_grain"), grain);
+  gl.uniform1f(u("u_maxLum"), maxLuminance);
+  const ground = bg ? hexToRgb(bg) : (cssToRgb(getComputedStyle(root).getPropertyValue("--l-bg").trim()) ?? [0, 0, 0]);
+  gl.uniform3fv(u("u_bg"), ground);
+  const cs = colorKey.split(",");
+  gl.uniform3fv(u("u_colors"), new Float32Array([0, 1, 2, 3].flatMap((i) => (cs[i] ? hexToRgb(cs[i]) : ground))));
+  const uScale = u("u_scale");
+
+  // The canvas is pinned to the top of the band and its height rounded up to the next
+  // 640px step, so a band that grows a little (an FAQ answer unfolding) changes nothing:
+  // no backing-store resize, no clear, no flash. The band clips the overhang.
+  const STEP = 640;
+  const resize = (): boolean => {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const cssH = Math.ceil((root.clientHeight + 1) / STEP) * STEP;
+    const w = Math.max(1, Math.round(root.clientWidth * dpr));
+    const h = Math.max(1, Math.round(cssH * dpr));
+    if (canvas.width === w && canvas.height === h) return false;
+    canvas.style.height = `${cssH}px`;
+    canvas.width = w;
+    canvas.height = h;
+    gl.viewport(0, 0, w, h);
+    gl.uniform2f(uRes, w, h);
+    gl.uniform1f(uScale, 1400 * dpr);
+    return true;
+  };
+
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+  // A random phase so the still frame isn't always the same one.
+  let elapsed = 20 + Math.random() * 40;
+  let last = 0;
+  let raf = 0;
+  let visible = false;
+  let drawn = false;
+
+  const draw = () => {
+    gl.uniform1f(uTime, elapsed);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (!drawn) {
+      drawn = true;
+      canvas.dataset.ready = "";
+    }
+  };
+  const frame = (now: number) => {
+    raf = requestAnimationFrame(frame);
+    if (now - last < 32) return; // ~30fps is plenty for a slow drift.
+    if (last) elapsed += (Math.min(now - last, 100) / 1000) * speed;
+    last = now;
+    draw();
+  };
+  const start = () => {
+    if (raf || reduce.matches || !visible || document.hidden) return;
+    last = 0;
+    raf = requestAnimationFrame(frame);
+  };
+  const stop = () => {
+    cancelAnimationFrame(raf);
+    raf = 0;
+  };
+  const sync = () => {
+    stop();
+    if (reduce.matches || !visible || document.hidden) {
+      if (visible || !drawn) draw();
+    } else start();
+  };
+
+  resize();
+  draw();
+  // Resizing clears the canvas, so redraw in the same callback (before paint).
+  const ro = new ResizeObserver(() => {
+    if (resize()) draw();
+  });
+  ro.observe(root);
+  const io = new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting;
+    sync();
+  });
+  io.observe(canvas);
+  document.addEventListener("visibilitychange", sync);
+  reduce.addEventListener("change", sync);
+
+  return () => {
+    stop();
+    ro.disconnect();
+    io.disconnect();
+    document.removeEventListener("visibilitychange", sync);
+    reduce.removeEventListener("change", sync);
+    gl.deleteBuffer(buf);
+    gl.deleteProgram(program);
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    lose();
+  };
+}
+
 export function Velaris({
   colors = DEFAULT_COLORS,
   bg,
@@ -150,6 +297,7 @@ export function Velaris({
   grain = 0.15,
   maxLuminance = 0.029,
   height = "100%",
+  releaseOffscreen = false,
   className = "",
   style,
 }: VelarisProps) {
@@ -159,140 +307,25 @@ export function Velaris({
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
-    // A fresh canvas per mount: a context lost on unmount can't be reused (Strict Mode remounts).
-    const canvas = document.createElement("canvas");
-    canvas.className = "velaris-canvas";
-    root.appendChild(canvas);
-    const gl = canvas.getContext("webgl", { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: "low-power", premultipliedAlpha: false });
-    if (!gl) {
-      canvas.remove();
-      return; // The CSS gradient underneath stays.
-    }
-
-    const vs = compile(gl, gl.VERTEX_SHADER, VERT);
-    const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
-    const program = gl.createProgram();
-    const lose = () => {
-      gl.getExtension("WEBGL_lose_context")?.loseContext();
-      canvas.remove();
-    };
-    if (!vs || !fs || !program) {
-      lose();
-      return;
-    }
-    gl.attachShader(program, vs);
-    gl.attachShader(program, fs);
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      lose();
-      return;
-    }
-    gl.useProgram(program);
-
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    const aPos = gl.getAttribLocation(program, "aPos");
-    gl.enableVertexAttribArray(aPos);
-    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-
-    const u = (name: string) => gl.getUniformLocation(program, name);
-    const uRes = u("u_resolution");
-    const uTime = u("u_time");
-    gl.uniform1f(u("u_grain"), grain);
-    gl.uniform1f(u("u_maxLum"), maxLuminance);
-    const ground = bg ? hexToRgb(bg) : (cssToRgb(getComputedStyle(root).getPropertyValue("--l-bg").trim()) ?? [0, 0, 0]);
-    gl.uniform3fv(u("u_bg"), ground);
-    const cs = colorKey.split(",");
-    gl.uniform3fv(u("u_colors"), new Float32Array([0, 1, 2, 3].flatMap((i) => (cs[i] ? hexToRgb(cs[i]) : ground))));
-    const uScale = u("u_scale");
-
-    // The canvas is pinned to the top of the band and its height rounded up to the next
-    // 640px step, so a band that grows a little (an FAQ answer unfolding) changes nothing:
-    // no backing-store resize, no clear, no flash. The band clips the overhang.
-    const STEP = 640;
-    const resize = (): boolean => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-      const cssH = Math.ceil((root.clientHeight + 1) / STEP) * STEP;
-      const w = Math.max(1, Math.round(root.clientWidth * dpr));
-      const h = Math.max(1, Math.round(cssH * dpr));
-      if (canvas.width === w && canvas.height === h) return false;
-      canvas.style.height = `${cssH}px`;
-      canvas.width = w;
-      canvas.height = h;
-      gl.viewport(0, 0, w, h);
-      gl.uniform2f(uRes, w, h);
-      gl.uniform1f(uScale, 1400 * dpr);
-      return true;
-    };
-
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-    // A random phase so the still frame isn't always the same one.
-    let elapsed = 20 + Math.random() * 40;
-    let last = 0;
-    let raf = 0;
-    let visible = false;
-    let drawn = false;
-
-    const draw = () => {
-      gl.uniform1f(uTime, elapsed);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-      if (!drawn) {
-        drawn = true;
-        canvas.dataset.ready = "";
-      }
-    };
-    const frame = (now: number) => {
-      raf = requestAnimationFrame(frame);
-      if (now - last < 32) return; // ~30fps is plenty for a slow drift.
-      if (last) elapsed += (Math.min(now - last, 100) / 1000) * speed;
-      last = now;
-      draw();
-    };
-    const start = () => {
-      if (raf || reduce.matches || !visible || document.hidden) return;
-      last = 0;
-      raf = requestAnimationFrame(frame);
-    };
-    const stop = () => {
-      cancelAnimationFrame(raf);
-      raf = 0;
-    };
-    const sync = () => {
-      stop();
-      if (reduce.matches || !visible || document.hidden) {
-        if (visible || !drawn) draw();
-      } else start();
-    };
-
-    resize();
-    draw();
-    // Resizing clears the canvas, so redraw in the same callback (before paint).
-    const ro = new ResizeObserver(() => {
-      if (resize()) draw();
-    });
-    ro.observe(root);
-    const io = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      sync();
-    });
-    io.observe(canvas);
-    document.addEventListener("visibilitychange", sync);
-    reduce.addEventListener("change", sync);
-
+    const opts = { colorKey, bg, speed, grain, maxLuminance };
+    if (!releaseOffscreen) return mountGl(root, opts);
+    let unmountGl: (() => void) | null = null;
+    const near = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) unmountGl ??= mountGl(root, opts);
+        else {
+          unmountGl?.();
+          unmountGl = null;
+        }
+      },
+      { rootMargin: "200px 0px" },
+    );
+    near.observe(root);
     return () => {
-      stop();
-      ro.disconnect();
-      io.disconnect();
-      document.removeEventListener("visibilitychange", sync);
-      reduce.removeEventListener("change", sync);
-      gl.deleteBuffer(buf);
-      gl.deleteProgram(program);
-      gl.deleteShader(vs);
-      gl.deleteShader(fs);
-      lose();
+      near.disconnect();
+      unmountGl?.();
     };
-  }, [colorKey, bg, speed, grain, maxLuminance]);
+  }, [colorKey, bg, speed, grain, maxLuminance, releaseOffscreen]);
 
   return (
     <div ref={rootRef} aria-hidden="true" className={`velaris ${className}`} style={{ height, ...style }} />

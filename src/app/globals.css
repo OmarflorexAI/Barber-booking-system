@@ -1219,78 +1219,32 @@ body:has(.landing) {
 }
 
 /*
- * Hero glow (hero.tsx): two large soft lights in the hero panel, a cool gray-blue one low
- * left and a faint warm white one high right, plain radial gradients (no filters). With
- * motion allowed they drift slowly on long alternating loops, transform only; under reduced
- * motion they rest where they start. On load they fade in (opacity + a slight scale settle on
- * the wrapper); eased multi-stop falloff so the rims never band. Grayscale-leaning so barber red stays the only accent.
+ * Hero gradient (hero.tsx): the FAQ band's Velaris gradient behind the hero phone, on the panel
+ * tone (its ground reads --l-bg, overridden here). The CSS gradient below is what shows at
+ * load (the hero never waits on WebGL) and stays without WebGL; the canvas fades in over it
+ * (.velaris-canvas) and is released when the panel is well off screen. On load the layer fades
+ * in (opacity only). No red.
  */
-.landing .hero-glow > span {
+.landing .hero-velaris {
+  --l-bg: var(--l-panel);
   position: absolute;
-  width: min(900px, 110vw);
-  aspect-ratio: 1;
-  border-radius: 9999px;
+  inset: 0;
   pointer-events: none;
-  will-change: transform;
-}
-.landing .hero-glow > span:first-child {
-  left: -18%;
-  bottom: -55%;
-  background: radial-gradient(
-    closest-side,
-    rgba(150, 164, 190, 0.32),
-    rgba(150, 164, 190, 0.29) 15%,
-    rgba(150, 164, 190, 0.22) 30%,
-    rgba(150, 164, 190, 0.145) 45%,
-    rgba(150, 164, 190, 0.08) 60%,
-    rgba(150, 164, 190, 0.035) 75%,
-    rgba(150, 164, 190, 0.01) 88%,
-    rgba(150, 164, 190, 0)
-  );
-}
-.landing .hero-glow > span:last-child {
-  right: -20%;
-  top: -50%;
-  background: radial-gradient(
-    closest-side,
-    rgba(236, 228, 218, 0.16),
-    rgba(236, 228, 218, 0.145) 15%,
-    rgba(236, 228, 218, 0.11) 30%,
-    rgba(236, 228, 218, 0.072) 45%,
-    rgba(236, 228, 218, 0.04) 60%,
-    rgba(236, 228, 218, 0.017) 75%,
-    rgba(236, 228, 218, 0.005) 88%,
-    rgba(236, 228, 218, 0)
-  );
+  background-color: var(--l-bg);
+  background-image:
+    radial-gradient(60% 55% at 50% 30%, rgb(58 61 68 / 0.5), transparent 75%),
+    radial-gradient(50% 45% at 20% 20%, rgb(46 49 55 / 0.6), transparent 70%),
+    radial-gradient(50% 50% at 82% 65%, rgb(46 49 55 / 0.55), transparent 70%),
+    radial-gradient(70% 45% at 40% 95%, rgb(26 27 31 / 0.8), transparent 70%);
 }
 @media (prefers-reduced-motion: no-preference) {
-  /* Load: the wrapper fades in and settles from a touch larger; the spans keep their own drift. */
-  .landing .hero-glow {
-    animation: hero-glow-in 1.6s cubic-bezier(0.33, 0, 0.15, 1) 0.1s both;
-  }
-  .landing .hero-glow > span:first-child {
-    animation: hero-drift-a 19s ease-in-out infinite alternate;
-  }
-  .landing .hero-glow > span:last-child {
-    animation: hero-drift-b 23s ease-in-out infinite alternate;
+  .landing .hero-velaris {
+    animation: hero-velaris-in 1.2s cubic-bezier(0.33, 0, 0.15, 1) 0.1s both;
   }
 }
-@keyframes hero-glow-in {
+@keyframes hero-velaris-in {
   from {
     opacity: 0;
-    scale: 1.06;
-  }
-}
-@keyframes hero-drift-a {
-  to {
-    translate: 22% -14%;
-    scale: 1.12;
-  }
-}
-@keyframes hero-drift-b {
-  to {
-    translate: -18% 16%;
-    scale: 0.92;
   }
 }
 @keyframes month-rail-draw {
@@ -1668,16 +1622,10 @@ body:has(.landing) {
 .arrow-btn:hover,
 .arrow-btn:focus-visible {
   background: var(--ab-hover);
-/* Reduced motion: no slide. The shaft appears at once behind the resting chevron. */
 }
-  .arrow-btn__arrow::after,
 .arrow-btn__arrow {
   position: relative;
   display: inline-block;
-  .arrow-btn:hover .arrow-btn__arrow::after,
-  .arrow-btn:focus-visible .arrow-btn__arrow::after {
-    transform: translateX(-3px) scaleX(0.7);
-  }
   width: 10px;
   height: 2px;
   flex: none;
@@ -1720,9 +1668,15 @@ body:has(.landing) {
 .arrow-btn:focus-visible .arrow-btn__arrow::before {
   transform: translateX(0) rotate(-45deg);
 }
+/* Reduced motion: no slide. The shaft appears at once behind the resting chevron. */
 @media (prefers-reduced-motion: reduce) {
+  .arrow-btn__arrow::after,
   .arrow-btn__arrow::before {
     transition: none;
+  }
+  .arrow-btn:hover .arrow-btn__arrow::after,
+  .arrow-btn:focus-visible .arrow-btn__arrow::after {
+    transform: translateX(-3px) scaleX(0.7);
   }
   .arrow-btn:hover .arrow-btn__arrow::before,
   .arrow-btn:focus-visible .arrow-btn__arrow::before {

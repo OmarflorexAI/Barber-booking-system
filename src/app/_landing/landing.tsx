@@ -113,7 +113,7 @@ export function Landing({ locale }: { locale: Locale }) {
           <Pricing {...props} />
           {/* FAQ and Contact share one slow brand gradient behind them (decorative, no text). */}
           <div className="relative isolate">
-            <Velaris className="velaris-band" height="100%" speed={1} />
+            <Velaris className="velaris-band" height="100%" speed={1} releaseOffscreen />
             <Faq {...props} />
             <Contact {...props} />
           </div>
