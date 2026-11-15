@@ -12,9 +12,11 @@ Last updated: 2026-11-15 (landing polish + Barber alert email, all QA PASS, push
 - Equal-size card groups (pricing/setup row subgrid, facts) `4292cbc`; floating glass nav that contracts on scroll down and opens on scroll up (`nav-scroll.tsx`) `6a773b5`; hero phone drawn as a real device + ≤ 5° pointer tilt `39673cd`; hero glow fades in `deeb255`; DESIGN.md `959132c`.
 - **Barber alert email** (user: the Owner adds Barbers' emails): migration `20261115090000_barber_email` (applied to the dev DB), `updateBarberProfile` email + `INVALID_EMAIL`, alerts use `coalesce(barbers.email, login email)` and drop the `/app/day` link for Barbers, field on the Barber profile in Settings. `8a09135` `713ab44` `4058630`.
 
+- Later the same day: no language label inside the hero phone `7f4a9c1`; the page scrolls over the hero phone (screens never scroll, 476px tall below 640px) `c82d77f`; premium lead form (inset fields, restyled select, gradient Send) and it keeps the input after a server error `3888583`; DESIGN.md `1b3803a`. All QA PASS.
+
 **Next:**
 
-1. Show the user the landing live; more landing rounds only if they ask ("nothing else yet", 2026-11-15).
+1. **Demo deploy: the user wants to discuss how to make the first demo** (next conversation topic). Show the user the landing live; more landing rounds only if they ask ("nothing else yet", 2026-11-15).
 2. **Demo deploy** (checklist under "Demo deploy plan" below).
 3. Telegram alerts for Barbers (Pro), a Settings page for Client texts, real-iPhone photo upload test, P3 calendar, P4 Settings polish.
 
