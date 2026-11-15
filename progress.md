@@ -1,10 +1,24 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-15, end of session (landing polish rounds, Barber alert email; everything committed and pushed). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-16, end of session (landing polish round, Client pages restyled premium; everything committed and pushed). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-### START HERE next session (written 2026-11-15, end of session)
+### START HERE next session (written 2026-11-16, end of session)
+
+Today's work is logged under "Done 2026-11-16" and "Later on 2026-11-16" below. **Left for later (user, 2026-11-16: "we'll leave this for later"), pick from here:**
+
+1. **Demo Shop photos.** demo-shop has no cover photo or logo, so `/b/demo-shop` (the landing's "See a real booking page") shows the compact no-cover header. Add a cover and logo (Settings → Shop profile, or upload landing photos to the dev DB) so the premium header shows. Asked the user; they said not yet.
+2. **Slot picker restyle.** `src/components/slot-picker.tsx` is shared by `/b`, `/m` and the staff day board; it's styled from `/b` through `.c-slots` but not restyled itself, and its "No free times" button still uses the old `btn-ghost`. Restyle it with the Client recipe and re-run `day.spec`, `book-now`, `manage`.
+3. **"A text 2 hours before" claim.** The $50 pricing card (and earlier landing copy) promises Client texts, which don't go out until the Twilio keys are set. Either set up Twilio before showing it, or soften the copy.
+4. **Landing hero phone.** `src/app/_landing/hero-phone.tsx` still draws the old (pre-restyle) booking screens; redraw them in the new Client look.
+5. **Send button on the contact card.** Its liquid-metal ring is the only thing still moving on the solid form card (kept on purpose). Ask the user whether it should be still there.
+6. **Smaller notes from QA:** the details step's "Payment" label sits under the dock until scrolled; meta text on `/b` is 12–15px (DESIGN.md asks 16px for body; read as primary text only); the "How your first month works" unrevealed steps fail axe contrast on purpose (faint preview); the setup photo is a narrow crop at 390px.
+7. **Not re-run:** `book-pay-online` e2e (needs `npm run stripe:listen`).
+8. **Crab agents mod** (a Claude panel showing background agents as a designer crab and a developer crab): started and stopped by the user, nothing written. Only if they bring it up again.
+9. **Then the DEMO talk** (still open from 2026-11-15, see below): where it runs, what data, what the dad does, what must be real, and when.
+
+### Earlier: START HERE (written 2026-11-15, end of session)
 
 **Tomorrow, in order (user, 2026-11-15):**
 
