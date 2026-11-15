@@ -1629,3 +1629,84 @@ body:has(.landing) {
       opacity var(--dur-fast) var(--ease-out);
   }
 }
+
+/*
+ * The pricing cards' arrow button (`ArrowButton`): a label, then an arrow whose shaft shows
+ * and whose chevron slides right on hover or focus. Only opacity and transform move.
+ * `primary` is the light button that leads; `quiet` is a raised panel with a hairline.
+ */
+.arrow-btn {
+  --ab-bg: var(--l-fg);
+  --ab-hover: oklch(85% 0 0);
+  --ab-fg: var(--l-bg);
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  padding: 1em 1.8em;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background: var(--ab-bg);
+  color: var(--ab-fg);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background-color 0.2s ease;
+}
+.arrow-btn[data-tone="quiet"] {
+  --ab-bg: var(--l-raised);
+  --ab-hover: oklch(25% 0 0);
+  --ab-fg: #fff;
+  border-color: rgb(255 255 255 / 0.14);
+}
+.arrow-btn:hover,
+.arrow-btn:focus-visible {
+  background: var(--ab-hover);
+}
+.arrow-btn__arrow {
+  position: relative;
+  display: inline-block;
+  width: 10px;
+  height: 2px;
+  flex: none;
+}
+/* The shaft: hidden at rest, the text color on hover. */
+.arrow-btn__arrow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+/* The chevron: a bordered square turned 45deg, 3px left of the tip at rest. */
+.arrow-btn__arrow::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: 0;
+  padding: 3px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: translateX(-3px) rotate(-45deg);
+  transition: transform 0.2s ease;
+}
+.arrow-btn:hover .arrow-btn__arrow::after,
+.arrow-btn:focus-visible .arrow-btn__arrow::after {
+  opacity: 1;
+}
+.arrow-btn:hover .arrow-btn__arrow::before,
+.arrow-btn:focus-visible .arrow-btn__arrow::before {
+  transform: translateX(0) rotate(-45deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .arrow-btn__arrow::before {
+    transition: none;
+  }
+  .arrow-btn:hover .arrow-btn__arrow::before,
+  .arrow-btn:focus-visible .arrow-btn__arrow::before {
+    transform: translateX(-3px) rotate(-45deg);
+  }
+}

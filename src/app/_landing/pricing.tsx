@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { SectionProps } from "./types";
-import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
+import { ArrowButton } from "@/components/ui/arrow-button";
 import { CONTACT_ID, Check, WidePanel, type } from "./ui";
 
 /**
@@ -54,10 +54,10 @@ export function Pricing({ t }: SectionProps) {
                   ))}
                 </ul>
                 <div className="px-8 pb-8 pt-8 md:px-10 md:pb-10">
-                  {/* Both liquid metal; the second card's ring stays dim until hover, so the first leads. */}
-                  <LiquidMetalButton href={`#${CONTACT_ID}`} tone={i === 0 ? "metal" : "quiet"} className="w-full">
+                  {/* Arrow buttons: the first card's is light so it leads; the second is a raised panel. */}
+                  <ArrowButton href={`#${CONTACT_ID}`} tone={i === 0 ? "primary" : "quiet"} className="w-full">
                     {t.navCta}
-                  </LiquidMetalButton>
+                  </ArrowButton>
                 </div>
               </div>
             ))}
