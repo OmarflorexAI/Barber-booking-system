@@ -292,9 +292,14 @@ body:has(.landing) {
     var(--l-bg)
   );
 }
-/* The footer rises out of the ground into the panel tone. */
-.landing .l-rise {
-  background: linear-gradient(180deg, var(--l-bg), var(--l-panel));
+/*
+ * The footer: its own flat surface a step below the ground, opened by one crisp hairline.
+ * --l-bg is reset here so the logo's red-pivot knockout ring matches the footer, not the page.
+ */
+.landing .l-foot {
+  --l-bg: oklch(10% 0 0);
+  background: var(--l-bg);
+  border-top: 1px solid rgb(255 255 255 / 0.1);
 }
 @media (prefers-reduced-motion: no-preference) {
   html:has(.landing) {
@@ -738,7 +743,7 @@ body:has(.landing) {
  * Velaris band (landing.tsx, components/ui/velaris.tsx): the slow brand gradient behind FAQ
  * and Contact. Under it, a static CSS gradient in the same colours shows until the canvas has
  * drawn (and stays when WebGL is missing); the canvas then fades in over 600ms (opacity). The
- * top and bottom ~120px feather into the page ground, so there are no hard edges.
+ * top ~120px feathers into the page ground; the bottom ends on a clean edge where the footer starts.
  */
 .landing .velaris-band {
   position: absolute;
@@ -752,8 +757,8 @@ body:has(.landing) {
     radial-gradient(40% 26% at 22% 24%, rgb(46 49 55 / 0.6), transparent 70%),
     radial-gradient(40% 28% at 80% 62%, rgb(46 49 55 / 0.55), transparent 70%),
     radial-gradient(55% 30% at 38% 82%, rgb(26 27 31 / 0.85), transparent 70%);
-  -webkit-mask-image: linear-gradient(180deg, transparent, #000 120px, #000 calc(100% - 120px), transparent);
-  mask-image: linear-gradient(180deg, transparent, #000 120px, #000 calc(100% - 120px), transparent);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 120px);
+  mask-image: linear-gradient(180deg, transparent, #000 120px);
 }
 .landing .velaris-canvas {
   /* Pinned to the top; velaris.tsx sets its height in 640px steps (>= the band). */

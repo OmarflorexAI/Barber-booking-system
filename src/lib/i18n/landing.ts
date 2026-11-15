@@ -215,6 +215,7 @@ const en = {
 
 type LandingDictionary = typeof en;
 
+  footerHome: "Barber Master, home page",
 const es: LandingDictionary = {
   metaTitle: "Barber Master: citas en línea para tu barbería",
   metaDescription:
@@ -423,3 +424,4 @@ const es: LandingDictionary = {
 
 export const landingDictionaries: Record<Locale, LandingDictionary> = { en, es };
 export type { LandingDictionary };
+  footerHome: "Barber Master, página de inicio",
