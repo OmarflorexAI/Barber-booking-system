@@ -10,7 +10,7 @@ export function Footer({ locale, t }: SectionProps) {
   // The legal pages come in both languages: Spanish pages link to /es/privacy and /es/terms.
   const prefix = locale === "es" ? "/es" : "";
   return (
-    <footer className="border-t border-border py-12">
+    <footer className="l-rise py-[calc(24px+4vh)]">
       <Container className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
         <div>
           <Wordmark />

@@ -237,14 +237,21 @@ body {
  * Hanken Grotesk for everything; JetBrains Mono only for times and prices.
  */
 .landing {
-  --l-bg: oklch(6% 0 0);
+  /*
+   * The ramp (user, 2026-11-15: "I like the grey, but it can be darker"): a deep graphite
+   * ground, then panel, raised and a hairline, each one clear step above the one it sits on.
+   * --l-band is the half step the alternating sections rise to (`.l-band`), so a panel card
+   * on a band still reads as a step up.
+   */
+  --l-bg: oklch(13% 0 0);
   --l-fg: oklch(93% 0 0);
-  --l-panel: oklch(11% 0 0);
-  --l-raised: oklch(14% 0 0);
-  --l-border: oklch(18% 0 0);
-  /* The template's 60% gray, lifted to 64% so it stays ≥6:1 on every dark surface. */
-  --l-muted-fg: oklch(64% 0 0);
-  /* Barber red: 5.2:1 on the ground, so it would hold even as text. */
+  --l-band: oklch(15.5% 0 0);
+  --l-panel: oklch(17% 0 0);
+  --l-raised: oklch(21% 0 0);
+  --l-border: oklch(28% 0 0);
+  /* Ash gray: at least 6:1 on every landing surface (ground, band, panel, raised). */
+  --l-muted-fg: oklch(71% 0 0);
+  /* Barber red: live signals only (dots, the booked check). */
   --l-red: oklch(62% 0.2 27);
   background: var(--l-bg);
   color: var(--l-fg);
@@ -267,8 +274,27 @@ body {
 /* Keep the page behind the landing dark too, so overscroll and sub-pixel edges never flash paper. */
 html:has(.landing),
 body:has(.landing) {
-  background: oklch(6% 0 0);
-  scrollbar-color: oklch(30% 0 0) oklch(6% 0 0);
+  background: oklch(13% 0 0);
+  scrollbar-color: oklch(34% 0 0) oklch(13% 0 0);
+}
+/*
+ * Section flow: no ruled lines between sections. A section marked .l-band rises from the
+ * ground to the band tone and settles back over --blend at each end, so it meets its
+ * neighbours (which all start and end on the ground) without a seam. Static gradients only.
+ */
+.landing .l-band {
+  --blend: 160px;
+  background: linear-gradient(
+    180deg,
+    var(--l-bg),
+    var(--l-band) var(--blend),
+    var(--l-band) calc(100% - var(--blend)),
+    var(--l-bg)
+  );
+}
+/* The footer rises out of the ground into the panel tone. */
+.landing .l-rise {
+  background: linear-gradient(180deg, var(--l-bg), var(--l-panel));
 }
 @media (prefers-reduced-motion: no-preference) {
   html:has(.landing) {
@@ -405,7 +431,6 @@ body:has(.landing) {
 .landing-widen {
   clip-path: inset(0 max(var(--pad), calc(50% - 576px + var(--pad))) round 16px);
 }
-
 /*
  * Scroll motion (the template's effects, rebuilt in CSS on scroll timelines, no JS):
  * - wide panels open to the full window

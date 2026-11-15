@@ -54,8 +54,8 @@ function PhotoPanel({ photo, className, children }: { photo: (typeof PHOTOS)[num
   return (
     <div
       data-fade-bg
-      className={`relative isolate flex h-80 items-center justify-center overflow-hidden rounded-2xl bg-black p-6 md:h-96 ${className}`}
-      style={{ "--photo-opacity": 0.45 } as CSSProperties}
+      className={`relative isolate flex h-80 items-center justify-center overflow-hidden rounded-2xl border border-white/12 bg-black p-6 md:h-96 ${className}`}
+      style={{ "--photo-opacity": 0.55 } as CSSProperties}
     >
       <Image
         src={photo.src}
@@ -70,9 +70,9 @@ function PhotoPanel({ photo, className, children }: { photo: (typeof PHOTOS)[num
   );
 }
 
-/** The template's mini card: a small dark panel with hairline border. */
+/** The template's mini card: a small panel-toned card, its hairline brighter along the top. */
 function MiniCard({ children }: { children: ReactNode }) {
-  return <div data-card="mini" className="rounded-2xl border border-white/10 bg-background p-5">{children}</div>;
+  return <div data-card="mini" className="rounded-2xl border border-white/14 border-t-white/24 bg-panel p-5">{children}</div>;
 }
 
 function BookingCard({ s }: { s: Stage }) {
@@ -95,7 +95,7 @@ function BookingCard({ s }: { s: Stage }) {
                   ? "bg-foreground font-semibold text-background"
                   : taken
                     ? "text-muted-foreground line-through"
-                    : "border border-white/10 text-foreground/90"
+                    : "border border-white/14 text-foreground/90"
               }`}
             >
               {time}
@@ -103,7 +103,7 @@ function BookingCard({ s }: { s: Stage }) {
           );
         })}
       </ul>
-      <p className="mt-4 flex items-center gap-2 border-t border-white/10 pt-3 text-[11px] font-medium text-foreground">
+      <p className="mt-4 flex items-center gap-2 border-t border-white/14 pt-3 text-[11px] font-medium text-foreground">
         <span aria-hidden className="grid h-4 w-4 place-items-center rounded-full bg-barber text-white">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" className="h-2.5 w-2.5">
             <path d="M20 6 9 17l-5-5" />
@@ -124,7 +124,7 @@ function AlertCard({ s }: { s: Stage }) {
       </div>
       <p className="mt-2 text-[12px] font-semibold text-foreground">{s.alertTitle}</p>
       <p className="mt-0.5 text-[11px] text-foreground/90">{s.alertBody}</p>
-      <div className="mt-4 border-t border-white/10 pt-3">
+      <div className="mt-4 border-t border-white/14 pt-3">
         <p className="text-[11px] font-semibold text-foreground">{s.dayTitle}</p>
         <ul className="mt-2 space-y-1">
           {s.day.map((row) => (
@@ -156,7 +156,7 @@ function ReminderCard({ s }: { s: Stage }) {
       <p className="mt-2 text-[10px] text-muted-foreground">{s.textSent}</p>
       <div className="mt-4 grid grid-cols-2 gap-1.5">
         {s.textActions.map((a) => (
-          <span key={a} className="rounded-md border border-white/10 py-1.5 text-center text-[10px] font-medium text-foreground/90">
+          <span key={a} className="rounded-md border border-white/14 py-1.5 text-center text-[10px] font-medium text-foreground/90">
             {a}
           </span>
         ))}

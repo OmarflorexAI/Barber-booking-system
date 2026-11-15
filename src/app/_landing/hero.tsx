@@ -38,6 +38,7 @@ export function Hero({ t }: SectionProps) {
           className="flex items-center justify-center px-4 py-10 md:p-16"
           background={
             <>
+              <div className="absolute inset-0 bg-panel" />
               <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(128,134,145,0.3), transparent)" }} />
               {/* Two soft lights drifting behind the phone (globals.css → "Hero glow"). */}
               <div className="hero-glow absolute inset-0">

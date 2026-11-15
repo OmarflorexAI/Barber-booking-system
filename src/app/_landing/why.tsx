@@ -6,7 +6,7 @@ export function Why({ t }: SectionProps) {
   return (
     <section aria-labelledby="why-title" className="py-[calc(24px+4vh)]">
       <Container>
-        <div className="grid gap-8 md:grid-cols-3 md:gap-12" data-reveal>
+        <div className="grid gap-10 md:grid-cols-3 md:gap-12" data-reveal>
           <h2 id="why-title" className={type.h2}>
             {t.whyTitle}
           </h2>
