@@ -1,5 +1,4 @@
 import { HtmlLang } from "@/app/_landing/html-lang";
-import { Wordmark } from "@/components/brand/logo";
 import { ClientNav } from "@/components/client-nav";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
 import { formatPhone } from "@/lib/phone";
@@ -10,8 +9,8 @@ const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-
  * The frame both Client pages share (/b booking, /m manage). The landing's glass nav floats
  * over the top (ClientNav: the mark or a way back to our site, language, the theme switch);
  * it takes no room in the flow, so the Shop's cover photo on /b can run full-bleed underneath it. Below it the
- * Shop's name (1.25rem semibold) with its address and a tap-to-call phone, the content
- * column, and a hairline footer with the Barber Master wordmark. `shopNameAs="h1"` on /b,
+ * Shop's name (1.25rem semibold) with its address and a tap-to-call phone, then the content
+ * column, which ends the page (no footer; the bottom padding clears the home bar). `shopNameAs="h1"` on /b,
  * where the Shop is the page's title; /m keeps its own h1. Styles: the "Client pages
  * (premium)" block in globals.css, whose header comment is the recipe for these screens.
  */
@@ -30,7 +29,7 @@ export function ClientShell(props: {
     <div className="client-page relative flex min-h-dvh w-full flex-col overflow-x-clip">
       <HtmlLang lang={locale} />
       <ClientNav locale={locale} t={{ otherLang: t.otherLang, themeSwitch: t.themeSwitch, backToSite: t.backToSite, talkToUs: t.talkToUs }} backHref={props.backHref} />
-      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pt-(--cbar-h)">
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pt-(--cbar-h) pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {shop && (
           <div className="c-in flex flex-col items-start pt-6 pb-4">
             <Name className="text-xl leading-tight font-semibold tracking-[-0.02em] text-balance">{shop.name}</Name>
@@ -48,14 +47,6 @@ export function ClientShell(props: {
         )}
         <main className="flex flex-1 flex-col">{props.children}</main>
       </div>
-      <footer className="mt-12 border-t border-line">
-        <div className="mx-auto flex max-w-lg justify-center px-4 pt-8 pb-[max(2rem,env(safe-area-inset-bottom))] text-muted">
-          <span className="sr-only">{t.manage.poweredBy}</span>
-          <span aria-hidden="true">
-            <Wordmark className="scale-90" />
-          </span>
-        </div>
-      </footer>
     </div>
   );
 }
