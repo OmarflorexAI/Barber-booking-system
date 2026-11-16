@@ -1,17 +1,25 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-16, end of session (landing polish round, Client pages restyled premium; everything committed and pushed). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-17 (slot picker restyled, hero phone redrawn; committed, not pushed). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-### START HERE next session (written 2026-11-16, end of session)
+### START HERE next session (written 2026-11-17)
+
+**Done 2026-11-17 (committed, not pushed):** slot picker restyled with the Client recipe `0a2cadc` (the picker owns `.c-slots`; rim/glint fall back to `--line` on the staff day board; "No free times" is a dashed well with a `.c-btn-secondary` "Next free day →"). Landing hero phone redrawn in the new Client look `938b1d5` (monogram header, 4 step segments, ruled cards, day strip + mono time pills with taken times hidden, summary dock, ticket on "You're booked"; new `heroPhone.week` EN/ES). Checks: typecheck, lint, landing e2e 12/12, book-now + manage + day 13/14.
+
+**Still open from the list below:** 1 (demo-shop photos, user), 3 ("text 2 hours before" claim: also in the hero phone's booked note, user's call), 5 (Send button ring, ask the user), 7 (book-pay-online e2e), 9 (demo talk). Item 6's "Payment label under the dock" is how a sticky dock behaves (focused fields already scroll clear); left as is.
+
+**New, pre-existing:** `day.spec` "add a walk-in from the big button" fails with and without today's changes (it adds a walk-in "now"; run at 7:42 PM it stayed open with an alert, likely outside the Shop's hours). Make the test use the injected clock or a time inside hours.
+
+### Earlier: START HERE (written 2026-11-16, end of session)
 
 Today's work is logged under "Done 2026-11-16" and "Later on 2026-11-16" below. **Left for later (user, 2026-11-16: "we'll leave this for later"), pick from here:**
 
 1. **Demo Shop photos.** demo-shop has no cover photo or logo, so `/b/demo-shop` (the landing's "See a real booking page") shows the compact no-cover header. Add a cover and logo (Settings → Shop profile, or upload landing photos to the dev DB) so the premium header shows. Asked the user; they said not yet.
-2. **Slot picker restyle.** `src/components/slot-picker.tsx` is shared by `/b`, `/m` and the staff day board; it's styled from `/b` through `.c-slots` but not restyled itself, and its "No free times" button still uses the old `btn-ghost`. Restyle it with the Client recipe and re-run `day.spec`, `book-now`, `manage`.
+2. ~~**Slot picker restyle.**~~ Done 2026-11-17. `src/components/slot-picker.tsx` is shared by `/b`, `/m` and the staff day board; it's styled from `/b` through `.c-slots` but not restyled itself, and its "No free times" button still uses the old `btn-ghost`. Restyle it with the Client recipe and re-run `day.spec`, `book-now`, `manage`.
 3. **"A text 2 hours before" claim.** The $50 pricing card (and earlier landing copy) promises Client texts, which don't go out until the Twilio keys are set. Either set up Twilio before showing it, or soften the copy.
-4. **Landing hero phone.** `src/app/_landing/hero-phone.tsx` still draws the old (pre-restyle) booking screens; redraw them in the new Client look.
+4. ~~**Landing hero phone.**~~ Done 2026-11-17. `src/app/_landing/hero-phone.tsx` still draws the old (pre-restyle) booking screens; redraw them in the new Client look.
 5. **Send button on the contact card.** Its liquid-metal ring is the only thing still moving on the solid form card (kept on purpose). Ask the user whether it should be still there.
 6. **Smaller notes from QA:** the details step's "Payment" label sits under the dock until scrolled; meta text on `/b` is 12–15px (DESIGN.md asks 16px for body; read as primary text only); the "How your first month works" unrevealed steps fail axe contrast on purpose (faint preview); the setup photo is a narrow crop at 390px.
 7. **Not re-run:** `book-pay-online` e2e (needs `npm run stripe:listen`).
