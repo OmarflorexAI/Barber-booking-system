@@ -58,6 +58,30 @@ function ArrowIcon() {
   );
 }
 
+/** "2026-11" → "November 2026". */
+function monthName(month: string, locale: Locale) {
+  return new Date(`${month}-01T12:00:00Z`).toLocaleDateString(intl(locale), { timeZone: "UTC", month: "long", year: "numeric" });
+}
+/** "2026-11-16" → "Monday, November 16". */
+function longDate(date: string, locale: Locale) {
+  return new Date(`${date}T12:00:00Z`).toLocaleDateString(intl(locale), { timeZone: "UTC", weekday: "long", month: "long", day: "numeric" });
+}
+function MonthButton(props: { label: string; disabled: boolean; onClick: () => void; dir: 1 | -1 }) {
+  return (
+    <button
+      type="button"
+      aria-label={props.label}
+      disabled={props.disabled}
+      onClick={props.onClick}
+      className="press grid size-11 place-items-center rounded-full text-ink transition-colors hover:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:text-muted/40 disabled:hover:bg-transparent"
+    >
+      <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+        <path d={props.dir === 1 ? "M7.5 4.5 13 10l-5.5 5.5" : "M12.5 4.5 7 10l5.5 5.5"} />
+      </svg>
+    </button>
+  );
+}
+
 const GROUPS = ["morning", "afternoon", "evening"] as const;
 const groupOf = (time: string) => {
   const h = Number(time.slice(0, 2));
@@ -65,7 +89,8 @@ const groupOf = (time: string) => {
 };
 
 /**
- * Day strip (today + 30 days, scrolling sideways inside itself) and the free times for the
+ * Day strip (today + 30 days, scrolling sideways inside itself), or with `calendar` a month
+ * grid with ‹ › between the (at most two) months those days touch, and the free times for the
  * chosen day as mono pills, grouped Morning / Afternoon / Evening. Taken times are not shown.
  * `refreshKey` forces a reload, e.g. after "that time was just taken".
  * Styled by `.c-slots` in globals.css (the Client recipe); outside a `.client-page` (the
@@ -80,14 +105,17 @@ export function SlotPicker(props: {
   selected: string | null;
   onPick: (slot: Slot) => void;
   refreshKey?: number;
+  /** A month calendar in one card (the Client pages) instead of the sideways day strip. */
+  calendar?: boolean;
 }) {
-  const { shopId, serviceId, barberId, timezone, locale, selected, onPick, refreshKey = 0 } = props;
+  const { shopId, serviceId, barberId, timezone, locale, selected, onPick, refreshKey = 0, calendar = false } = props;
   const t = dictionaries[locale];
   const days = useMemo(() => {
     const today = todayIn(timezone);
     return Array.from({ length: 31 }, (_, i) => addDays(today, i));
   }, [timezone]);
   const [date, setDate] = useState(days[0]);
+  const [view, setView] = useState(days[0].slice(0, 7)); // the month on show, "YYYY-MM"
   const [state, setState] = useState<{ key: string; slots: Slot[] | null; error: string | null }>({ key: "", slots: null, error: null });
   const [search, setSearch] = useState<"idle" | "searching" | "none">("idle");
   const stripRef = useRef<HTMLDivElement>(null);
@@ -116,6 +144,7 @@ export function SlotPicker(props: {
   function pickDay(d: string) {
     setSearch("idle");
     setDate(d);
+    setView(d.slice(0, 7));
   }
 
   /** Looks ahead day by day for the first day with a free time. */
@@ -139,36 +168,8 @@ export function SlotPicker(props: {
   const loading = state.key !== key;
   const slots = loading ? null : state.slots;
 
-  return (
-    <div className="c-slots flex min-w-0 flex-col gap-5">
-      <div
-        ref={stripRef}
-        className="-mx-4 flex gap-2 overflow-x-auto overscroll-x-contain px-4 pt-0.5 pb-2 [scrollbar-width:none]"
-        role="tablist"
-        aria-label={t.dayLabel}
-      >
-        {days.map((d) => {
-          const p = dayParts(d, locale);
-          const on = d === date;
-          return (
-            <button
-              key={d}
-              type="button"
-              role="tab"
-              aria-selected={on}
-              onClick={() => pickDay(d)}
-              className={`flex w-14 shrink-0 flex-col items-center gap-0.5 border py-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                on ? "bg-ink text-paper" : "bg-surface text-ink"
-              }`}
-            >
-              <span className={`text-xs font-medium ${on ? "" : "text-muted"}`}>{p.weekday}</span>
-              <span className="font-mono text-lg leading-6 font-medium tabular-nums">{p.day}</span>
-              <span className={`text-xs ${on ? "" : "text-muted"}`}>{p.month}</span>
-            </button>
-          );
-        })}
-      </div>
-
+  const times = (
+    <>
       {loading && (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4" role="status" aria-busy="true">
           <span className="sr-only">{t.loadingSlots}</span>
@@ -234,6 +235,116 @@ export function SlotPicker(props: {
           })}
         </div>
       )}
+    </>
+  );
+
+  if (!calendar) {
+    return (
+      <div className="c-slots flex min-w-0 flex-col gap-5">
+      <div
+        ref={stripRef}
+        className="-mx-4 flex gap-2 overflow-x-auto overscroll-x-contain px-4 pt-0.5 pb-2 [scrollbar-width:none]"
+        role="tablist"
+        aria-label={t.dayLabel}
+      >
+        {days.map((d) => {
+          const p = dayParts(d, locale);
+          const on = d === date;
+          return (
+            <button
+              key={d}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              onClick={() => pickDay(d)}
+              className={`flex w-14 shrink-0 flex-col items-center gap-0.5 border py-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                on ? "bg-ink text-paper" : "bg-surface text-ink"
+              }`}
+            >
+              <span className={`text-xs font-medium ${on ? "" : "text-muted"}`}>{p.weekday}</span>
+              <span className="font-mono text-lg leading-6 font-medium tabular-nums">{p.day}</span>
+              <span className={`text-xs ${on ? "" : "text-muted"}`}>{p.month}</span>
+            </button>
+          );
+        })}
+      </div>
+        {times}
+      </div>
+    );
+  }
+
+  // The month calendar (Client pages): one card, the month on top, the chosen day's times below.
+  const viewDays = days.filter((d) => d.startsWith(view));
+  const lead = new Date(`${view}-01T12:00:00Z`).getUTCDay(); // Sunday-first, like a US wall calendar
+  const monthCount = new Date(Date.UTC(Number(view.slice(0, 4)), Number(view.slice(5, 7)), 0)).getUTCDate();
+  const months = [...new Set(days.map((d) => d.slice(0, 7)))];
+  // Weeks that are wholly past are left out (they only push the times down on a phone).
+  const firstOpen = viewDays.length ? Number(viewDays[0].slice(8)) : 1;
+  const cells = [...Array.from({ length: lead }, () => 0), ...Array.from({ length: monthCount }, (_, i) => i + 1)];
+  const shown = cells.slice(Math.floor((lead + firstOpen - 1) / 7) * 7);
+  const vi = months.indexOf(view);
+  const weekdays = Array.from({ length: 7 }, (_, i) =>
+    new Date(Date.UTC(2026, 10, 1 + i, 12)).toLocaleDateString(intl(locale), { timeZone: "UTC", weekday: "short" }).replace(".", ""),
+  );
+  return (
+    <div className="c-slots c-card flex min-w-0 flex-col overflow-hidden">
+      <div className="c-cal px-3 pt-4 pb-3 sm:px-4">
+        <div className="flex items-center justify-between pl-2">
+          <h3 className="text-lg leading-tight font-semibold tracking-[-0.02em] first-letter:uppercase" aria-live="polite">
+            {monthName(view, locale)}
+          </h3>
+          <div className="flex gap-1">
+            <MonthButton label={t.prevMonth} disabled={vi <= 0} onClick={() => setView(months[vi - 1])} dir={-1} />
+            <MonthButton label={t.nextMonth} disabled={vi >= months.length - 1} onClick={() => setView(months[vi + 1])} dir={1} />
+          </div>
+        </div>
+        <div aria-hidden="true" className="mt-3 grid grid-cols-7 text-center text-xs font-medium text-muted">
+          {weekdays.map((w) => (
+            <span key={w} className="py-1 capitalize">
+              {w}
+            </span>
+          ))}
+        </div>
+        <div key={view} className="c-cal-grid mt-1 grid grid-cols-7 gap-y-1" role="tablist" aria-label={t.dayLabel}>
+          {shown.map((n, i) => {
+            if (n === 0) return <span key={`lead-${i}`} />;
+            const d = `${view}-${String(n).padStart(2, "0")}`;
+            const open = viewDays.includes(d);
+            const on = d === date;
+            const today = d === days[0];
+            if (!open) {
+              return (
+                <span key={d} aria-hidden="true" className="grid h-11 place-items-center font-mono text-[0.9375rem] text-muted/45 tabular-nums">
+                  {n}
+                </span>
+              );
+            }
+            return (
+              <div key={d} className="grid place-items-center">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
+                  aria-label={longDate(d, locale) + (today ? `, ${t.today}` : "")}
+                  aria-current={today ? "date" : undefined}
+                  onClick={() => pickDay(d)}
+                  className={`c-day relative grid size-11 place-items-center border font-mono text-[0.9375rem] font-medium tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                    on ? "bg-ink text-paper" : "bg-transparent text-ink"
+                  } ${today && !on ? "is-today" : ""}`}
+                >
+                  {n}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="flex flex-col gap-5 border-t border-line px-4 pt-4 pb-5">
+        <p className="text-[0.9375rem] font-semibold tracking-[-0.01em] first-letter:uppercase" aria-live="polite">
+          {longDate(date, locale)}
+        </p>
+        {times}
+      </div>
     </div>
   );
 }

@@ -7,6 +7,11 @@ const en = {
   otherLang: "Español",
   // theme toggle (a toggle button: pressed = dark)
   themeDark: "Dark mode",
+  // the top bar's way back when the visitor came from our site (?from=site)
+  backToSite: "Back to Barber Master",
+  // the month calendar in the time picker
+  prevMonth: "Previous month",
+  nextMonth: "Next month",
   themeSwitch: { group: "Theme", system: "Match device", light: "Light", dark: "Dark" },
   // booking flow
   stepService: "Choose a service",
@@ -745,6 +750,9 @@ const es: Dictionary = {
   langName: "Español",
   otherLang: "English",
   themeDark: "Modo oscuro",
+  backToSite: "Volver a Barber Master",
+  prevMonth: "Mes anterior",
+  nextMonth: "Mes siguiente",
   themeSwitch: { group: "Tema", system: "Como el dispositivo", light: "Claro", dark: "Oscuro" },
   stepService: "Elige un servicio",
   stepBarber: "Elige tu barbero",

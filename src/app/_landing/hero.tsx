@@ -20,7 +20,7 @@ export function Hero({ t }: SectionProps) {
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">{t.heroBody}</p>
             <Link
-              href="/b/demo-shop"
+              href="/b/demo-shop?from=site"
               transitionTypes={["page"]}
               className={`mt-5 inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-medium text-foreground underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white ${focusRing}`}
             >

@@ -9,17 +9,19 @@ import { ShopHeader } from "./shop-header";
 export default function ShopBookingPage(props: PageProps<"/b/[shopSlug]">) {
   return (
     <Suspense fallback={<Loading />}>
-      <ShopBooking params={props.params} />
+      <ShopBooking params={props.params} searchParams={props.searchParams} />
     </Suspense>
   );
 }
 
-async function ShopBooking({ params }: { params: Promise<{ shopSlug: string }> }) {
-  const { shopSlug } = await params;
+async function ShopBooking({ params, searchParams }: { params: Promise<{ shopSlug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const [{ shopSlug }, query] = await Promise.all([params, searchParams]);
   await connection(); // prices depend on "now" (specials end), so never prerender
   const [locale, catalog] = await Promise.all([getLocale(), bookingEngine().getShopCatalog(shopSlug, new Date())]);
   if (!catalog) notFound();
-  return <BookingFlow catalog={catalog} locale={locale} header={<ShopHeader shop={catalog.shop} locale={locale} />} />;
+  // Opened from our landing ("See a real booking page"): the top bar offers the way back.
+  const fromSite = query.from === "site";
+  return <BookingFlow catalog={catalog} locale={locale} fromSite={fromSite} header={<ShopHeader shop={catalog.shop} locale={locale} />} />;
 }
 
 /** Shaped like the first step: the glass bar, the Shop's front, the step counter, a ruled list of Services. */

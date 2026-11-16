@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { HtmlLang } from "@/app/_landing/html-lang";
 import { LogoMark, Wordmark } from "@/components/brand/logo";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -21,6 +22,8 @@ export function ClientShell(props: {
   t: Dictionary;
   shop: { name: string; address?: string | null; phone?: string | null } | null;
   shopNameAs?: "h1" | "p";
+  /** Set when the visitor came from our landing: the bar's mark becomes a pill back to it. */
+  backHref?: string;
   children: React.ReactNode;
 }) {
   const { locale, t, shop } = props;
@@ -30,7 +33,22 @@ export function ClientShell(props: {
       <HtmlLang lang={locale} />
       <header className="pointer-events-none sticky top-0 z-40 -mb-(--cbar-h) h-(--cbar-h) px-3 pt-2.5">
         <div className="c-bar pointer-events-auto mx-auto flex h-14 max-w-lg items-center justify-between gap-2 rounded-full pr-1.5 pl-4">
-          <LogoMark className="h-7 w-7 shrink-0 text-ink" />
+          {props.backHref ? (
+            <Link
+              href={props.backHref}
+              transitionTypes={["page"]}
+              aria-label={t.backToSite}
+              className={`press -ml-2.5 flex min-h-11 min-w-0 items-center gap-1.5 rounded-full pr-3 pl-2 text-[0.9375rem] font-medium tracking-[-0.01em] text-ink transition-colors hover:bg-raised ${focusRing}`}
+            >
+              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0 text-muted">
+                <path d="M12.5 4.5 7 10l5.5 5.5" />
+              </svg>
+              <LogoMark className="h-6 w-6 shrink-0" />
+              <span className="truncate max-[359px]:sr-only">Barber Master</span>
+            </Link>
+          ) : (
+            <LogoMark className="h-7 w-7 shrink-0 text-ink" />
+          )}
           <div className="flex items-center gap-1.5">
             <LanguageToggle locale={locale} label={t.otherLang} className="press" />
             <ThemeToggle label={t.themeDark} />

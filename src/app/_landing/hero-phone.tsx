@@ -280,7 +280,7 @@ export function HeroPhone({ p }: { p: Phone }) {
       <p className="mx-auto mt-6 flex w-max max-w-full items-center gap-2 rounded-full border border-white/15 bg-background/70 px-3.5 py-1.5 text-[13px] font-medium text-foreground">
         <LiveDot />
         {step === 3 ? (
-          <Link href="/b/demo-shop" transitionTypes={["page"]} className="underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white">
+          <Link href="/b/demo-shop?from=site" transitionTypes={["page"]} className="underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white">
             {p.label}
           </Link>
         ) : (

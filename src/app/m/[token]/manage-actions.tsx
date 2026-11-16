@@ -126,6 +126,7 @@ export function ManageActions(props: {
         )}
 
         <SlotPicker
+          calendar
           shopId={props.shopId}
           serviceId={props.serviceId}
           barberId={props.barberId}

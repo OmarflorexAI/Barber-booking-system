@@ -60,7 +60,7 @@ const rowClass = "c-row press w-full justify-between gap-4 focus-visible:outline
  * step 2 a glass dock pinned to the bottom (.c-dock) carries what is chosen so far, and on
  * the details step the one primary button.
  */
-export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; locale: Locale; header?: React.ReactNode }) {
+export function BookingFlow({ catalog, locale, header, fromSite = false }: { catalog: Catalog; locale: Locale; header?: React.ReactNode; fromSite?: boolean }) {
   const t = dictionaries[locale];
   const { shop, services, barbers } = catalog;
 
@@ -206,7 +206,7 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
   );
 
   return (
-    <ClientShell locale={locale} t={t} shop={showFront ? null : shop} shopNameAs="h1">
+    <ClientShell locale={locale} t={t} shop={showFront ? null : shop} shopNameAs="h1" backHref={fromSite ? (locale === "es" ? "/es" : "/") : undefined}>
       {showFront && header}
       {!takingBookings ? (
         <EmptyNotice text={t.errors.SHOP_UNAVAILABLE} phone={shop.phone} t={t} />
@@ -415,6 +415,7 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
                 </p>
                 <div>
                   <SlotPicker
+                    calendar
                     shopId={shop.id}
                     serviceId={service.id}
                     barberId={barberId}

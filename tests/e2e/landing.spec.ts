@@ -111,10 +111,12 @@ test("an Owner leaves their number and the lead is saved", async ({ page }) => {
   expect(rows[0]).toMatchObject({ owner_name: "E2E Owner", locale: "en" });
 });
 
-test("'See a real booking page' opens the demo shop", async ({ page }) => {
+test("'See a real booking page' opens the demo shop, with a way back", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: en.heroDemo }).first().click();
-  await expect(page).toHaveURL(/\/b\/demo-shop$/);
+  await expect(page).toHaveURL(/\/b\/demo-shop\?from=site$/);
+  await page.getByRole("link", { name: "Back to Barber Master" }).click();
+  await expect(page).toHaveURL(/localhost:\d+\/$/);
 });
 
 test("the hero phone books a pretend cut", async ({ page }) => {

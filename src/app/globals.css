@@ -2012,6 +2012,38 @@ body:has(.landing) {
 .c-slots [aria-busy] > div {
   border-radius: 9999px;
 }
+/* The month calendar (SlotPicker `calendar`): round days with no rim; the chosen day is a
+   solid --ink disc, today a thin ring, days outside the 31 bookable ones a faint number. */
+.c-slots .c-day[role="tab"] {
+  border-radius: 9999px;
+  border-color: transparent;
+  box-shadow: none;
+}
+.c-slots .c-day.is-today {
+  border-color: color-mix(in oklch, var(--ink) 35%, var(--line));
+}
+.c-slots .c-day[aria-selected="true"] {
+  border-color: var(--ink);
+}
+@media (hover: hover) and (pointer: fine) {
+  .c-slots .c-day[role="tab"]:hover:not([aria-selected="true"]) {
+    border-color: transparent;
+    background: var(--raised);
+  }
+  .c-slots .c-day.is-today[role="tab"]:hover:not([aria-selected="true"]) {
+    border-color: color-mix(in oklch, var(--ink) 35%, var(--line));
+  }
+}
+@keyframes c-cal-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .c-cal-grid {
+    animation: c-cal-in var(--dur-fast) var(--ease-out);
+  }
+}
 /* No free times: a quiet dashed well (an absence, not a card), the next-free-day pill in it. */
 .c-slots-empty {
   border: 1px dashed var(--line);
