@@ -24,7 +24,7 @@ export function Notice({
       id={id}
       role={role}
       tabIndex={tabIndex}
-      className="flex items-start gap-3 rounded-md border border-line bg-surface px-4 py-3 text-sm leading-relaxed text-ink outline-none"
+      className="c-notice flex items-start gap-3 rounded-md border border-line bg-surface px-4 py-3 text-sm leading-relaxed text-ink outline-none"
     >
       <span className="shrink-0 text-muted">{icon ?? <InfoIcon />}</span>
       <div className="flex min-w-0 flex-col gap-1">{children}</div>

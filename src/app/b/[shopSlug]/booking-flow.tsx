@@ -310,7 +310,8 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                     </button>
                   </div>
                 ) : (
-                  <ul className="c-card divide-y divide-line overflow-hidden">
+                  // Separators start at the names, past the faces (iOS inset rows).
+                  <ul className="c-card divide-y divide-line overflow-hidden [--sep:5.375rem]">
                     <li>
                       <button
                         type="button"

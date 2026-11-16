@@ -1779,20 +1779,24 @@ body:has(.landing) {
 /* ══ Client pages (premium) ═══════════════════════════════════════════════════════════════
  * /b/<shopSlug> and /m/<token>: the frame is src/components/client-shell.tsx, the Shop's
  * front is src/app/b/[shopSlug]/shop-header.tsx. RECIPE for every Client screen:
- * - Ground: --paper, flat. Column max-w-lg, 16px gutters (px-4), sections gap-6/pt-8.
- * - Card: .c-card = --surface fill, 16px radius (rounded-2xl), a --c-rim border whose top
- *   edge is brighter (--c-rim-top), a 1px inner glint. Light only adds --c-depth (a very
- *   soft low shadow, DESIGN.md's card exception); dark has none.
- * - List: ONE .c-card holding ruled rows (divide-y divide-line), never a card per row.
+ * - iOS grouped look: .client-page redefines --paper (soft grey; black in dark), --surface
+ *   (white; graphite in dark), --raised, --line and --muted, so the utilities follow.
+ *   Column max-w-lg, 16px gutters (px-4), sections gap-6/pt-8.
+ * - Card: .c-card = --surface fill, 20px radius, a hairline --c-rim (top edge --c-rim-top),
+ *   an inner glint and the layered --c-depth shadow in both themes.
+ * - List: ONE .c-card holding rows (divide-y divide-line), never a card per row. The
+ *   separators are inset from the left (--sep, 1rem; past the faces on the Barber list).
  *   Row: .c-row = min-h-16 px-4 py-3, hover tints --raised (fine pointers), .press on tap.
- * - Selected (row, chip, Barber): .c-selected or aria-pressed/aria-checked="true" on a
- *   .c-row/.c-chip = --raised fill + 1.5px --ink ring. A chosen time pill fills --ink.
- * - Chip / time pill: .c-chip = 48px full pill, --line border, mono label for times.
+ * - Selected row: .c-selected or aria-pressed/aria-checked="true" = a --raised fill, no
+ *   frame. A pressed chip, a chosen day or time fills --ink.
+ * - Chip: .c-chip = 44px white capsule on --c-press (a --raised fill inside a card).
+ * - Field: .c-field = 52px white well, hairline, --c-focus halo on focus.
  * - Buttons: .c-btn.c-btn-primary (48px pill, --ink fill, --paper text, one per view)
  *   and .c-btn.c-btn-secondary (outlined, hover fills --raised). Add .press. Never red.
  * - Section heading: .c-h2 = 1.5rem semibold, -0.025em, text-balance; a muted 0.875rem
  *   medium line (step counter, meta) sits above or below it, never a pill label.
- * - Mono: `font-mono tabular-nums` for times, durations, prices, phone numbers, counts only.
+ * - Numbers: Hanken with tabular figures (--font-jetbrains is remapped here, so a stray
+ *   font-mono still reads in the landing's face).
  * - Photos: wrap in .c-photo (overflow clip, --raised fill); a linked photo zooms 1.02.
  *   Initials disc when a person or Shop has no photo, never an empty box.
  * - Motion: .c-in rises 12px + fades once on load (stagger with style="--i: n", 60ms);
@@ -1802,34 +1806,60 @@ body:has(.landing) {
  */
 .client-page {
   --cbar-h: 5rem; /* the glass nav's 80px header (client-nav.tsx) */
-  /* Light: a rim one step firmer than --line, its top edge back at --line (lit from above),
-     and a very soft depth so white cards hold their edge on the near-white ground. */
-  --c-rim: color-mix(in oklch, var(--line), var(--ink) 8%);
-  --c-rim-top: var(--line);
-  --c-depth: 0 1px 2px oklch(0% 0 0 / 0.04), 0 8px 24px -14px oklch(0% 0 0 / 0.14);
-  /* The one raised surface per screen (the time card): a contact shadow, a soft mid and a
-     long low spread, so it sits above the page rather than on it. */
-  --c-lift: 0 1px 2px oklch(0% 0 0 / 0.05), 0 12px 28px -12px oklch(0% 0 0 / 0.16), 0 40px 80px -40px oklch(0% 0 0 / 0.22);
-  --c-glint: oklch(100% 0 0 / 0.7);
+  /* iOS grouped surfaces: the page a soft grey, cards white above it, fills a step darker
+     inside a card. The color utilities read these (they are @theme inline), so bg-paper,
+     bg-surface, bg-raised and divide-line follow inside the Client pages only. */
+  --paper: oklch(96.4% 0.002 286);
+  --surface: oklch(100% 0 0);
+  --raised: oklch(95.6% 0.002 286);
+  --line: oklch(91.5% 0.002 286);
+  --muted: oklch(47% 0.004 286);
+  /* Numbers in the landing's face with tabular figures, never monospace. */
+  --font-jetbrains: var(--font-hanken);
+  --c-rim: oklch(0% 0 0 / 0.06);
+  --c-rim-top: oklch(0% 0 0 / 0.035);
+  --c-glint: oklch(100% 0 0 / 0.9);
+  /* Cards: a hairline contact, a soft near shadow and a wide faint one. */
+  --c-depth: 0 1px 1px oklch(0% 0 0 / 0.03), 0 2px 6px -1px oklch(0% 0 0 / 0.05), 0 12px 32px -12px oklch(0% 0 0 / 0.1);
+  /* The one raised surface per screen (the time card, the dock). */
+  --c-lift: 0 1px 2px oklch(0% 0 0 / 0.04), 0 8px 20px -6px oklch(0% 0 0 / 0.1), 0 32px 64px -24px oklch(0% 0 0 / 0.18);
+  /* Small controls (chips, fields, time buttons on hover). */
+  --c-press: 0 1px 1px oklch(0% 0 0 / 0.04), 0 2px 6px -2px oklch(0% 0 0 / 0.1);
+  --c-focus: 0 0 0 4px color-mix(in oklch, var(--ink) 12%, transparent);
   --c-glass: color-mix(in oklch, var(--paper) 72%, transparent);
   background: var(--paper);
+  font-variant-numeric: tabular-nums;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .client-page {
-    --c-rim: var(--line);
-    --c-depth: 0 1px 0 oklch(0% 0 0 / 0.5), 0 12px 28px -16px oklch(0% 0 0 / 0.9);
-    --c-lift: 0 1px 0 oklch(0% 0 0 / 0.6), 0 24px 48px -20px oklch(0% 0 0 / 0.95), 0 0 0 1px oklch(100% 0 0 / 0.02);
-    --c-rim-top: color-mix(in oklch, var(--line), var(--ink) 9%);
-    --c-glint: oklch(100% 0 0 / 0.05);
+    --paper: oklch(0% 0 0);
+    --surface: oklch(19.5% 0.003 286);
+    --raised: oklch(26% 0.004 286);
+    --line: oklch(29% 0.004 286);
+    --muted: oklch(70% 0.004 286);
+    --c-rim: oklch(100% 0 0 / 0.06);
+    --c-rim-top: oklch(100% 0 0 / 0.12);
+    --c-glint: oklch(100% 0 0 / 0.06);
+    --c-depth: 0 1px 2px oklch(0% 0 0 / 0.6), 0 16px 32px -16px oklch(0% 0 0 / 0.9);
+    --c-lift: 0 1px 2px oklch(0% 0 0 / 0.7), 0 28px 56px -20px oklch(0% 0 0 / 1);
+    --c-press: 0 1px 2px oklch(0% 0 0 / 0.5);
+    --c-focus: 0 0 0 4px color-mix(in oklch, var(--ink) 22%, transparent);
     --c-glass: color-mix(in oklch, var(--paper) 68%, transparent);
   }
 }
 :root[data-theme="dark"] .client-page {
-  --c-rim: var(--line);
-  --c-depth: 0 1px 0 oklch(0% 0 0 / 0.5), 0 12px 28px -16px oklch(0% 0 0 / 0.9);
-  --c-lift: 0 1px 0 oklch(0% 0 0 / 0.6), 0 24px 48px -20px oklch(0% 0 0 / 0.95), 0 0 0 1px oklch(100% 0 0 / 0.02);
-  --c-rim-top: color-mix(in oklch, var(--line), var(--ink) 9%);
-  --c-glint: oklch(100% 0 0 / 0.05);
+  --paper: oklch(0% 0 0);
+  --surface: oklch(19.5% 0.003 286);
+  --raised: oklch(26% 0.004 286);
+  --line: oklch(29% 0.004 286);
+  --muted: oklch(70% 0.004 286);
+  --c-rim: oklch(100% 0 0 / 0.06);
+  --c-rim-top: oklch(100% 0 0 / 0.12);
+  --c-glint: oklch(100% 0 0 / 0.06);
+  --c-depth: 0 1px 2px oklch(0% 0 0 / 0.6), 0 16px 32px -16px oklch(0% 0 0 / 0.9);
+  --c-lift: 0 1px 2px oklch(0% 0 0 / 0.7), 0 28px 56px -20px oklch(0% 0 0 / 1);
+  --c-press: 0 1px 2px oklch(0% 0 0 / 0.5);
+  --c-focus: 0 0 0 4px color-mix(in oklch, var(--ink) 22%, transparent);
   --c-glass: color-mix(in oklch, var(--paper) 68%, transparent);
 }
 .client-page ::selection {
@@ -1853,10 +1883,23 @@ body:has(.landing) {
   background: var(--surface);
   border: 1px solid var(--c-rim);
   border-top-color: var(--c-rim-top);
-  border-radius: 1rem;
+  border-radius: 1.25rem;
   box-shadow:
     inset 0 1px 0 var(--c-glint),
     var(--c-depth);
+}
+.client-page .c-card.divide-y > :not(:last-child) {
+  position: relative;
+  border-bottom-color: transparent;
+}
+.client-page .c-card.divide-y > :not(:last-child)::after {
+  content: "";
+  position: absolute;
+  inset-inline: var(--sep, 1rem) 0;
+  bottom: -1px;
+  height: 1px;
+  background: var(--line);
+  pointer-events: none;
 }
 .c-row {
   display: flex;
@@ -1868,26 +1911,40 @@ body:has(.landing) {
 }
 .c-selected,
 .c-row[aria-pressed="true"],
-.c-row[aria-checked="true"],
+.c-row[aria-checked="true"] {
+  background: var(--raised);
+}
 .c-chip[aria-pressed="true"],
 .c-chip[aria-checked="true"] {
-  background: var(--raised);
-  box-shadow: inset 0 0 0 1.5px var(--ink);
+  background: var(--ink);
+  color: var(--paper);
 }
+/* Chips (the address, the phone, a Barber's Profile): a white capsule that sits on its
+   shadow, the same on the grey page and inside a card. */
 .c-chip {
   display: inline-flex;
-  min-height: 3rem;
+  min-height: 2.75rem;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--line);
+  border: 1px solid var(--c-rim, var(--line));
+  border-top-color: var(--c-rim-top, var(--line));
   border-radius: 9999px;
   padding: 0 1rem;
   background: var(--surface);
+  box-shadow:
+    inset 0 1px 0 var(--c-glint, transparent),
+    var(--c-press, 0 0 #0000);
   font-size: 0.9375rem;
+  font-weight: 500;
+}
+.c-card .c-chip {
+  background: var(--raised);
+  border-color: transparent;
+  box-shadow: none;
 }
 .c-btn {
   display: inline-flex;
-  min-height: 3rem;
+  min-height: 3.25rem;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
@@ -1936,13 +1993,29 @@ body:has(.landing) {
   background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
 }
 @media (hover: hover) and (pointer: fine) {
-  .c-row:hover:not(:disabled, .c-selected, [aria-pressed="true"], [aria-checked="true"]),
-  .c-chip:hover:not(:disabled, [aria-pressed="true"], [aria-checked="true"]),
-  .c-btn-secondary:hover {
-    background: var(--raised);
+  .c-row:hover:not(:disabled, .c-selected, [aria-pressed="true"], [aria-checked="true"]) {
+    background: color-mix(in oklch, var(--raised) 70%, var(--surface));
   }
-  .c-chip:hover:not(:disabled) {
-    border-color: color-mix(in oklch, var(--ink) 35%, var(--line));
+  /* A Barber row is the row button plus its Profile chip: tint the whole line. */
+  .client-page .c-card > li:has(> .c-row:hover:not(:disabled)) {
+    background: color-mix(in oklch, var(--raised) 70%, var(--surface));
+  }
+  .client-page .c-card > li > .c-row:hover {
+    background: transparent;
+  }
+  .c-chip:hover:not(:disabled, [aria-pressed="true"], [aria-checked="true"]) {
+    translate: 0 -1px;
+    box-shadow:
+      inset 0 1px 0 var(--c-glint, transparent),
+      0 1px 1px oklch(0% 0 0 / 0.04),
+      0 6px 14px -6px oklch(0% 0 0 / 0.18);
+  }
+  .c-card .c-chip:hover:not(:disabled, [aria-pressed="true"], [aria-checked="true"]) {
+    background: var(--surface);
+    border-color: var(--c-rim, var(--line));
+  }
+  .c-btn-secondary:hover {
+    translate: 0 -1px;
   }
   .c-btn-primary:hover:not(:disabled) {
     background-color: color-mix(in oklch, var(--ink) 88%, var(--paper));
@@ -1985,10 +2058,13 @@ body:has(.landing) {
       background-color var(--dur-fast) var(--ease-out);
   }
   .c-row,
-  .c-chip {
+  .c-chip,
+  .client-page .c-card > li {
     transition:
       background-color var(--dur-fast) var(--ease-out),
       border-color var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-fast) var(--ease-out),
+      translate var(--dur-fast) var(--ease-out),
       scale var(--dur-fast) var(--ease-spring);
   }
   .c-link {
@@ -2053,28 +2129,30 @@ body:has(.landing) {
   backdrop-filter: blur(20px) saturate(1.6);
 }
 .c-field {
-  min-height: 3rem;
+  min-height: 3.25rem;
   width: 100%;
   scroll-margin-bottom: 7rem; /* a focused field scrolls clear of the dock */
   border: 1px solid var(--c-rim);
   border-top-color: var(--c-rim-top);
-  border-radius: 10px;
+  border-radius: 0.875rem;
   background: var(--surface);
-  box-shadow: inset 0 1px 0 var(--c-glint);
+  box-shadow: var(--c-press);
   padding: 0 1rem;
   font-size: 1rem;
   color: var(--ink);
+  outline: none;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 .c-field:focus {
-  border-color: var(--ink);
+  border-color: color-mix(in oklch, var(--ink) 55%, transparent);
+  box-shadow:
+    var(--c-press),
+    var(--c-focus);
 }
-.c-field:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-}
-.c-field:user-invalid {
-  border-style: dashed;
-  border-color: color-mix(in oklch, var(--ink) 55%, var(--line));
+.c-field:user-invalid:not(:focus) {
+  border-color: color-mix(in oklch, var(--ink) 45%, transparent);
 }
 .c-radio-dot {
   scale: 0;
@@ -2089,37 +2167,39 @@ body:has(.landing) {
 .c-radio-dot.is-on {
   scale: 1;
 }
-.c-slots [role="tablist"] {
+.c-slots:not(.c-timecard) [role="tablist"] {
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 1rem, #000 calc(100% - 1.5rem), transparent);
   mask-image: linear-gradient(90deg, transparent, #000 1rem, #000 calc(100% - 1.5rem), transparent);
 }
 /* The picker is also on the staff day board (no .client-page): the rim and glint fall back. */
-.c-slots [role="tab"],
-.c-slots button[aria-pressed] {
+.c-slots:not(.c-timecard) [role="tab"],
+.c-slots:not(.c-timecard) button[aria-pressed] {
   border-color: var(--line);
   border-top-color: var(--c-rim-top, var(--line));
   box-shadow: inset 0 1px 0 var(--c-glint, transparent);
 }
-.c-slots [role="tab"] {
+.c-slots:not(.c-timecard) [role="tab"] {
   border-radius: 1.125rem;
 }
-.c-slots [role="tab"][aria-selected="true"],
-.c-slots button[aria-pressed="true"] {
+.c-slots:not(.c-timecard) [role="tab"][aria-selected="true"],
+.c-slots:not(.c-timecard) button[aria-pressed="true"] {
   border-color: var(--ink);
   box-shadow: none;
 }
-.c-slots h3 {
+.c-slots .c-times-scroll h3,
+.c-slots:not(.c-timecard) h3 {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
-.c-slots h3::after {
+.c-slots .c-times-scroll h3::after,
+.c-slots:not(.c-timecard) h3::after {
   content: "";
   flex: 1;
   height: 1px;
   background: var(--line);
 }
-.c-slots [aria-busy] > div {
+.c-slots:not(.c-timecard) [aria-busy] > div {
   border-radius: 9999px;
 }
 /* ── The time card (SlotPicker `calendar`, after the user's reference) ─────────────────────
@@ -2175,42 +2255,48 @@ body:has(.landing) {
   box-shadow: inset 0 0 0 1px var(--line);
   color: var(--ink);
 }
+.c-cal-grid > * {
+  width: min(100%, 2.875rem);
+  max-height: none;
+  justify-self: center;
+}
 .c-slots .c-day[role="tab"] {
-  border-radius: 0.75rem;
+  border-radius: 0.875rem;
   border-color: transparent;
   box-shadow: none;
 }
 .c-slots .c-day.is-today {
-  border-color: color-mix(in oklch, var(--ink) 30%, var(--line));
+  background: var(--raised);
+  font-weight: 700;
 }
 .c-slots .c-day[aria-selected="true"] {
-  border-color: var(--ink);
-  box-shadow: 0 6px 16px -8px oklch(0% 0 0 / 0.45);
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 oklch(100% 0 0 / 0.16),
+    0 2px 4px oklch(0% 0 0 / 0.12),
+    0 8px 18px -8px oklch(0% 0 0 / 0.55);
 }
 .c-time {
-  border-radius: 0.75rem;
-  border: 1px solid var(--line);
-  background: color-mix(in oklch, var(--raised) 70%, var(--surface));
-  box-shadow: inset 0 1px 0 var(--c-glint, transparent);
+  border-radius: 0.875rem;
+  border: 1px solid transparent;
+  background: var(--raised);
 }
 .c-time[aria-pressed="true"] {
-  border-color: var(--ink);
-  box-shadow: 0 8px 18px -10px oklch(0% 0 0 / 0.5);
+  box-shadow:
+    inset 0 1px 0 oklch(100% 0 0 / 0.16),
+    0 8px 18px -8px oklch(0% 0 0 / 0.55);
 }
 @media (hover: hover) and (pointer: fine) {
   .c-slots .c-day[role="tab"]:hover:not([aria-selected="true"]) {
     border-color: transparent;
     background: var(--raised);
   }
-  .c-slots .c-day.is-today[role="tab"]:hover:not([aria-selected="true"]) {
-    border-color: color-mix(in oklch, var(--ink) 30%, var(--line));
-  }
   .c-time[aria-pressed="false"]:hover {
     background: var(--surface);
-    border-color: color-mix(in oklch, var(--ink) 28%, var(--line));
+    border-color: var(--c-rim);
     box-shadow:
-      inset 0 1px 0 var(--c-glint, transparent),
-      0 6px 14px -8px oklch(0% 0 0 / 0.22);
+      0 1px 1px oklch(0% 0 0 / 0.04),
+      0 6px 14px -6px oklch(0% 0 0 / 0.2);
     translate: 0 -1px;
   }
 }
@@ -2255,8 +2341,29 @@ body:has(.landing) {
 }
 /* No free times: a quiet dashed well (an absence, not a card), the next-free-day pill in it. */
 .c-slots-empty {
-  border: 1px dashed var(--line);
-  background: color-mix(in oklch, var(--raised) 45%, transparent);
+  border-radius: 1rem;
+  background: var(--raised);
+}
+/* Notices and payment tags on the Client pages: the same card language (a soft rounded
+   card on its shadow; a filled tag), while the staff app keeps its hairline boxes. */
+.client-page .c-notice {
+  border-radius: 1rem;
+  border-color: var(--c-rim);
+  border-top-color: var(--c-rim-top);
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    var(--c-press);
+}
+.client-page .c-card .c-notice,
+.client-page dialog .c-notice {
+  background: var(--raised);
+  border-color: transparent;
+  box-shadow: none;
+}
+.client-page .c-tag {
+  border-color: transparent;
+  background: var(--raised);
+  color: var(--ink);
 }
 .c-slots-empty .c-btn[aria-busy="true"] {
   cursor: progress;
