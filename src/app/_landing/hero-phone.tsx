@@ -7,14 +7,19 @@ import { LiveDot } from "./live-dot";
 
 type Phone = LandingDictionary["heroPhone"];
 
-/* The real booking page's light palette (achromatic, globals.css :root), so the demo looks like
-   what clients get: ground #fafafa, white cards, hairline #dedede, ink #0f0f0f, muted #5d5d5d,
-   raised #f0f0f0, black pills, and the light red (#cc2827) only on the booked check. */
+/* The real booking page's light palette and its Client recipe (globals.css :root and the
+   "Client pages (premium)" block), so the demo looks like what clients get: ground #fafafa,
+   white cards with a rim one step firmer than the hairline and a soft depth, raised #f0f0f0,
+   ink #0f0f0f, muted #5d5d5d, mono for times and prices, and the light red (#cc2827) only on
+   the booked check. */
 const c = {
   paper: "bg-[#fafafa]",
-  card: "rounded-[14px] border border-[#dedede] bg-white",
+  card: "rounded-[14px] border border-[#d2d2d2] border-t-[#dedede] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_1px_2px_rgba(0,0,0,.04),0_8px_20px_-14px_rgba(0,0,0,.16)]",
+  row: "flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-150 hover:bg-[#f0f0f0] active:bg-[#f0f0f0] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#0f0f0f]",
+  pill: "rounded-full border border-[#dedede] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,.7)]",
   ink: "text-[#0f0f0f]",
   muted: "text-[#5d5d5d]",
+  mono: "font-mono tabular-nums",
 } as const;
 
 /**
@@ -75,10 +80,15 @@ export function HeroPhone({ p }: { p: Phone }) {
     aimAt((e.clientX - r.left) / r.width - 0.5, (e.clientY - r.top) / r.height - 0.5);
   }
 
+  // Like the real picker, taken times are not shown; the free ones split by part of the day.
+  const free = p.times.map((t, i) => ({ t, i })).filter(({ i }) => !p.taken.includes(i));
+  const isAm = (t: string) => /a\.?\s?m\.?$/i.test(t);
+  const groups = [free.filter(({ t }) => isAm(t)), free.filter(({ t }) => !isAm(t))];
+
   const screens: ReactNode[] = [
-    // 0. Services
-    <Screen key="s" title={p.chooseService} p={p}>
-      <ul className="flex flex-col gap-2">
+    // 0. Services: one card of ruled rows, like the real page.
+    <Screen key="s" title={p.chooseService} p={p} at={0}>
+      <ul className={`${c.card} divide-y divide-[#e4e4e4] overflow-hidden`}>
         {p.services.map((s, i) => (
           <li key={s.name}>
             <Tap
@@ -86,20 +96,25 @@ export function HeroPhone({ p }: { p: Phone }) {
                 setService(i);
                 go(1);
               }}
-              className="flex items-start justify-between gap-2 px-3 py-2.5"
+              className="min-h-[46px] justify-between py-2"
             >
               <span className="min-w-0">
-                <span className="block text-[13px] font-medium leading-tight">{s.name}</span>
-                <span className={`block text-[11px] ${c.muted}`}>{s.min} min</span>
-                {s.special && <span className="mt-1 inline-block rounded-full bg-[#f0f0f0] px-1.5 py-px text-[9.5px] text-[#0f0f0f]">{s.special}</span>}
+                <span className="block text-[12.5px] leading-tight font-medium">{s.name}</span>
+                <span className={`mt-0.5 flex items-center gap-1.5 text-[10.5px] ${c.muted}`}>
+                  <span className={c.mono}>{s.min} min</span>
+                  {s.special && <span className="rounded-full bg-[#f0f0f0] px-1.5 text-[9.5px] text-[#0f0f0f]">{s.special}</span>}
+                </span>
               </span>
-              <span className="shrink-0 text-right">
-                {s.was ? (
-                  <span className={`block text-[10px] line-through ${c.muted}`}>${s.was}</span>
-                ) : (
-                  <span className={`block text-[10px] ${c.muted}`}>{p.from}</span>
-                )}
-                <span className="block text-[14px] font-semibold tabular-nums">${s.price}</span>
+              <span className="flex shrink-0 items-center gap-1.5 text-right">
+                <span>
+                  {s.was ? (
+                    <span className={`block text-[9.5px] line-through ${c.muted} ${c.mono}`}>${s.was}</span>
+                  ) : (
+                    <span className={`block text-[9.5px] ${c.muted}`}>{p.from}</span>
+                  )}
+                  <span className={`block text-[13px] font-semibold ${c.mono}`}>${s.price}</span>
+                </span>
+                <Chevron />
               </span>
             </Tap>
           </li>
@@ -107,9 +122,9 @@ export function HeroPhone({ p }: { p: Phone }) {
       </ul>
     </Screen>,
 
-    // 1. Barbers
-    <Screen key="b" title={p.chooseBarber} p={p} onBack={() => go(0)}>
-      <ul className="flex flex-col gap-2">
+    // 1. Barbers: "Any available" first, then initials discs.
+    <Screen key="b" title={p.chooseBarber} p={p} at={1} onBack={() => go(0)} dock={<Dock name={svc.name} price={svc.price} />}>
+      <ul className={`${c.card} divide-y divide-[#e4e4e4] overflow-hidden`}>
         {[null, 0, 1, 2, 3].map((b) => (
           <li key={b ?? "any"}>
             <Tap
@@ -117,11 +132,11 @@ export function HeroPhone({ p }: { p: Phone }) {
                 setBarber(b);
                 go(2);
               }}
-              className="flex items-center gap-2.5 px-3 py-2.5"
+              className="min-h-[46px] py-1.5"
             >
               <span
                 className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12px] font-semibold ${
-                  b === null ? "bg-[#0f0f0f] text-white" : "bg-[#f0f0f0] text-[#0f0f0f]"
+                  b === null ? "bg-[#0f0f0f] text-white" : "border border-[#dedede] bg-[#f0f0f0] text-[#0f0f0f]"
                 }`}
               >
                 {b === null ? (
@@ -133,60 +148,90 @@ export function HeroPhone({ p }: { p: Phone }) {
                   p.barbers[b][0]
                 )}
               </span>
-              <span className="min-w-0">
-                <span className="block text-[13px] font-medium leading-tight">{b === null ? p.anyBarber : p.barbers[b]}</span>
-                {b === null && <span className={`block text-[11px] ${c.muted}`}>{p.anyBarberHint}</span>}
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12.5px] leading-tight font-medium">{b === null ? p.anyBarber : p.barbers[b]}</span>
+                {b === null && <span className={`block text-[10.5px] ${c.muted}`}>{p.anyBarberHint}</span>}
               </span>
+              <Chevron />
             </Tap>
           </li>
         ))}
       </ul>
     </Screen>,
 
-    // 2. Times
-    <Screen key="t" title={p.pickTime} p={p} onBack={() => go(1)}>
-      <p className="mb-2 inline-block rounded-full bg-[#0f0f0f] px-2.5 py-1.5 text-[11px] text-white">{p.day}</p>
-      <div className="grid grid-cols-3 gap-1.5">
-        {p.times.map((t, i) => {
-          const taken = p.taken.includes(i);
-          return (
-            <button
-              key={t}
-              type="button"
-              disabled={taken}
-              onClick={() => {
-                setTime(i);
-                setBooked((n) => n + 1);
-                go(3);
-              }}
-              className={`${c.card} min-h-11 px-1 text-[11px] tabular-nums transition-[background-color,border-color,transform] duration-150 hover:border-[#0f0f0f] active:scale-95 disabled:border-transparent disabled:bg-transparent disabled:text-[#a4a4a4] disabled:line-through focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f]`}
-            >
-              {t}
-            </button>
-          );
-        })}
+    // 2. Times: the day strip, then the free times as mono pills by part of the day.
+    <Screen key="t" title={p.pickTime} p={p} at={2} onBack={() => go(1)} dock={<Dock name={svc.name} sub={barberName} price={svc.price} />}>
+      <p className="sr-only">{p.day}</p>
+      <div aria-hidden className="-mx-3.5 mb-2.5 flex gap-1.5 overflow-hidden px-3.5 [mask-image:linear-gradient(90deg,#000_75%,transparent)]">
+        {p.week.map((_, d) => (
+          <span
+            key={d}
+            className={`flex w-[40px] shrink-0 flex-col items-center rounded-[12px] border py-1 ${
+              d === 0 ? "border-[#0f0f0f] bg-[#0f0f0f] text-white" : "border-[#dedede] bg-white text-[#0f0f0f]"
+            }`}
+          >
+            <span className={`text-[8.5px] font-medium ${d === 0 ? "" : c.muted}`}>{p.week[d]}</span>
+            <span className={`text-[13px] leading-4 font-medium ${c.mono}`}>{dayNumber(p.day) + d}</span>
+          </span>
+        ))}
       </div>
+      {groups.map((group, g) => (
+        <div key={g} className={g ? "mt-2" : ""}>
+          <p aria-hidden className={`mb-1 flex items-center gap-2 text-[9.5px] font-medium ${c.muted} ${c.mono}`}>
+            {group[0]?.t.match(/[ap]\.?\s?m\.?$/i)?.[0]}
+            <span className="h-px flex-1 bg-[#dedede]" />
+          </p>
+          <div className="grid grid-cols-3 gap-1.5">
+            {group.map(({ t, i }) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => {
+                  setTime(i);
+                  setBooked((n) => n + 1);
+                  go(3);
+                }}
+                className={`${c.pill} min-h-[34px] px-1 text-[11px] font-medium ${c.mono} transition-[background-color,border-color,scale] duration-150 hover:border-[#0f0f0f]/40 hover:bg-[#f0f0f0] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f]`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
     </Screen>,
 
-    // 3. Booked
-    <Screen key="d" p={p}>
-      <div className="flex h-full flex-col items-center pt-6 text-center">
-        <span key={booked} className="landing-pop grid h-12 w-12 place-items-center rounded-full bg-[#cc2827] text-white">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+    // 3. Booked: the red check, and the Booking as a ticket with a tear line.
+    <Screen key="d" p={p} at={3}>
+      <div className="flex h-full flex-col items-center pt-2 text-center">
+        <span key={booked} className="landing-pop grid h-11 w-11 place-items-center rounded-full bg-[#cc2827] text-white">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
             <path d="M20 6 9 17l-5-5" />
           </svg>
         </span>
-        <p data-screen-title tabIndex={-1} className="mt-4 text-[17px] font-semibold tracking-[-0.01em] outline-none">
+        <p data-screen-title tabIndex={-1} className="mt-3 text-[18px] font-semibold tracking-[-0.025em] outline-none">
           {p.bookedTitle}
         </p>
-        <div className={`${c.card} mt-4 w-full px-3 py-3 text-left`}>
-          <p className="text-[13px] font-medium">{svc.name}</p>
-          <p className={`text-[11px] ${c.muted}`}>
-            {p.bookedWith} {barberName} · {p.dayShort} {p.bookedAt} {p.times[time]}
-          </p>
-          <p className="mt-1 text-[13px] font-semibold tabular-nums">${svc.price}</p>
+        <div className={`${c.card} mt-3 w-full text-left`}>
+          <div className="px-3 pt-2.5 pb-2">
+            <p className={`text-[10px] font-medium ${c.muted}`}>{p.day}</p>
+            <p className={`text-[20px] leading-6 font-semibold tracking-[-0.02em] ${c.mono}`}>{p.times[time]}</p>
+          </div>
+          <div aria-hidden className="relative mx-3 border-t border-dashed border-[#d2d2d2]">
+            <span className="absolute -top-[7px] -left-[20px] h-3.5 w-3.5 rounded-full bg-[#fafafa] shadow-[inset_0_0_0_1px_#d2d2d2]" />
+            <span className="absolute -top-[7px] -right-[20px] h-3.5 w-3.5 rounded-full bg-[#fafafa] shadow-[inset_0_0_0_1px_#d2d2d2]" />
+          </div>
+          <div className="flex items-center justify-between gap-2 px-3 py-2.5">
+            <span className="min-w-0">
+              <span className="block truncate text-[12.5px] font-medium">{svc.name}</span>
+              <span className={`block text-[10.5px] ${c.muted}`}>
+                {p.bookedWith} {barberName}
+              </span>
+            </span>
+            <span className={`text-[13px] font-semibold ${c.mono}`}>${svc.price}</span>
+          </div>
         </div>
-        <p className={`mt-3 text-[11px] leading-[1.45] ${c.muted}`}>{p.bookedNote}</p>
+        <p className={`mt-2.5 text-[10.5px] leading-[1.45] text-pretty ${c.muted}`}>{p.bookedNote}</p>
         <button
           type="button"
           onClick={() => go(0)}
@@ -274,49 +319,97 @@ function StatusBar() {
   );
 }
 
-/** One screen of the phone: the shop header, an optional Back, a title and its content. */
-function Screen({ title, p, onBack, children }: { title?: string; p: Phone; onBack?: () => void; children: ReactNode }) {
+/** "Thu, Nov 12" or "jue, 12 nov" → 12, for the day strip's numbers. */
+function dayNumber(day: string) {
+  return Number(day.match(/\d+/)?.[0] ?? 1);
+}
+
+/** "Fresh Cuts Barbershop" → "FC", the Shop's monogram when it has no logo. */
+function monogram(name: string) {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("");
+}
+
+/**
+ * One screen of the phone, in the real page's order: the Shop's monogram and name, then
+ * Back and the step segments, a title, the content, and (from the barber step) the glass
+ * dock with what is chosen so far.
+ */
+function Screen({ title, p, at, onBack, dock, children }: { title?: string; p: Phone; at: number; onBack?: () => void; dock?: ReactNode; children: ReactNode }) {
   // The screen never scrolls on its own (every screen fits), so a wheel or swipe over the
   // phone always moves the page.
   return (
     <div className="flex h-full flex-col overflow-y-hidden px-3.5 pb-3 [scrollbar-width:none]">
-      <div className="flex items-start justify-between gap-2 pt-2">
+      <div className="flex items-center gap-2.5 pt-2.5">
+        <span aria-hidden className={`${c.card} grid h-8 w-8 shrink-0 place-items-center rounded-full! text-[10.5px] font-semibold tracking-[-0.02em]`}>
+          {monogram(p.shop)}
+        </span>
         <div className="min-w-0">
-          <p className="text-[15px] font-semibold leading-tight tracking-[-0.02em]">{p.shop}</p>
+          <p className="truncate text-[14px] leading-tight font-semibold tracking-[-0.025em]">{p.shop}</p>
           <p className={`truncate text-[10px] ${c.muted}`}>{p.address}</p>
         </div>
       </div>
-      {onBack && (
-        <button
-          type="button"
-          onClick={onBack}
-          className={`-my-1 mt-1 -ml-1 flex min-h-11 w-max min-w-11 items-center gap-0.5 rounded px-1 text-[11px] ${c.muted} transition-colors hover:text-[#0f0f0f] focus-visible:outline-2 focus-visible:outline-[#0f0f0f]`}
-        >
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-          {p.back}
-        </button>
-      )}
+      <div className="mt-2 flex min-h-8 items-center gap-2">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className={`-ml-1 flex min-h-8 min-w-11 items-center gap-0.5 rounded px-1 text-[11px] ${c.ink} focus-visible:outline-2 focus-visible:outline-[#0f0f0f]`}
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            {p.back}
+          </button>
+        )}
+        <span aria-hidden className="flex flex-1 gap-1">
+          {[0, 1, 2, 3].map((i) => (
+            <span key={i} className={`h-[3px] flex-1 rounded-full transition-colors duration-300 ${i <= at ? "bg-[#0f0f0f]" : "bg-[#e4e4e4]"}`} />
+          ))}
+        </span>
+      </div>
       {title && (
-        <p data-screen-title tabIndex={-1} className={`${onBack ? "mt-1.5" : "mt-4"} mb-2.5 text-[14px] font-medium outline-none`}>
+        <p data-screen-title tabIndex={-1} className="mt-1.5 mb-2.5 text-[17px] leading-tight font-semibold tracking-[-0.025em] outline-none">
           {title}
         </p>
       )}
       <div className="flex-1">{children}</div>
+      {dock}
     </div>
   );
 }
 
-/** A tappable white card, like the real page's service and barber rows. */
+/** The glass dock: the chosen Service (and Barber) and its price, pinned under the content. */
+function Dock({ name, sub, price }: { name: string; sub?: string; price: number }) {
+  return (
+    <div className="mt-2 flex items-center gap-2 rounded-[1.25rem] border border-[#d2d2d2] border-t-[#dedede] bg-white/90 p-1.5 pr-3 shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_12px_28px_-16px_rgba(0,0,0,.35)] backdrop-blur-md">
+      <span aria-hidden className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[#dedede] bg-[#f0f0f0] text-[10.5px] font-semibold">
+        {(sub ?? name)[0]}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[11.5px] leading-tight font-medium">{name}</span>
+        {sub && <span className={`block truncate text-[10px] leading-tight ${c.muted}`}>{sub}</span>}
+      </span>
+      <span className={`text-[12.5px] font-semibold ${c.mono}`}>${price}</span>
+    </div>
+  );
+}
+
+function Chevron() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 shrink-0 text-[#a4a4a4]">
+      <path d="M7.5 4.5 13 10l-5.5 5.5" />
+    </svg>
+  );
+}
+
+/** A tappable row inside a card, like the real page's Service and Barber rows. */
 function Tap({ onClick, className, children }: { onClick: () => void; className: string; children: ReactNode }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{ WebkitTapHighlightColor: "transparent" } as CSSProperties}
-      className={`${c.card} w-full text-left transition-[border-color,transform,box-shadow] duration-150 hover:border-[#0f0f0f]/60 hover:shadow-[0_6px_16px_-10px_rgba(15,15,15,.5)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f] ${className}`}
-    >
+    <button type="button" onClick={onClick} style={{ WebkitTapHighlightColor: "transparent" } as CSSProperties} className={`${c.row} ${className}`}>
       {children}
     </button>
   );

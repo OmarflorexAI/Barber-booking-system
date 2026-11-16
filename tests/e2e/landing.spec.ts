@@ -123,7 +123,8 @@ test("the hero phone books a pretend cut", async ({ page }) => {
   const phone = page.getByRole("group", { name: p.label });
   await phone.getByRole("button", { name: p.services[3].name }).click();
   await phone.getByRole("button", { name: p.barbers[2] }).click();
-  await expect(phone.getByRole("button", { name: p.times[p.taken[0]] })).toBeDisabled();
+  // Like the real picker, taken times aren't shown.
+  await expect(phone.getByRole("button", { name: p.times[p.taken[0]], exact: true })).toHaveCount(0);
   await phone.getByRole("button", { name: p.times[6] }).click();
   await expect(phone.getByText(p.bookedTitle)).toBeVisible();
   await phone.getByRole("button", { name: p.again }).click();
