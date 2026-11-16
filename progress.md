@@ -1,10 +1,20 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-17 (slot picker restyled, hero phone redrawn; committed, not pushed). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-17 (iOS card pass on /b, /m and the hero phone; all pushed). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
 ### START HERE next session (written 2026-11-17)
+
+**iOS card pass, 2026-11-17 (latest; pushed), after the user: "the input boxes, buttons, the highlighted days look glitched; I want an iOS card feeling, premium, modern, minimal; cards and buttons need depth or a shadow; fonts from the landing":**
+- `.client-page` now redefines `--paper` (soft grey; black in dark), `--surface` (white; graphite oklch 19.5% in dark), `--raised`, `--line`, `--muted`, so the `@theme inline` utilities follow on Client pages only. `--font-jetbrains` is remapped to Hanken there, so every `font-mono` on /b and /m reads in the landing face with tabular figures.
+- Cards 20px corners, hairline rim, layered `--c-depth` in both themes; lists in `.c-card.divide-y` get iOS separators inset from the left (`--sep`, 1rem; the Barber list sets 5.375rem past the faces). Selected rows = a quiet `--raised` fill (no ink frame). Chips = white capsules on `--c-press` (grey fill inside a card); a Barber row's hover tints the whole line. Fields = 52px white wells with a `--c-focus` halo (no dashed invalid state). Buttons 52px.
+- Glitches fixed: the staff day-strip rules (edge mask, tab borders, h3 rule line) leaked into the time card; now scoped to `.c-slots:not(.c-timecard)`. Calendar days stretched on wide columns; now true squares (max 2.875rem), today = soft fill + bold, chosen = ink tile on a shadow. Time buttons = filled grey, lift on hover.
+- `Notice` and `PayTag` carry `c-notice` / `c-tag`; on Client pages only they become a rounded card on its shadow (grey inside a card/sheet) and a filled tag. "No free times" is a solid rounded well.
+- Landing hero phone (`hero-phone.tsx`) restyled to the same look: #f2f2f4 ground, 18px white cards, inset separators, no mono, the time screen as one card (week of rounded squares with dots + grey time rectangles), lit "Book another".
+- Verified by screenshots (`.impeccable/review/ios/`: `shots.mjs` = the 4 /b steps phone light/dark + desktop; `flow.mjs` = profile sheet, filled details, booked, /m, Change time, cancel sheet, cancelled, light + dark; it books then cancels a real "Visual Check" Booking at demo-shop; `../hero-phone/shots-ios.mjs` = the phone EN/ES). Typecheck, lint, e2e landing + manage + book-now 19/19, barber-profile/race/plans pass.
+- The Client recipe comment in globals.css is updated (the old "mono for times" note is gone).
+
 
 **Done 2026-11-17 (committed, not pushed):** slot picker restyled with the Client recipe `0a2cadc` (the picker owns `.c-slots`; rim/glint fall back to `--line` on the staff day board; "No free times" is a dashed well with a `.c-btn-secondary` "Next free day →"). Landing hero phone redrawn in the new Client look `938b1d5` (monogram header, 4 step segments, ruled cards, day strip + mono time pills with taken times hidden, summary dock, ticket on "You're booked"; new `heroPhone.week` EN/ES). Checks: typecheck, lint, landing e2e 12/12, book-now + manage + day 13/14.
 
@@ -14,7 +24,7 @@ Last updated: 2026-11-17 (slot picker restyled, hero phone redrawn; committed, n
 - `src/components/client-nav.tsx`: the landing's glass nav on `/b` and `/m` (shared `.nav-*` rules now `:is(.landing, .client-page)`, light/dark glass of their own, contracts on scroll), the dashboard's `ThemeSwitcher`, language as a nav link; with `?from=site` the wordmark leads back and a liquid metal "Talk to us" shows from md. `ThemeToggle` is no longer rendered anywhere (only `THEME_COOKIE` is still imported from it).
 - Time step = one raised card (`.c-timecard`, `--c-lift`): month left, times right, 46.25rem wide from md (lines up with the nav), stacked on a phone (past weeks hidden there). Rounded-square days, a dot for days with free times (`engine.getOpenDays` + `/api/availability/days`), today ringed, "Today" link, a duration chip; times as rounded rectangles in Geist (not mono) scrolling inside the card from md. Motion: month slides from the side asked, the chosen day settles with a spring, times rise in one after another.
 - `.c-btn-primary` lit (sheen, inner highlight, drop shadow), `.c-btn-secondary` rim + depth, dark cards get depth.
-- e2e 29/30 (the pre-existing walk-in failure). Not done: the Client recipe comment in globals.css still says "mono for times" (the picker now uses Geist for times).
+- e2e 29/30 (the pre-existing walk-in failure).
 
 **Still open from the list below:** 1 (demo-shop photos, user), 3 ("text 2 hours before" claim: also in the hero phone's booked note, user's call), 5 (Send button ring, ask the user), 7 (book-pay-online e2e), 9 (demo talk). Item 6's "Payment label under the dock" is how a sticky dock behaves (focused fields already scroll clear); left as is.
 
