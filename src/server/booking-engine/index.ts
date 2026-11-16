@@ -423,6 +423,22 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     return { date: args.date, timezone: shop.timezone, slots };
   }
 
+  /**
+   * Which of these days have at least one free time (the calendar's dots). At most 31 days,
+   * checked three at a time so a calendar never holds more than three pooled connections.
+   */
+  async function getOpenDays(args: { shopId: string; serviceId: string; barberId: string | "any"; dates: string[]; now: Date }) {
+    if (args.dates.length > 31) throw invalid("Too many days");
+    args.dates.forEach(assertDate);
+    const open = new Set<string>();
+    for (let i = 0; i < args.dates.length; i += 3) {
+      const batch = args.dates.slice(i, i + 3);
+      const results = await Promise.all(batch.map((date) => getAvailability({ ...args, date })));
+      results.forEach((r) => r.slots.length > 0 && open.add(r.date));
+    }
+    return args.dates.filter((d) => open.has(d));
+  }
+
   async function createBooking(args: {
     shopId: string;
     serviceId: string;
@@ -851,6 +867,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     releaseExpiredHolds,
     getShopCatalog,
     getAvailability,
+    getOpenDays,
     createBooking,
     cancelBooking,
     rescheduleBooking,

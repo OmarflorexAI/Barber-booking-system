@@ -55,6 +55,12 @@ describe("availability", () => {
     expect(slots.find((s) => s.time === "10:00")?.barberIds).toEqual([shop.blake]);
   });
 
+  it("lists the days that have a free time, and none past the 30-day window", async () => {
+    const open = await engine.getOpenDays({ shopId: shop.shopId, serviceId: shop.cut, barberId: "any", dates: [TOMORROW, "2027-03-01"], now: NOW });
+    expect(open).toEqual([TOMORROW]);
+    await expectCode(engine.getOpenDays({ shopId: shop.shopId, serviceId: shop.cut, barberId: "any", dates: ["nope"], now: NOW }), "INVALID_INPUT");
+  });
+
   it("rejects bookings under 30 minutes or over 30 days ahead", async () => {
     await expectCode(book(shop, { startsAt: new Date(NOW.getTime() + 15 * 60_000) }), "OUTSIDE_WINDOW");
     await expectCode(book(shop, { startsAt: at("2027-02-15", 10) }), "OUTSIDE_WINDOW");
