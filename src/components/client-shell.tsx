@@ -1,17 +1,15 @@
-import Link from "next/link";
 import { HtmlLang } from "@/app/_landing/html-lang";
-import { LogoMark, Wordmark } from "@/components/brand/logo";
-import { LanguageToggle } from "@/components/language-toggle";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { Wordmark } from "@/components/brand/logo";
+import { ClientNav } from "@/components/client-nav";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
 import { formatPhone } from "@/lib/phone";
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 
 /**
- * The frame both Client pages share (/b booking, /m manage). A sticky glass capsule floats
- * over the top (a small scissors mark, the language and theme toggles); it takes no room in
- * the flow, so the Shop's cover photo on /b can run full-bleed underneath it. Below it the
+ * The frame both Client pages share (/b booking, /m manage). The landing's glass nav floats
+ * over the top (ClientNav: the mark or a way back to our site, language, the theme switch);
+ * it takes no room in the flow, so the Shop's cover photo on /b can run full-bleed underneath it. Below it the
  * Shop's name (1.25rem semibold) with its address and a tap-to-call phone, the content
  * column, and a hairline footer with the Barber Master wordmark. `shopNameAs="h1"` on /b,
  * where the Shop is the page's title; /m keeps its own h1. Styles: the "Client pages
@@ -31,30 +29,7 @@ export function ClientShell(props: {
   return (
     <div className="client-page relative flex min-h-dvh w-full flex-col overflow-x-clip">
       <HtmlLang lang={locale} />
-      <header className="pointer-events-none sticky top-0 z-40 -mb-(--cbar-h) h-(--cbar-h) px-3 pt-2.5">
-        <div className="c-bar pointer-events-auto mx-auto flex h-14 max-w-lg items-center justify-between gap-2 rounded-full pr-1.5 pl-4">
-          {props.backHref ? (
-            <Link
-              href={props.backHref}
-              transitionTypes={["page"]}
-              aria-label={t.backToSite}
-              className={`press -ml-2.5 flex min-h-11 min-w-0 items-center gap-1.5 rounded-full pr-3 pl-2 text-[0.9375rem] font-medium tracking-[-0.01em] text-ink transition-colors hover:bg-raised ${focusRing}`}
-            >
-              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0 text-muted">
-                <path d="M12.5 4.5 7 10l5.5 5.5" />
-              </svg>
-              <LogoMark className="h-6 w-6 shrink-0" />
-              <span className="truncate max-[359px]:sr-only">Barber Master</span>
-            </Link>
-          ) : (
-            <LogoMark className="h-7 w-7 shrink-0 text-ink" />
-          )}
-          <div className="flex items-center gap-1.5">
-            <LanguageToggle locale={locale} label={t.otherLang} className="press" />
-            <ThemeToggle label={t.themeDark} />
-          </div>
-        </div>
-      </header>
+      <ClientNav locale={locale} t={{ otherLang: t.otherLang, themeSwitch: t.themeSwitch, backToSite: t.backToSite, talkToUs: t.talkToUs }} backHref={props.backHref} />
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pt-(--cbar-h)">
         {shop && (
           <div className="c-in flex flex-col items-start pt-6 pb-4">

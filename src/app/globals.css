@@ -506,14 +506,14 @@ body:has(.landing) {
  * so the bar contracts without any box changing size (paint and transform only, CLS 0).
  * An open menu holds the bar open. Reduced motion: the states swap without animation.
  */
-.landing .landing-nav {
+:is(.landing, .client-page) .landing-nav {
   --nx: 0px;
   --ny: 0px;
   --tight: 0px;
   --nav-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --nav-time: 480ms;
 }
-.landing .landing-nav[data-compact]:not([data-open]) {
+:is(.landing, .client-page) .landing-nav[data-compact]:not([data-open]) {
   --nx: 10px;
   --ny: 6px;
   /* The content draws in 6px less than the rim, so the 52px bar keeps the same inset at the
@@ -524,47 +524,47 @@ body:has(.landing) {
 /* From 1024px the links have room to spare: the bar draws in toward them. Between 768 and
    1023 the centered links nearly touch the ends, so it only gets shorter. */
 @media (min-width: 1024px) {
-  .landing .landing-nav[data-compact]:not([data-open]) {
+  :is(.landing, .client-page) .landing-nav[data-compact]:not([data-open]) {
     --nx: 96px;
   }
 }
-.landing .nav-shadow,
-.landing .nav-shadow > span,
-.landing .nav-rim,
-.landing .nav-glint,
-.landing .nav-glass {
+:is(.landing, .client-page) .nav-shadow,
+:is(.landing, .client-page) .nav-shadow > span,
+:is(.landing, .client-page) .nav-rim,
+:is(.landing, .client-page) .nav-glint,
+:is(.landing, .client-page) .nav-glass {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
-.landing .nav-rim,
-.landing .nav-glint,
-.landing .nav-glass,
-.landing .nav-shadow > span {
+:is(.landing, .client-page) .nav-rim,
+:is(.landing, .client-page) .nav-glint,
+:is(.landing, .client-page) .nav-glass,
+:is(.landing, .client-page) .nav-shadow > span {
   clip-path: inset(var(--ny) var(--nx) round 9999px);
 }
-.landing .nav-shadow {
+:is(.landing, .client-page) .nav-shadow {
   top: 14px;
   inset-inline: 16px;
   filter: blur(14px);
   opacity: 0;
 }
-.landing .nav-shadow > span {
+:is(.landing, .client-page) .nav-shadow > span {
   background: rgb(0 0 0 / 0.55);
 }
-.landing .landing-nav[data-compact] .nav-shadow {
+:is(.landing, .client-page) .landing-nav[data-compact] .nav-shadow {
   opacity: 1;
 }
-.landing .nav-rim {
+:is(.landing, .client-page) .nav-rim {
   background:
     linear-gradient(90deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0) 30%),
     linear-gradient(180deg, rgb(255 255 255 / 0.26), rgb(255 255 255 / 0.07) 50%, rgb(255 255 255 / 0.1));
 }
-.landing .nav-glint {
+:is(.landing, .client-page) .nav-glint {
   clip-path: inset(calc(var(--ny) + 1px) calc(var(--nx) + 1px) round 9999px);
   background: linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0) 45%, rgb(0 0 0 / 0) 70%, rgb(0 0 0 / 0.4));
 }
-.landing .nav-glass {
+:is(.landing, .client-page) .nav-glass {
   clip-path: inset(calc(var(--ny) + 2px) calc(var(--nx) + 2px) round 9999px);
   background-color: color-mix(in oklch, var(--l-bg) 66%, transparent);
   background-image:
@@ -573,16 +573,16 @@ body:has(.landing) {
   -webkit-backdrop-filter: blur(24px) saturate(1.7) brightness(0.3);
   backdrop-filter: blur(24px) saturate(1.7) brightness(0.3);
 }
-.landing .landing-nav[data-compact]:not([data-open]) .nav-glass {
+:is(.landing, .client-page) .landing-nav[data-compact]:not([data-open]) .nav-glass {
   background-color: color-mix(in oklch, var(--l-bg) 70%, transparent);
 }
-.landing .landing-nav[data-compact]:not([data-open]) .nav-bar {
+:is(.landing, .client-page) .landing-nav[data-compact]:not([data-open]) .nav-bar {
   translate: 0 -6px;
 }
-.landing .nav-start {
+:is(.landing, .client-page) .nav-start {
   translate: calc(var(--nx) - var(--tight)) 0;
 }
-.landing .nav-end {
+:is(.landing, .client-page) .nav-end {
   translate: calc(var(--tight) - var(--nx)) 0;
 }
 /*
@@ -590,10 +590,10 @@ body:has(.landing) {
  * from the centre, 60% of the word wide, 4px under it. Keyboard focus shows the same line
  * plus the focus ring. The 44px link box stays the hit area.
  */
-.landing .nav-link-label {
+:is(.landing, .client-page) .nav-link-label {
   position: relative;
 }
-.landing .nav-link-label::after {
+:is(.landing, .client-page) .nav-link-label::after {
   content: "";
   position: absolute;
   left: 20%;
@@ -605,38 +605,38 @@ body:has(.landing) {
   opacity: 0.7;
   transform: scaleX(0);
 }
-.landing .nav-link:focus-visible,
-.landing .nav-link[aria-current] {
+:is(.landing, .client-page) .nav-link:focus-visible,
+:is(.landing, .client-page) .nav-link[aria-current] {
   color: var(--l-fg);
 }
 /* The ring hugs the 44px box so it stays inside the contracted bar (52px). */
-.landing .nav-link:focus-visible {
+:is(.landing, .client-page) .nav-link:focus-visible {
   outline-offset: -2px;
 }
 /* The wordmark's ring also hugs its box, so it stays inside the bar's rounded end. */
-.landing .nav-start a:focus-visible {
+:is(.landing, .client-page) .nav-start a:focus-visible {
   outline-offset: -2px;
 }
-.landing .nav-link:focus-visible .nav-link-label::after {
+:is(.landing, .client-page) .nav-link:focus-visible .nav-link-label::after {
   transform: scaleX(1);
 }
 @media (hover: hover) {
-  .landing .nav-link:hover {
+  :is(.landing, .client-page) .nav-link:hover {
     color: var(--l-fg);
   }
-  .landing .nav-link:hover .nav-link-label::after {
+  :is(.landing, .client-page) .nav-link:hover .nav-link-label::after {
     transform: scaleX(1);
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .landing .nav-link {
+  :is(.landing, .client-page) .nav-link {
     transition: color 180ms ease-out;
   }
-  .landing .nav-link-label::after {
+  :is(.landing, .client-page) .nav-link-label::after {
     transition: transform 180ms ease-out;
   }
 }
-.landing .nav-menu {
+:is(.landing, .client-page) .nav-menu {
   border: 1px solid rgb(255 255 255 / 0.08);
   background-color: color-mix(in oklch, var(--l-bg) 68%, transparent);
   background-image:
@@ -651,7 +651,7 @@ body:has(.landing) {
   transform-origin: top center;
 }
 /* The menu's rim: brightest top left, fading (a masked 1px ring over the border). */
-.landing .nav-menu::before {
+:is(.landing, .client-page) .nav-menu::before {
   content: "";
   position: absolute;
   inset: -1px;
@@ -666,37 +666,129 @@ body:has(.landing) {
   pointer-events: none;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .landing .nav-bar,
-  .landing .nav-start,
-  .landing .nav-end {
+  :is(.landing, .client-page) .nav-bar,
+  :is(.landing, .client-page) .nav-start,
+  :is(.landing, .client-page) .nav-end {
     transition: translate var(--nav-time) var(--nav-ease);
   }
-  .landing .nav-rim,
-  .landing .nav-glint,
-  .landing .nav-shadow > span {
+  :is(.landing, .client-page) .nav-rim,
+  :is(.landing, .client-page) .nav-glint,
+  :is(.landing, .client-page) .nav-shadow > span {
     transition: clip-path var(--nav-time) var(--nav-ease);
   }
-  .landing .nav-glass {
+  :is(.landing, .client-page) .nav-glass {
     transition:
       clip-path var(--nav-time) var(--nav-ease),
       background-color var(--nav-time) var(--nav-ease);
   }
-  .landing .nav-shadow {
+  :is(.landing, .client-page) .nav-shadow {
     transition: opacity var(--nav-time) var(--nav-ease);
   }
-  .landing .nav-menu {
+  :is(.landing, .client-page) .nav-menu {
     transition:
       opacity 220ms var(--nav-ease),
       scale 320ms var(--nav-ease),
       translate 320ms var(--nav-ease);
   }
   @starting-style {
-    .landing .nav-menu {
+    :is(.landing, .client-page) .nav-menu {
       opacity: 0;
       scale: 0.97;
       translate: 0 -6px;
     }
   }
+}
+
+/* The same nav on the Client pages (client-nav.tsx), in their own light/dark ground: a dark
+   hairline rim lit white along the top, paper glass with no dimming, and a soft shadow that
+   is always there in light (white bar on a white page) and deepens when the bar contracts. */
+.client-page .nav-shadow {
+  opacity: 0.55;
+}
+.client-page .landing-nav[data-compact] .nav-shadow {
+  opacity: 1;
+}
+.client-page .nav-shadow > span {
+  background: rgb(0 0 0 / 0.16);
+}
+.client-page .nav-rim {
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.07), rgb(0 0 0 / 0.11));
+}
+.client-page .nav-glint {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0) 40%, rgb(0 0 0 / 0) 75%, rgb(0 0 0 / 0.025));
+}
+.client-page .nav-glass,
+.client-page .landing-nav[data-compact]:not([data-open]) .nav-glass {
+  background-color: color-mix(in oklch, var(--paper) 74%, transparent);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0) 60%);
+  -webkit-backdrop-filter: blur(24px) saturate(1.7);
+  backdrop-filter: blur(24px) saturate(1.7);
+}
+@media (min-width: 1024px) {
+  .client-page .landing-nav[data-compact]:not([data-open]) {
+    --nx: 40px;
+  }
+}
+.client-page .nav-link:focus-visible,
+.client-page .nav-link[aria-current] {
+  color: var(--ink);
+}
+@media (hover: hover) {
+  .client-page .nav-link:hover {
+    color: var(--ink);
+  }
+}
+/* The language switch reads as a nav link here (no outline pill), with the drawn hairline. */
+.client-page .c-nav-lang {
+  border-color: transparent;
+  padding-inline: 0.75rem;
+}
+.client-page .c-nav-lang:hover {
+  border-color: transparent;
+}
+.client-page .c-nav .theme-switch {
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--line) 80%, transparent);
+  background: color-mix(in oklch, var(--paper) 40%, transparent);
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .client-page .c-nav-back {
+    transition: translate var(--dur-fast) var(--ease-out);
+  }
+  .client-page .c-nav a:hover .c-nav-back {
+    translate: -2px 0;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .client-page .nav-shadow > span {
+    background: rgb(0 0 0 / 0.6);
+  }
+  :root:not([data-theme="light"]) .client-page .nav-rim {
+    background:
+      linear-gradient(90deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0) 30%),
+      linear-gradient(180deg, rgb(255 255 255 / 0.22), rgb(255 255 255 / 0.06) 50%, rgb(255 255 255 / 0.09));
+  }
+  :root:not([data-theme="light"]) .client-page .nav-glint {
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0) 45%, rgb(0 0 0 / 0) 70%, rgb(0 0 0 / 0.4));
+  }
+  :root:not([data-theme="light"]) .client-page .nav-glass {
+    background-color: color-mix(in oklch, var(--paper) 66%, transparent);
+    background-image: radial-gradient(40% 140% at 10% 0%, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0) 70%);
+  }
+}
+:root[data-theme="dark"] .client-page .nav-shadow > span {
+  background: rgb(0 0 0 / 0.6);
+}
+:root[data-theme="dark"] .client-page .nav-rim {
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0) 30%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.22), rgb(255 255 255 / 0.06) 50%, rgb(255 255 255 / 0.09));
+}
+:root[data-theme="dark"] .client-page .nav-glint {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0) 45%, rgb(0 0 0 / 0) 70%, rgb(0 0 0 / 0.4));
+}
+:root[data-theme="dark"] .client-page .nav-glass {
+  background-color: color-mix(in oklch, var(--paper) 66%, transparent);
+  background-image: radial-gradient(40% 140% at 10% 0%, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0) 70%);
 }
 /*
  * Lead form (lead-form.tsx, contact.tsx): the same family as the glass nav. Fields are a
@@ -1709,12 +1801,15 @@ body:has(.landing) {
  * - Red: only the booked check (and /m's confirmed check). Errors use <Notice>.
  */
 .client-page {
-  --cbar-h: 4.5rem;
+  --cbar-h: 5rem; /* the glass nav's 80px header (client-nav.tsx) */
   /* Light: a rim one step firmer than --line, its top edge back at --line (lit from above),
      and a very soft depth so white cards hold their edge on the near-white ground. */
   --c-rim: color-mix(in oklch, var(--line), var(--ink) 8%);
   --c-rim-top: var(--line);
   --c-depth: 0 1px 2px oklch(0% 0 0 / 0.04), 0 8px 24px -14px oklch(0% 0 0 / 0.14);
+  /* The one raised surface per screen (the time card): a contact shadow, a soft mid and a
+     long low spread, so it sits above the page rather than on it. */
+  --c-lift: 0 1px 2px oklch(0% 0 0 / 0.05), 0 12px 28px -12px oklch(0% 0 0 / 0.16), 0 40px 80px -40px oklch(0% 0 0 / 0.22);
   --c-glint: oklch(100% 0 0 / 0.7);
   --c-glass: color-mix(in oklch, var(--paper) 72%, transparent);
   background: var(--paper);
@@ -1722,7 +1817,8 @@ body:has(.landing) {
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .client-page {
     --c-rim: var(--line);
-    --c-depth: 0 0 #0000;
+    --c-depth: 0 1px 0 oklch(0% 0 0 / 0.5), 0 12px 28px -16px oklch(0% 0 0 / 0.9);
+    --c-lift: 0 1px 0 oklch(0% 0 0 / 0.6), 0 24px 48px -20px oklch(0% 0 0 / 0.95), 0 0 0 1px oklch(100% 0 0 / 0.02);
     --c-rim-top: color-mix(in oklch, var(--line), var(--ink) 9%);
     --c-glint: oklch(100% 0 0 / 0.05);
     --c-glass: color-mix(in oklch, var(--paper) 68%, transparent);
@@ -1730,7 +1826,8 @@ body:has(.landing) {
 }
 :root[data-theme="dark"] .client-page {
   --c-rim: var(--line);
-  --c-depth: 0 0 #0000;
+  --c-depth: 0 1px 0 oklch(0% 0 0 / 0.5), 0 12px 28px -16px oklch(0% 0 0 / 0.9);
+  --c-lift: 0 1px 0 oklch(0% 0 0 / 0.6), 0 24px 48px -20px oklch(0% 0 0 / 0.95), 0 0 0 1px oklch(100% 0 0 / 0.02);
   --c-rim-top: color-mix(in oklch, var(--line), var(--ink) 9%);
   --c-glint: oklch(100% 0 0 / 0.05);
   --c-glass: color-mix(in oklch, var(--paper) 68%, transparent);
@@ -1806,15 +1903,23 @@ body:has(.landing) {
   pointer-events: none;
 }
 .c-btn-primary {
-  background: var(--ink);
+  background-color: var(--ink);
+  background-image: linear-gradient(180deg, color-mix(in oklch, var(--paper) 16%, transparent), transparent 55%);
   color: var(--paper);
-  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.14);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, var(--paper) 28%, transparent),
+    inset 0 -1px 0 oklch(0% 0 0 / 0.25),
+    0 1px 2px oklch(0% 0 0 / 0.18),
+    0 10px 22px -10px oklch(0% 0 0 / 0.45);
 }
 .c-btn-secondary {
   border: 1px solid var(--c-rim, var(--line));
   border-top-color: var(--c-rim-top, var(--line));
   background: var(--surface);
   color: var(--ink);
+  box-shadow:
+    inset 0 1px 0 var(--c-glint, transparent),
+    var(--c-depth, 0 0 #0000);
 }
 .c-h2 {
   font-size: 1.5rem;
@@ -1839,8 +1944,13 @@ body:has(.landing) {
   .c-chip:hover:not(:disabled) {
     border-color: color-mix(in oklch, var(--ink) 35%, var(--line));
   }
-  .c-btn-primary:hover {
-    background: color-mix(in oklch, var(--ink) 86%, var(--paper));
+  .c-btn-primary:hover:not(:disabled) {
+    background-color: color-mix(in oklch, var(--ink) 88%, var(--paper));
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklch, var(--paper) 30%, transparent),
+      inset 0 -1px 0 oklch(0% 0 0 / 0.25),
+      0 1px 2px oklch(0% 0 0 / 0.18),
+      0 14px 28px -12px oklch(0% 0 0 / 0.5);
   }
   .c-link:hover,
   .c-link:focus-visible {
@@ -1938,7 +2048,7 @@ body:has(.landing) {
   border-top-color: var(--c-rim-top);
   box-shadow:
     inset 0 1px 0 var(--c-glint),
-    0 16px 40px -18px oklch(0% 0 0 / 0.35);
+    var(--c-lift);
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
   backdrop-filter: blur(20px) saturate(1.6);
 }
@@ -2012,18 +2122,80 @@ body:has(.landing) {
 .c-slots [aria-busy] > div {
   border-radius: 9999px;
 }
-/* The month calendar (SlotPicker `calendar`): round days with no rim; the chosen day is a
-   solid --ink disc, today a thin ring, days outside the 31 bookable ones a faint number. */
+/* ── The time card (SlotPicker `calendar`, after the user's reference) ─────────────────────
+ * One raised card: the month on the left, the chosen day's times on the right (stacked on a
+ * phone). From md it is wider than the Client column (centred on it), like a booking widget.
+ * Days are rounded squares: the chosen day a solid --ink tile that settles in with a spring,
+ * today a ring, a dot under days with free times. Times are rounded rectangles on --raised
+ * that lift on hover; the day's list rises in one after another when the day changes, and the
+ * month slides in from the side it was asked for. Reduced motion: everything just appears.
+ */
+.c-timecard {
+  background: var(--surface);
+  border: 1px solid var(--c-rim, var(--line));
+  border-top-color: var(--c-rim-top, var(--line));
+  border-radius: 1.25rem;
+  box-shadow:
+    inset 0 1px 0 var(--c-glint, transparent),
+    var(--c-lift);
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .c-timecard {
+    position: relative;
+    left: 50%;
+    width: min(46.25rem, calc(100vw - 3rem)); /* the nav's width, so the two line up */
+    translate: -50% 0;
+  }
+  .c-timecard .c-cal {
+    border-right: 1px solid var(--line);
+  }
+  /* The times scroll inside the card, fading at the edges, so the card keeps one height. */
+  .c-timecard .c-times-scroll {
+    max-height: 25rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+    padding-top: 0.75rem;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 0.75rem, #000 calc(100% - 1.5rem), transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 0.75rem, #000 calc(100% - 1.5rem), transparent);
+  }
+}
+@media (max-width: 767.98px) {
+  .c-timecard .c-past-week {
+    display: none;
+  }
+  .c-timecard .c-times-pane {
+    border-top: 1px solid var(--line);
+  }
+}
+.c-duration {
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+}
 .c-slots .c-day[role="tab"] {
-  border-radius: 9999px;
+  border-radius: 0.75rem;
   border-color: transparent;
   box-shadow: none;
 }
 .c-slots .c-day.is-today {
-  border-color: color-mix(in oklch, var(--ink) 35%, var(--line));
+  border-color: color-mix(in oklch, var(--ink) 30%, var(--line));
 }
 .c-slots .c-day[aria-selected="true"] {
   border-color: var(--ink);
+  box-shadow: 0 6px 16px -8px oklch(0% 0 0 / 0.45);
+}
+.c-time {
+  border-radius: 0.75rem;
+  border: 1px solid var(--line);
+  background: color-mix(in oklch, var(--raised) 70%, var(--surface));
+  box-shadow: inset 0 1px 0 var(--c-glint, transparent);
+}
+.c-time[aria-pressed="true"] {
+  border-color: var(--ink);
+  box-shadow: 0 8px 18px -10px oklch(0% 0 0 / 0.5);
 }
 @media (hover: hover) and (pointer: fine) {
   .c-slots .c-day[role="tab"]:hover:not([aria-selected="true"]) {
@@ -2031,17 +2203,54 @@ body:has(.landing) {
     background: var(--raised);
   }
   .c-slots .c-day.is-today[role="tab"]:hover:not([aria-selected="true"]) {
-    border-color: color-mix(in oklch, var(--ink) 35%, var(--line));
+    border-color: color-mix(in oklch, var(--ink) 30%, var(--line));
+  }
+  .c-time[aria-pressed="false"]:hover {
+    background: var(--surface);
+    border-color: color-mix(in oklch, var(--ink) 28%, var(--line));
+    box-shadow:
+      inset 0 1px 0 var(--c-glint, transparent),
+      0 6px 14px -8px oklch(0% 0 0 / 0.22);
+    translate: 0 -1px;
   }
 }
 @keyframes c-cal-in {
   from {
     opacity: 0;
+    translate: calc(var(--dir, 1) * 14px) 0;
+  }
+}
+@keyframes c-day-on {
+  from {
+    scale: 0.82;
+  }
+}
+@keyframes c-time-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
   }
 }
 @media (prefers-reduced-motion: no-preference) {
   .c-cal-grid {
-    animation: c-cal-in var(--dur-fast) var(--ease-out);
+    animation: c-cal-in var(--dur-slow) var(--ease-out);
+  }
+  .c-slots .c-day[aria-selected="true"] {
+    animation: c-day-on var(--dur-slow) var(--ease-spring);
+  }
+  .c-time {
+    animation: c-time-in 320ms var(--ease-out) backwards;
+    animation-delay: calc(min(var(--i, 0), 14) * 22ms);
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out),
+      translate var(--dur-fast) var(--ease-out),
+      scale var(--dur-fast) var(--ease-spring);
+  }
+  .c-time:active {
+    scale: 0.96;
   }
 }
 /* No free times: a quiet dashed well (an absence, not a card), the next-free-day pill in it. */

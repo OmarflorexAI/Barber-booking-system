@@ -105,8 +105,10 @@ export function SlotPicker(props: {
   selected: string | null;
   onPick: (slot: Slot) => void;
   refreshKey?: number;
-  /** A month calendar in one card (the Client pages) instead of the sideways day strip. */
+  /** A month calendar beside the times in one card (the Client pages) instead of the day strip. */
   calendar?: boolean;
+  /** Shown as a chip in the card's header ("30 min"), calendar only. */
+  duration?: string;
 }) {
   const { shopId, serviceId, barberId, timezone, locale, selected, onPick, refreshKey = 0, calendar = false } = props;
   const t = dictionaries[locale];
@@ -116,6 +118,10 @@ export function SlotPicker(props: {
   }, [timezone]);
   const [date, setDate] = useState(days[0]);
   const [view, setView] = useState(days[0].slice(0, 7)); // the month on show, "YYYY-MM"
+  const [monthDir, setMonthDir] = useState<1 | -1>(1); // which way the month grid slides in
+  // Days with a free time (the calendar's dots); null until loaded, then dots appear.
+  const [openDays, setOpenDays] = useState<{ key: string; days: Set<string> } | null>(null);
+  const openKey = `${shopId}|${serviceId}|${barberId}|${days[0]}|${refreshKey}`;
   const [state, setState] = useState<{ key: string; slots: Slot[] | null; error: string | null }>({ key: "", slots: null, error: null });
   const [search, setSearch] = useState<"idle" | "searching" | "none">("idle");
   const stripRef = useRef<HTMLDivElement>(null);
@@ -131,6 +137,17 @@ export function SlotPicker(props: {
     return () => ctrl.abort();
   }, [key, shopId, serviceId, barberId, date]);
 
+  useEffect(() => {
+    if (!calendar) return;
+    const ctrl = new AbortController();
+    const q = new URLSearchParams({ shopId, serviceId, barberId, from: days[0], days: String(days.length) });
+    fetch(`/api/availability/days?${q}`, { signal: ctrl.signal, cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("UNKNOWN"))))
+      .then((body: { open: string[] }) => setOpenDays({ key: openKey, days: new Set(body.open) }))
+      .catch(() => {}); // the dots are a hint; without them every day still works
+    return () => ctrl.abort();
+  }, [calendar, openKey, shopId, serviceId, barberId, days]);
+
   // Keep the chosen day visible inside the strip (the strip scrolls; the page doesn't).
   useEffect(() => {
     const strip = stripRef.current;
@@ -144,7 +161,11 @@ export function SlotPicker(props: {
   function pickDay(d: string) {
     setSearch("idle");
     setDate(d);
-    setView(d.slice(0, 7));
+    if (d.slice(0, 7) !== view) showMonth(d.slice(0, 7));
+  }
+  function showMonth(m: string) {
+    setMonthDir(m > view ? 1 : -1);
+    setView(m);
   }
 
   /** Looks ahead day by day for the first day with a free time. */
@@ -171,10 +192,10 @@ export function SlotPicker(props: {
   const times = (
     <>
       {loading && (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4" role="status" aria-busy="true">
+        <div className={calendar ? "grid grid-cols-3 gap-2 pt-7 md:grid-cols-2" : "grid grid-cols-3 gap-2 sm:grid-cols-4"} role="status" aria-busy="true">
           <span className="sr-only">{t.loadingSlots}</span>
           {Array.from({ length: 9 }, (_, i) => (
-            <div key={i} className="h-12 rounded-full bg-raised motion-safe:animate-pulse" style={{ animationDelay: `${i * 60}ms` }} />
+            <div key={i} className={`h-12 bg-raised motion-safe:animate-pulse ${calendar ? "rounded-xl" : "rounded-full"}`} style={{ animationDelay: `${i * 60}ms` }} />
           ))}
         </div>
       )}
@@ -205,14 +226,14 @@ export function SlotPicker(props: {
       )}
 
       {!loading && slots && slots.length > 0 && (
-        <div className="flex flex-col gap-5">
+        <div key={key} className="flex flex-col gap-5">
           {GROUPS.map((g) => {
             const group = slots.filter((s) => groupOf(s.time) === g);
             if (group.length === 0) return null;
             return (
               <section key={g} className="flex flex-col gap-2">
                 <h3 className="text-sm font-medium text-muted">{t.dayParts[g]}</h3>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                <div className={calendar ? "grid grid-cols-3 gap-2 md:grid-cols-2" : "grid grid-cols-3 gap-2 sm:grid-cols-4"}>
                   {group.map((s) => {
                     const on = selected === s.startsAt;
                     return (
@@ -221,9 +242,14 @@ export function SlotPicker(props: {
                         type="button"
                         onClick={() => onPick(s)}
                         aria-pressed={on}
-                        className={`min-h-12 rounded-full border px-2 font-mono text-base font-medium whitespace-nowrap tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                          on ? "bg-ink text-paper" : "bg-surface text-ink"
-                        }`}
+                        style={calendar ? ({ "--i": slots.indexOf(s) } as React.CSSProperties) : undefined}
+                        className={
+                          calendar
+                            ? `c-time min-h-12 px-2 text-[0.9375rem] font-medium whitespace-nowrap tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${on ? "bg-ink text-paper" : "text-ink"}`
+                            : `min-h-12 rounded-full border px-2 font-mono text-base font-medium whitespace-nowrap tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                                on ? "bg-ink text-paper" : "bg-surface text-ink"
+                              }`
+                        }
                       >
                         {to12h(s.time, locale)}
                       </button>
@@ -273,77 +299,110 @@ export function SlotPicker(props: {
     );
   }
 
-  // The month calendar (Client pages): one card, the month on top, the chosen day's times below.
+  // The time card (Client pages): the month on the left, the chosen day's times on the right;
+  // stacked on a phone. Wider than the Client column from md, like a booking widget.
   const viewDays = days.filter((d) => d.startsWith(view));
   const lead = new Date(`${view}-01T12:00:00Z`).getUTCDay(); // Sunday-first, like a US wall calendar
   const monthCount = new Date(Date.UTC(Number(view.slice(0, 4)), Number(view.slice(5, 7)), 0)).getUTCDate();
   const months = [...new Set(days.map((d) => d.slice(0, 7)))];
-  // Weeks that are wholly past are left out (they only push the times down on a phone).
+  // Weeks that are wholly past get .c-past-week: hidden on a phone (they only push the times
+  // down), kept from md where the month sits beside the times like a wall calendar.
   const firstOpen = viewDays.length ? Number(viewDays[0].slice(8)) : 1;
-  const cells = [...Array.from({ length: lead }, () => 0), ...Array.from({ length: monthCount }, (_, i) => i + 1)];
-  const shown = cells.slice(Math.floor((lead + firstOpen - 1) / 7) * 7);
+  const shown = [...Array.from({ length: lead }, () => 0), ...Array.from({ length: monthCount }, (_, i) => i + 1)];
+  const pastCells = Math.floor((lead + firstOpen - 1) / 7) * 7;
   const vi = months.indexOf(view);
   const weekdays = Array.from({ length: 7 }, (_, i) =>
     new Date(Date.UTC(2026, 10, 1 + i, 12)).toLocaleDateString(intl(locale), { timeZone: "UTC", weekday: "short" }).replace(".", ""),
   );
+  const free = openDays?.key === openKey ? openDays.days : null;
   return (
-    <div className="c-slots c-card flex min-w-0 flex-col overflow-hidden">
-      <div className="c-cal px-3 pt-4 pb-3 sm:px-4">
-        <div className="flex items-center justify-between pl-2">
-          <h3 className="text-lg leading-tight font-semibold tracking-[-0.02em] first-letter:uppercase" aria-live="polite">
-            {monthName(view, locale)}
-          </h3>
-          <div className="flex gap-1">
-            <MonthButton label={t.prevMonth} disabled={vi <= 0} onClick={() => setView(months[vi - 1])} dir={-1} />
-            <MonthButton label={t.nextMonth} disabled={vi >= months.length - 1} onClick={() => setView(months[vi + 1])} dir={1} />
+    <div className="c-slots c-timecard min-w-0">
+      <div className="grid md:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)]">
+        <div className="c-cal flex flex-col px-3 pt-4 pb-2 sm:px-5 sm:pt-5">
+          <div className="flex items-center justify-between pl-2">
+            <h3 className="text-lg leading-tight font-semibold tracking-[-0.02em] first-letter:uppercase" aria-live="polite">
+              {monthName(view, locale)}
+            </h3>
+            <div className="flex gap-0.5">
+              <MonthButton label={t.prevMonth} disabled={vi <= 0} onClick={() => showMonth(months[vi - 1])} dir={-1} />
+              <MonthButton label={t.nextMonth} disabled={vi >= months.length - 1} onClick={() => showMonth(months[vi + 1])} dir={1} />
+            </div>
           </div>
-        </div>
-        <div aria-hidden="true" className="mt-3 grid grid-cols-7 text-center text-xs font-medium text-muted">
-          {weekdays.map((w) => (
-            <span key={w} className="py-1 capitalize">
-              {w}
-            </span>
-          ))}
-        </div>
-        <div key={view} className="c-cal-grid mt-1 grid grid-cols-7 gap-y-1" role="tablist" aria-label={t.dayLabel}>
-          {shown.map((n, i) => {
-            if (n === 0) return <span key={`lead-${i}`} />;
-            const d = `${view}-${String(n).padStart(2, "0")}`;
-            const open = viewDays.includes(d);
-            const on = d === date;
-            const today = d === days[0];
-            if (!open) {
+          <div aria-hidden="true" className="mt-3 grid grid-cols-7 text-center text-xs font-medium text-muted">
+            {weekdays.map((w) => (
+              <span key={w} className="py-1 first-letter:uppercase">
+                {w}
+              </span>
+            ))}
+          </div>
+          <div
+            key={view}
+            className="c-cal-grid mt-1 grid grid-cols-7 gap-1"
+            style={{ "--dir": monthDir } as React.CSSProperties}
+            role="tablist"
+            aria-label={t.dayLabel}
+          >
+            {shown.map((n, i) => {
+              const past = i < pastCells ? "c-past-week" : "";
+              if (n === 0) return <span key={`lead-${i}`} className={past} />;
+              const d = `${view}-${String(n).padStart(2, "0")}`;
+              const bookable = viewDays.includes(d);
+              const on = d === date;
+              const today = d === days[0];
+              if (!bookable) {
+                return (
+                  <span key={d} aria-hidden="true" className={`${past} grid aspect-square max-h-12 place-items-center text-[0.9375rem] text-muted/40 tabular-nums`}>
+                    {n}
+                  </span>
+                );
+              }
+              const hasTimes = free ? free.has(d) : null; // null: not known yet
               return (
-                <span key={d} aria-hidden="true" className="grid h-11 place-items-center font-mono text-[0.9375rem] text-muted/45 tabular-nums">
-                  {n}
-                </span>
-              );
-            }
-            return (
-              <div key={d} className="grid place-items-center">
                 <button
+                  key={d}
                   type="button"
                   role="tab"
                   aria-selected={on}
-                  aria-label={longDate(d, locale) + (today ? `, ${t.today}` : "")}
+                  aria-label={longDate(d, locale) + (today ? `, ${t.today}` : "") + (hasTimes ? `, ${t.freeTimes}` : "")}
                   aria-current={today ? "date" : undefined}
                   onClick={() => pickDay(d)}
-                  className={`c-day relative grid size-11 place-items-center border font-mono text-[0.9375rem] font-medium tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                    on ? "bg-ink text-paper" : "bg-transparent text-ink"
+                  className={`c-day relative grid aspect-square max-h-12 w-full place-items-center border text-[0.9375rem] font-medium tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                    on ? "bg-ink text-paper" : hasTimes === false ? "text-muted" : "text-ink"
                   } ${today && !on ? "is-today" : ""}`}
                 >
                   {n}
+                  {hasTimes && <span aria-hidden="true" className={`c-dot absolute bottom-[16%] left-1/2 size-1 -translate-x-1/2 rounded-full ${on ? "bg-paper" : "bg-ink"}`} />}
                 </button>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+          <div className="mt-auto flex items-center justify-between gap-3 pt-2 pl-2 text-xs text-muted">
+            <button
+              type="button"
+              onClick={() => pickDay(days[0])}
+              disabled={date === days[0]}
+              className="-ml-1 min-h-11 rounded px-1 text-sm font-medium text-ink transition-colors focus-visible:outline-2 focus-visible:outline-ink disabled:text-muted"
+            >
+              {t.today}
+            </button>
+            <span className={`inline-flex items-center gap-1.5 transition-opacity duration-300 ${free ? "opacity-100" : "opacity-0"}`}>
+              <span aria-hidden="true" className="size-1.5 rounded-full bg-ink" />
+              {t.freeTimes}
+            </span>
+          </div>
         </div>
-      </div>
-      <div className="flex flex-col gap-5 border-t border-line px-4 pt-4 pb-5">
-        <p className="text-[0.9375rem] font-semibold tracking-[-0.01em] first-letter:uppercase" aria-live="polite">
-          {longDate(date, locale)}
-        </p>
-        {times}
+        <div className="c-times-pane flex min-w-0 flex-col">
+          <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3 sm:px-5 sm:pt-5">
+            <div className="min-w-0">
+              <p className="text-[1.0625rem] leading-tight font-semibold tracking-[-0.015em] first-letter:uppercase" aria-live="polite">
+                {longDate(date, locale)}
+              </p>
+              <p className="mt-1 text-xs text-muted">{t.nyTimeShort}</p>
+            </div>
+            {props.duration && <span className="c-duration shrink-0 rounded-full px-2.5 py-1 text-xs font-medium tabular-nums">{props.duration}</span>}
+          </div>
+          <div className="c-times-scroll flex flex-col gap-5 px-4 pt-1 pb-5 sm:px-5">{times}</div>
+        </div>
       </div>
     </div>
   );

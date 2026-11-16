@@ -28,12 +28,13 @@ async function ShopBooking({ params, searchParams }: { params: Promise<{ shopSlu
 function Loading() {
   return (
     <div className="client-page flex min-h-dvh w-full flex-col" aria-busy="true">
-      <div className="px-3 pt-2.5">
-        <div className="c-bar mx-auto flex h-14 max-w-lg items-center justify-between gap-2 rounded-full pr-1.5 pl-4">
+      {/* The glass nav's shape (client-nav.tsx): mark, language, the three-way theme switch. */}
+      <div className="px-3 pt-3">
+        <div className="c-bar mx-auto flex h-16 max-w-3xl items-center justify-between gap-2 rounded-full pr-[11px] pl-4">
           <div className="size-7 rounded-full bg-raised" />
-          <div className="flex gap-1.5">
-            <div className="h-11 w-20 rounded-full border border-line" />
-            <div className="size-11 rounded-full border border-line" />
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-16 rounded-full bg-raised" />
+            <div className="h-11 w-[8.25rem] rounded-full border border-line" />
           </div>
         </div>
       </div>

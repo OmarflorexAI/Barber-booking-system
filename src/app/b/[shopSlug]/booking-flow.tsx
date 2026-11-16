@@ -409,13 +409,10 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
             {step === "time" && service && barberId && (
               <>
                 {notice}
-                <p className="-mt-3 inline-flex items-center gap-1.5 text-sm text-muted">
-                  <ClockIcon />
-                  {t.nyTime}
-                </p>
                 <div>
                   <SlotPicker
                     calendar
+                    duration={`${service.durationMin} ${t.min}`}
                     shopId={shop.id}
                     serviceId={service.id}
                     barberId={barberId}
