@@ -1,12 +1,34 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-17 (iOS card pass on /b, /m and the hero phone; all pushed). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-17, second session (depth, buttons, contrast and motion on /b, /m and the hero phone; all pushed). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-### START HERE next session (written 2026-11-17)
+### START HERE next session (written 2026-11-17, end of the second session)
 
-**iOS card pass, 2026-11-17 (latest; pushed), after the user: "the input boxes, buttons, the highlighted days look glitched; I want an iOS card feeling, premium, modern, minimal; cards and buttons need depth or a shadow; fonts from the landing":**
+**What this session did (all QA PASS, committed and pushed: `f0f0feb` hero phone, `feaf62a` footer removed, `5d77b6b` Client depth/buttons/calendar/reveal):** two rounds of user asks, each split into two parallel `bm-worker` jobs with their own files, then a `bm-qa` pass per job, small fixes by the orchestrator. Details of both rounds below. Checks at the end: typecheck, lint, landing e2e 12/12, book-now + manage + race 8/8, day.spec 14/14 (the walk-in test passed this time). Not re-run: `book-pay-online` (needs `npm run stripe:listen`; its click step was changed to scroll to the bottom first).
+
+**Leftovers from QA runs:** about eight cancelled "Visual Check" Bookings and their Client rows (phones (718) 555-01xx) remain in demo-shop. Harmless, but they show in the Owner's lists; delete them before the demo if they bother the user.
+
+**Open / ask the user next:**
+1. The dashed name/phone fields in the user's screenshot never reproduced in Chromium; the field rim is now an inset shadow. If the user still sees dashes, ask which browser.
+2. Kept on purpose, confirm with the user: on the real booked step "Book another" is the raised white capsule (Manage is the one ink button there); the /b booked card has depth but no ticket notches (only /m and the hero phone have them); the submit button reads "Booking…" while pending.
+3. A day change in the time card ends with one un-animated height change when the new list is longer (animating height would break the transform/opacity rule). Ask if it bothers them.
+4. The unused "Bookings by Barber Master" dictionary string can be removed.
+5. Still open from earlier: demo-shop photos, the "text 2 hours before" claim (also on the hero phone's booked screen), the contact card's Send ring, book-pay-online e2e, the demo talk (see below).
+
+**Round 2, contrast + motion (QA 10/10 PASS; `5d77b6b`, `feaf62a`), after the user: "light version is hard to see, no depth on the service menu, calendar select glitches, Reserve button's white outline gets lost, remove the footer logo + line, show the reserve button only at the bottom":**
+- Light ground `--paper` #ebebee, rims black 7–10% (`--c-rim-in` on controls inside cards), three-layer `--c-depth`, stronger button shadow; dark surface 20.5%/raised 27.5% with a lighter top rim. Muted text ≥ 5.5:1 everywhere.
+- The white ring round "Book now" was the compact Dock's white glass capsule; now `.c-dock-bare` (no capsule, a ground-coloured fade behind the button).
+- Calendar: the chosen tile's fill + shadow are one `::before` layer that springs by scale (the old flicker = shadow before fill, scale jump); the last day's list stays dimmed while the next loads (no skeleton, no shrink-then-grow); stale "no free times" words hide at once; the day/month fades start at 0.4–0.45 opacity (no blink). The staff strip's hover rule is scoped to `.c-slots:not(.c-timecard)`.
+- Footer (wordmark + rule) removed from `client-shell.tsx` (/b and /m). The "Bookings by Barber Master" dictionary string is now unused.
+- Details step: the reserve bar stays hidden (`inert`, aria-hidden) until a sentinel at the bottom is seen, then slides up and stays; shows at once when the page fits; Tab from the last field reveals and focuses it; errors/pending force it visible. e2e book-now/book-pay-online/race scroll to the bottom before clicking it (book-pay-online not re-run, needs Stripe CLI).
+
+**Round 1, depth + buttons (QA PASS; `f0f0feb`, `5d77b6b`), after the user's six asks (Book now / Book another buttons, pick other days in the hero phone, dock colliding with the phone bottom, depth on the ticket and everywhere, glitched payment card outlines, plain "Next free day"):**
+- Hero phone (`hero-phone.tsx`, `.hp-*` block after `.hero-phone-bezel` in globals.css): every day in the week row is selectable (ink tile springs over, times per day, Sunday = "No free times this day" EN/ES, ticket shows the picked date); the dock now clears the home bar by 10px (screens 22px bottom padding); layered depth on cards, mask-cut ticket notches, raised day tile/chip, staggered rise-in; "Book another" = `.hp-btn` (ink capsule, inner highlight, layered shadow, 1px hover lift, 0.97 press spring, sheen on appear/hover). QA 9/9.
+- Client pages (`/b`, `/m`, Client block of globals.css): `.c-btn-primary` = the same ink capsule (white in dark) + sheen + spring + `aria-busy` spinner; `.c-btn-secondary` same motion on a raised white capsule. Payment = two separate `.c-pay` cards (rim and selected ring are box-shadows, ring 30% ink, so no doubled/misaligned border; the old glitch was a 2px focus outline inside a shared `overflow-hidden` frame). Fields: rim is an inset shadow on a transparent solid border, invalid = solid ring (the user's dashed fields didn't reproduce in Chromium; ask which browser if they persist). Empty day = inset well, icon tile, "Next free day →" capsule with arrow nudge. `/m` ticket deeper, inset-shadowed notches. Step items rise in. Staff day board unchanged (rules scoped to `.client-page`). QA PASS; kept on purpose: "Book another" on /b stays secondary (Manage is the one primary there), the submit button's name reads "Booking…" while pending, /b booked card has depth but no notches.
+
+**iOS card pass, 2026-11-17, first session (pushed), after the user: "the input boxes, buttons, the highlighted days look glitched; I want an iOS card feeling, premium, modern, minimal; cards and buttons need depth or a shadow; fonts from the landing":**
 - `.client-page` now redefines `--paper` (soft grey; black in dark), `--surface` (white; graphite oklch 19.5% in dark), `--raised`, `--line`, `--muted`, so the `@theme inline` utilities follow on Client pages only. `--font-jetbrains` is remapped to Hanken there, so every `font-mono` on /b and /m reads in the landing face with tabular figures.
 - Cards 20px corners, hairline rim, layered `--c-depth` in both themes; lists in `.c-card.divide-y` get iOS separators inset from the left (`--sep`, 1rem; the Barber list sets 5.375rem past the faces). Selected rows = a quiet `--raised` fill (no ink frame). Chips = white capsules on `--c-press` (grey fill inside a card); a Barber row's hover tints the whole line. Fields = 52px white wells with a `--c-focus` halo (no dashed invalid state). Buttons 52px.
 - Glitches fixed: the staff day-strip rules (edge mask, tab borders, h3 rule line) leaked into the time card; now scoped to `.c-slots:not(.c-timecard)`. Calendar days stretched on wide columns; now true squares (max 2.875rem), today = soft fill + bold, chosen = ink tile on a shadow. Time buttons = filled grey, lift on hover.
