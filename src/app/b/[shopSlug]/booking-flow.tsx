@@ -413,7 +413,7 @@ export function BookingFlow({ catalog, locale, header }: { catalog: Catalog; loc
                   <ClockIcon />
                   {t.nyTime}
                 </p>
-                <div className="c-slots">
+                <div>
                   <SlotPicker
                     shopId={shop.id}
                     serviceId={service.id}

@@ -1811,8 +1811,8 @@ body:has(.landing) {
   box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.14);
 }
 .c-btn-secondary {
-  border: 1px solid var(--c-rim);
-  border-top-color: var(--c-rim-top);
+  border: 1px solid var(--c-rim, var(--line));
+  border-top-color: var(--c-rim-top, var(--line));
   background: var(--surface);
   color: var(--ink);
 }
@@ -1983,11 +1983,12 @@ body:has(.landing) {
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 1rem, #000 calc(100% - 1.5rem), transparent);
   mask-image: linear-gradient(90deg, transparent, #000 1rem, #000 calc(100% - 1.5rem), transparent);
 }
+/* The picker is also on the staff day board (no .client-page): the rim and glint fall back. */
 .c-slots [role="tab"],
 .c-slots button[aria-pressed] {
   border-color: var(--line);
-  border-top-color: var(--c-rim-top);
-  box-shadow: inset 0 1px 0 var(--c-glint);
+  border-top-color: var(--c-rim-top, var(--line));
+  box-shadow: inset 0 1px 0 var(--c-glint, transparent);
 }
 .c-slots [role="tab"] {
   border-radius: 1.125rem;
@@ -2010,6 +2011,14 @@ body:has(.landing) {
 }
 .c-slots [aria-busy] > div {
   border-radius: 9999px;
+}
+/* No free times: a quiet dashed well (an absence, not a card), the next-free-day pill in it. */
+.c-slots-empty {
+  border: 1px dashed var(--line);
+  background: color-mix(in oklch, var(--raised) 45%, transparent);
+}
+.c-slots-empty .c-btn[aria-busy="true"] {
+  cursor: progress;
 }
 @media (hover: hover) and (pointer: fine) {
   .c-slots [role="tab"]:hover:not([aria-selected="true"]),
@@ -2064,7 +2073,8 @@ body:has(.landing) {
     scale: 0.96;
   }
   @media (hover: hover) and (pointer: fine) {
-    .c-row:hover .c-chevron {
+    .c-row:hover .c-chevron,
+    .c-btn:hover:not(:disabled) .c-chevron {
       translate: 2px 0;
     }
     .c-field:hover:not(:focus) {

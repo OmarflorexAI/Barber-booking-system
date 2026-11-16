@@ -42,6 +42,22 @@ async function fetchSlots(q: { shopId: string; serviceId: string; barberId: stri
   return body.slots as Slot[];
 }
 
+function CalendarIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6 text-muted" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
+    </svg>
+  );
+}
+function ArrowIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20" className="c-chevron h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 10h11M11 6l4 4-4 4" />
+    </svg>
+  );
+}
+
 const GROUPS = ["morning", "afternoon", "evening"] as const;
 const groupOf = (time: string) => {
   const h = Number(time.slice(0, 2));
@@ -52,6 +68,8 @@ const groupOf = (time: string) => {
  * Day strip (today + 30 days, scrolling sideways inside itself) and the free times for the
  * chosen day as mono pills, grouped Morning / Afternoon / Evening. Taken times are not shown.
  * `refreshKey` forces a reload, e.g. after "that time was just taken".
+ * Styled by `.c-slots` in globals.css (the Client recipe); outside a `.client-page` (the
+ * staff day board) its rim and glint tokens fall back to plain --line.
  */
 export function SlotPicker(props: {
   shopId: string;
@@ -122,7 +140,7 @@ export function SlotPicker(props: {
   const slots = loading ? null : state.slots;
 
   return (
-    <div className="flex min-w-0 flex-col gap-5">
+    <div className="c-slots flex min-w-0 flex-col gap-5">
       <div
         ref={stripRef}
         className="-mx-4 flex gap-2 overflow-x-auto overscroll-x-contain px-4 pt-0.5 pb-2 [scrollbar-width:none]"
@@ -139,8 +157,8 @@ export function SlotPicker(props: {
               role="tab"
               aria-selected={on}
               onClick={() => pickDay(d)}
-              className={`flex w-14 shrink-0 flex-col items-center gap-0.5 rounded-full border py-2.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                on ? "border-ink bg-ink text-paper" : "border-line bg-surface text-ink hover:border-ink/40"
+              className={`flex w-14 shrink-0 flex-col items-center gap-0.5 border py-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                on ? "bg-ink text-paper" : "bg-surface text-ink"
               }`}
             >
               <span className={`text-xs font-medium ${on ? "" : "text-muted"}`}>{p.weekday}</span>
@@ -155,7 +173,7 @@ export function SlotPicker(props: {
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4" role="status" aria-busy="true">
           <span className="sr-only">{t.loadingSlots}</span>
           {Array.from({ length: 9 }, (_, i) => (
-            <div key={i} className="h-12 rounded-full bg-raised motion-safe:animate-pulse" />
+            <div key={i} className="h-12 rounded-full bg-raised motion-safe:animate-pulse" style={{ animationDelay: `${i * 60}ms` }} />
           ))}
         </div>
       )}
@@ -167,11 +185,19 @@ export function SlotPicker(props: {
       )}
 
       {!loading && slots && slots.length === 0 && (
-        <div className="flex flex-col items-start gap-3">
-          <p className="text-muted">{search === "none" ? t.noSlotsAhead : t.noSlots}</p>
+        <div className="c-slots-empty flex flex-col items-center gap-4 rounded-2xl px-5 py-8 text-center">
+          <CalendarIcon />
+          <p className="max-w-[28ch] text-pretty text-muted">{search === "none" ? t.noSlotsAhead : t.noSlots}</p>
           {search !== "none" && days.indexOf(date) < days.length - 1 && (
-            <button type="button" className="btn-ghost" disabled={search === "searching"} onClick={nextFreeDay}>
+            <button
+              type="button"
+              className="c-btn c-btn-secondary press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              disabled={search === "searching"}
+              aria-busy={search === "searching" || undefined}
+              onClick={nextFreeDay}
+            >
               {t.nextFreeDay}
+              <ArrowIcon />
             </button>
           )}
         </div>
@@ -194,8 +220,8 @@ export function SlotPicker(props: {
                         type="button"
                         onClick={() => onPick(s)}
                         aria-pressed={on}
-                        className={`min-h-12 rounded-full border px-2 font-mono text-base font-medium whitespace-nowrap tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                          on ? "border-ink bg-ink text-paper" : "border-line bg-surface text-ink hover:border-ink/40"
+                        className={`min-h-12 rounded-full border px-2 font-mono text-base font-medium whitespace-nowrap tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                          on ? "bg-ink text-paper" : "bg-surface text-ink"
                         }`}
                       >
                         {to12h(s.time, locale)}
