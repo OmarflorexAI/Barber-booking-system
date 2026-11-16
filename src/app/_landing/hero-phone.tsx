@@ -7,19 +7,25 @@ import { LiveDot } from "./live-dot";
 
 type Phone = LandingDictionary["heroPhone"];
 
-/* The real booking page's light palette and its Client recipe (globals.css :root and the
-   "Client pages (premium)" block), so the demo looks like what clients get: ground #fafafa,
-   white cards with a rim one step firmer than the hairline and a soft depth, raised #f0f0f0,
-   ink #0f0f0f, muted #5d5d5d, mono for times and prices, and the light red (#cc2827) only on
-   the booked check. */
+/* The real booking page's light look (globals.css, "Client pages (premium)": the iOS grouped
+   cards), so the demo looks like what clients get: a soft grey ground (#f2f2f4), white cards
+   with 18px corners, a hairline rim and a layered shadow, separators inset from the left,
+   filled grey times and avatars (#f0f0f3), ink #0f0f0f, muted #6b6b70, numbers in the page
+   face with tabular figures, the lit ink button, and the light red (#cc2827) only on the
+   booked check. */
 const c = {
-  paper: "bg-[#fafafa]",
-  card: "rounded-[14px] border border-[#d2d2d2] border-t-[#dedede] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_1px_2px_rgba(0,0,0,.04),0_8px_20px_-14px_rgba(0,0,0,.16)]",
-  row: "flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-150 hover:bg-[#f0f0f0] active:bg-[#f0f0f0] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#0f0f0f]",
-  pill: "rounded-full border border-[#dedede] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,.7)]",
+  paper: "bg-[#f2f2f4]",
+  card: "rounded-[18px] border border-black/[.06] border-t-black/[.035] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,.9),0_1px_1px_rgba(0,0,0,.03),0_2px_6px_-1px_rgba(0,0,0,.05),0_12px_28px_-12px_rgba(0,0,0,.12)]",
+  // iOS separators: a hairline under every row but the last, starting at the text (--sep).
+  rows: "[&>li:not(:last-child)]:relative [&>li:not(:last-child)]:after:absolute [&>li:not(:last-child)]:after:right-0 [&>li:not(:last-child)]:after:bottom-0 [&>li:not(:last-child)]:after:left-(--sep) [&>li:not(:last-child)]:after:h-px [&>li:not(:last-child)]:after:bg-[#e6e6ea] [&>li:not(:last-child)]:after:content-['']",
+  row: "flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-150 hover:bg-[#f6f6f8] active:bg-[#f0f0f3] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#0f0f0f]",
+  fill: "bg-[#f0f0f3]",
   ink: "text-[#0f0f0f]",
-  muted: "text-[#5d5d5d]",
-  mono: "font-mono tabular-nums",
+  muted: "text-[#6b6b70]",
+  mono: "tabular-nums",
+  // The page's primary button: ink lit from above, an inner highlight and a soft drop.
+  primary:
+    "bg-[#0f0f0f] bg-linear-to-b from-white/[.16] to-transparent to-55% text-white shadow-[inset_0_1px_0_rgba(255,255,255,.28),inset_0_-1px_0_rgba(0,0,0,.25),0_1px_2px_rgba(0,0,0,.18),0_10px_22px_-10px_rgba(0,0,0,.45)]",
 } as const;
 
 /**
@@ -88,7 +94,7 @@ export function HeroPhone({ p }: { p: Phone }) {
   const screens: ReactNode[] = [
     // 0. Services: one card of ruled rows, like the real page.
     <Screen key="s" title={p.chooseService} p={p} at={0}>
-      <ul className={`${c.card} divide-y divide-[#e4e4e4] overflow-hidden`}>
+      <ul className={`${c.card} ${c.rows} overflow-hidden [--sep:12px]`}>
         {p.services.map((s, i) => (
           <li key={s.name}>
             <Tap
@@ -102,7 +108,7 @@ export function HeroPhone({ p }: { p: Phone }) {
                 <span className="block text-[12.5px] leading-tight font-medium">{s.name}</span>
                 <span className={`mt-0.5 flex items-center gap-1.5 text-[10.5px] ${c.muted}`}>
                   <span className={c.mono}>{s.min} min</span>
-                  {s.special && <span className="rounded-full bg-[#f0f0f0] px-1.5 text-[9.5px] text-[#0f0f0f]">{s.special}</span>}
+                  {s.special && <span className={`rounded-full ${c.fill} px-1.5 text-[9.5px] font-medium text-[#0f0f0f]`}>{s.special}</span>}
                 </span>
               </span>
               <span className="flex shrink-0 items-center gap-1.5 text-right">
@@ -124,7 +130,7 @@ export function HeroPhone({ p }: { p: Phone }) {
 
     // 1. Barbers: "Any available" first, then initials discs.
     <Screen key="b" title={p.chooseBarber} p={p} at={1} onBack={() => go(0)} dock={<Dock name={svc.name} price={svc.price} />}>
-      <ul className={`${c.card} divide-y divide-[#e4e4e4] overflow-hidden`}>
+      <ul className={`${c.card} ${c.rows} overflow-hidden [--sep:52px]`}>
         {[null, 0, 1, 2, 3].map((b) => (
           <li key={b ?? "any"}>
             <Tap
@@ -136,7 +142,7 @@ export function HeroPhone({ p }: { p: Phone }) {
             >
               <span
                 className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12px] font-semibold ${
-                  b === null ? "bg-[#0f0f0f] text-white" : "border border-[#dedede] bg-[#f0f0f0] text-[#0f0f0f]"
+                  b === null ? "bg-[#0f0f0f] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.2),0_4px_10px_-4px_rgba(0,0,0,.4)]" : `${c.fill} text-[#0f0f0f]`
                 }`}
               >
                 {b === null ? (
@@ -159,46 +165,53 @@ export function HeroPhone({ p }: { p: Phone }) {
       </ul>
     </Screen>,
 
-    // 2. Times: the day strip, then the free times as mono pills by part of the day.
+    // 2. Times: one card like the real time card, the week as rounded squares (the chosen
+    //    day an ink tile, a dot under days with free times), then the free times by part of day.
     <Screen key="t" title={p.pickTime} p={p} at={2} onBack={() => go(1)} dock={<Dock name={svc.name} sub={barberName} price={svc.price} />}>
       <p className="sr-only">{p.day}</p>
-      <div aria-hidden className="-mx-3.5 mb-2.5 flex gap-1.5 overflow-hidden px-3.5 [mask-image:linear-gradient(90deg,#000_75%,transparent)]">
-        {p.week.map((_, d) => (
-          <span
-            key={d}
-            className={`flex w-[40px] shrink-0 flex-col items-center rounded-[12px] border py-1 ${
-              d === 0 ? "border-[#0f0f0f] bg-[#0f0f0f] text-white" : "border-[#dedede] bg-white text-[#0f0f0f]"
-            }`}
-          >
-            <span className={`text-[8.5px] font-medium ${d === 0 ? "" : c.muted}`}>{p.week[d]}</span>
-            <span className={`text-[13px] leading-4 font-medium ${c.mono}`}>{dayNumber(p.day) + d}</span>
-          </span>
-        ))}
-      </div>
-      {groups.map((group, g) => (
-        <div key={g} className={g ? "mt-2" : ""}>
-          <p aria-hidden className={`mb-1 flex items-center gap-2 text-[9.5px] font-medium ${c.muted} ${c.mono}`}>
-            {group[0]?.t.match(/[ap]\.?\s?m\.?$/i)?.[0]}
-            <span className="h-px flex-1 bg-[#dedede]" />
-          </p>
-          <div className="grid grid-cols-3 gap-1.5">
-            {group.map(({ t, i }) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => {
-                  setTime(i);
-                  setBooked((n) => n + 1);
-                  go(3);
-                }}
-                className={`${c.pill} min-h-[34px] px-1 text-[11px] font-medium ${c.mono} transition-[background-color,border-color,scale] duration-150 hover:border-[#0f0f0f]/40 hover:bg-[#f0f0f0] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f]`}
+      <div className={`${c.card} px-2.5 pt-2 pb-2.5`}>
+        <div aria-hidden className="grid grid-cols-6 gap-1">
+          {p.week.map((w, d) => (
+            <span key={d} className="flex flex-col items-center gap-0.5">
+              <span className={`text-[8.5px] font-medium ${c.muted}`}>{w}</span>
+              <span
+                className={`relative grid h-[30px] w-[30px] place-items-center rounded-[9px] text-[12px] font-medium ${c.mono} ${
+                  d === 0 ? `${c.primary} font-semibold` : "text-[#0f0f0f]"
+                }`}
               >
-                {t}
-              </button>
-            ))}
-          </div>
+                {dayNumber(p.day) + d}
+                <span className={`absolute bottom-[3px] h-[3px] w-[3px] rounded-full ${d === 0 ? "bg-white" : d === 3 ? "bg-transparent" : "bg-[#0f0f0f]"}`} />
+              </span>
+            </span>
+          ))}
         </div>
-      ))}
+        <div className="mt-2 border-t border-[#ececef] pt-1.5">
+          {groups.map((group, g) => (
+            <div key={g} className={g ? "mt-1.5" : ""}>
+              <p aria-hidden className={`mb-1 flex items-center gap-2 text-[9.5px] font-medium ${c.muted}`}>
+                {group[0]?.t.match(/[ap]\.?\s?m\.?$/i)?.[0]}
+                <span className="h-px flex-1 bg-[#ececef]" />
+              </p>
+              <div className="grid grid-cols-3 gap-1.5">
+                {group.map(({ t, i }) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => {
+                      setTime(i);
+                      setBooked((n) => n + 1);
+                      go(3);
+                    }}
+                    className={`min-h-[32px] rounded-[10px] ${c.fill} px-1 text-[11px] font-medium ${c.mono} transition-[background-color,box-shadow,translate,scale] duration-150 hover:-translate-y-px hover:bg-white hover:shadow-[0_0_0_1px_rgba(0,0,0,.06),0_6px_14px_-6px_rgba(0,0,0,.2)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f]`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </Screen>,
 
     // 3. Booked: the red check, and the Booking as a ticket with a tear line.
@@ -217,9 +230,9 @@ export function HeroPhone({ p }: { p: Phone }) {
             <p className={`text-[10px] font-medium ${c.muted}`}>{p.day}</p>
             <p className={`text-[20px] leading-6 font-semibold tracking-[-0.02em] ${c.mono}`}>{p.times[time]}</p>
           </div>
-          <div aria-hidden className="relative mx-3 border-t border-dashed border-[#d2d2d2]">
-            <span className="absolute -top-[7px] -left-[20px] h-3.5 w-3.5 rounded-full bg-[#fafafa] shadow-[inset_0_0_0_1px_#d2d2d2]" />
-            <span className="absolute -top-[7px] -right-[20px] h-3.5 w-3.5 rounded-full bg-[#fafafa] shadow-[inset_0_0_0_1px_#d2d2d2]" />
+          <div aria-hidden className="relative mx-3 border-t border-dashed border-[#dcdce0]">
+            <span className="absolute -top-[7px] -left-[20px] h-3.5 w-3.5 rounded-full bg-[#f2f2f4] shadow-[inset_0_0_0_1px_rgba(0,0,0,.06)]" />
+            <span className="absolute -top-[7px] -right-[20px] h-3.5 w-3.5 rounded-full bg-[#f2f2f4] shadow-[inset_0_0_0_1px_rgba(0,0,0,.06)]" />
           </div>
           <div className="flex items-center justify-between gap-2 px-3 py-2.5">
             <span className="min-w-0">
@@ -235,7 +248,7 @@ export function HeroPhone({ p }: { p: Phone }) {
         <button
           type="button"
           onClick={() => go(0)}
-          className="mt-auto mb-2 min-h-11 w-full rounded-full bg-[#0f0f0f] text-[13px] font-medium text-white transition-transform active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f0f0f]"
+          className={`mt-auto mb-2 min-h-11 w-full rounded-full ${c.primary} text-[13px] font-medium transition-transform active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f0f0f]`}
         >
           {p.again}
         </button>
@@ -367,7 +380,7 @@ function Screen({ title, p, at, onBack, dock, children }: { title?: string; p: P
         )}
         <span aria-hidden className="flex flex-1 gap-1">
           {[0, 1, 2, 3].map((i) => (
-            <span key={i} className={`h-[3px] flex-1 rounded-full transition-colors duration-300 ${i <= at ? "bg-[#0f0f0f]" : "bg-[#e4e4e4]"}`} />
+            <span key={i} className={`h-[3px] flex-1 rounded-full transition-colors duration-300 ${i <= at ? "bg-[#0f0f0f]" : "bg-[#dedee2]"}`} />
           ))}
         </span>
       </div>
@@ -385,8 +398,8 @@ function Screen({ title, p, at, onBack, dock, children }: { title?: string; p: P
 /** The glass dock: the chosen Service (and Barber) and its price, pinned under the content. */
 function Dock({ name, sub, price }: { name: string; sub?: string; price: number }) {
   return (
-    <div className="mt-2 flex items-center gap-2 rounded-[1.25rem] border border-[#d2d2d2] border-t-[#dedede] bg-white/90 p-1.5 pr-3 shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_12px_28px_-16px_rgba(0,0,0,.35)] backdrop-blur-md">
-      <span aria-hidden className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[#dedede] bg-[#f0f0f0] text-[10.5px] font-semibold">
+    <div className="mt-2 flex items-center gap-2 rounded-[1.25rem] border border-black/[.06] border-t-black/[.035] bg-white/90 p-1.5 pr-3 shadow-[inset_0_1px_0_rgba(255,255,255,.9),0_1px_2px_rgba(0,0,0,.04),0_8px_20px_-6px_rgba(0,0,0,.1),0_24px_48px_-20px_rgba(0,0,0,.18)] backdrop-blur-md">
+      <span aria-hidden className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${c.fill} text-[10.5px] font-semibold`}>
         {(sub ?? name)[0]}
       </span>
       <span className="min-w-0 flex-1">
@@ -400,7 +413,7 @@ function Dock({ name, sub, price }: { name: string; sub?: string; price: number 
 
 function Chevron() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 shrink-0 text-[#a4a4a4]">
+    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 shrink-0 text-[#b4b4ba]">
       <path d="M7.5 4.5 13 10l-5.5 5.5" />
     </svg>
   );
