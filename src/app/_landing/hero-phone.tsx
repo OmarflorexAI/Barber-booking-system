@@ -15,7 +15,8 @@ type Phone = LandingDictionary["heroPhone"];
    booked check. */
 const c = {
   paper: "bg-[#f2f2f4]",
-  card: "rounded-[18px] border border-black/[.06] border-t-black/[.035] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,.9),0_1px_1px_rgba(0,0,0,.03),0_2px_6px_-1px_rgba(0,0,0,.05),0_12px_28px_-12px_rgba(0,0,0,.12)]",
+  // Ambient + key light: a hairline contact, a soft near shadow, a long low one; a faint top highlight.
+  card: "rounded-[18px] border border-black/[.06] border-t-black/[.03] bg-white shadow-[inset_0_1px_0_#fff,0_1px_1px_rgba(0,0,0,.04),0_3px_8px_-2px_rgba(0,0,0,.06),0_14px_30px_-12px_rgba(0,0,0,.16)]",
   // iOS separators: a hairline under every row but the last, starting at the text (--sep).
   rows: "[&>li:not(:last-child)]:relative [&>li:not(:last-child)]:after:absolute [&>li:not(:last-child)]:after:right-0 [&>li:not(:last-child)]:after:bottom-0 [&>li:not(:last-child)]:after:left-(--sep) [&>li:not(:last-child)]:after:h-px [&>li:not(:last-child)]:after:bg-[#e6e6ea] [&>li:not(:last-child)]:after:content-['']",
   row: "flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-150 hover:bg-[#f6f6f8] active:bg-[#f0f0f3] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#0f0f0f]",
@@ -28,6 +29,21 @@ const c = {
     "bg-[#0f0f0f] bg-linear-to-b from-white/[.16] to-transparent to-55% text-white shadow-[inset_0_1px_0_rgba(255,255,255,.28),inset_0_-1px_0_rgba(0,0,0,.25),0_1px_2px_rgba(0,0,0,.18),0_10px_22px_-10px_rgba(0,0,0,.45)]",
 } as const;
 
+/** Which of the day's times are taken, per day of the strip (index into p.times). Day 0
+ *  uses the dictionary's own list; day 3 (Sunday, no dot) is full. Each day fits three rows. */
+const TAKEN_LATER: number[][] = [
+  [0, 1, 4, 5, 6, 7],
+  [0, 1, 2, 4, 5, 6, 7, 8, 10],
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  [0, 3, 5, 6, 9],
+  [1, 2, 4, 7, 8, 10],
+];
+
+/** An item that rises in when its screen appears; `i` sets its place in the stagger. */
+function rise(i: number): CSSProperties {
+  return { "--i": i } as CSSProperties;
+}
+
 /**
  * The hero phone, live: a pretend booking at the demo shop. Service, then barber,
  * then a time, then "You're booked". Each step is a view transition: the next screen
@@ -39,7 +55,10 @@ export function HeroPhone({ p }: { p: Phone }) {
   const [service, setService] = useState(1);
   const [barber, setBarber] = useState<number | null>(1);
   const [time, setTime] = useState(10);
+  const [day, setDay] = useState(0); // index into the day strip
+  const [picked, setPicked] = useState<number | null>(null); // the time chip raised just before "booked"
   const [booked, setBooked] = useState(0); // counts bookings, so the check mark replays each time
+  const pending = useRef(0);
   const box = useRef<HTMLDivElement>(null);
   const device = useRef<HTMLDivElement>(null);
   const aim = useRef({ x: 0, y: 0 });
@@ -69,7 +88,13 @@ export function HeroPhone({ p }: { p: Phone }) {
 
   // The lean: at most 5deg sideways and 4deg up/down, written straight to the style once
   // per frame (no re-render); the CSS transition eases it. Mouse only, never under reduced motion.
-  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(frame.current);
+      clearTimeout(pending.current);
+    },
+    [],
+  );
   function paint() {
     frame.current = 0;
     const { x, y } = aim.current;
@@ -87,16 +112,36 @@ export function HeroPhone({ p }: { p: Phone }) {
   }
 
   // Like the real picker, taken times are not shown; the free ones split by part of the day.
-  const free = p.times.map((t, i) => ({ t, i })).filter(({ i }) => !p.taken.includes(i));
+  const takenOn = (d: number) => (d === 0 ? p.taken : TAKEN_LATER[d - 1] ?? []);
+  const freeOn = (d: number) => p.times.map((t, i) => ({ t, i })).filter(({ i }) => !takenOn(d).includes(i));
   const isAm = (t: string) => /a\.?\s?m\.?$/i.test(t);
-  const groups = [free.filter(({ t }) => isAm(t)), free.filter(({ t }) => !isAm(t))];
+  const free = freeOn(day);
+  const groups = [free.filter(({ t }) => isAm(t)), free.filter(({ t }) => !isAm(t))].filter((g) => g.length > 0);
+
+  /** A new day: the ink tile springs over and the chosen time is dropped. */
+  function pickDay(d: number) {
+    if (pending.current) return;
+    setDay(d);
+    setPicked(null);
+  }
+  /** A time: the chip lifts for a beat, then the booked screen. */
+  function pickTime(i: number) {
+    if (pending.current) return;
+    setPicked(i);
+    pending.current = window.setTimeout(() => {
+      pending.current = 0;
+      setTime(i);
+      setBooked((n) => n + 1);
+      go(3);
+    }, 200);
+  }
 
   const screens: ReactNode[] = [
     // 0. Services: one card of ruled rows, like the real page.
     <Screen key="s" title={p.chooseService} p={p} at={0}>
       <ul className={`${c.card} ${c.rows} overflow-hidden [--sep:12px]`}>
         {p.services.map((s, i) => (
-          <li key={s.name}>
+          <li key={s.name} className="hp-rise" style={rise(4 + i)}>
             <Tap
               onClick={() => {
                 setService(i);
@@ -131,8 +176,8 @@ export function HeroPhone({ p }: { p: Phone }) {
     // 1. Barbers: "Any available" first, then initials discs.
     <Screen key="b" title={p.chooseBarber} p={p} at={1} onBack={() => go(0)} dock={<Dock name={svc.name} price={svc.price} />}>
       <ul className={`${c.card} ${c.rows} overflow-hidden [--sep:52px]`}>
-        {[null, 0, 1, 2, 3].map((b) => (
-          <li key={b ?? "any"}>
+        {[null, 0, 1, 2, 3].map((b, i) => (
+          <li key={b ?? "any"} className="hp-rise" style={rise(4 + i)}>
             <Tap
               onClick={() => {
                 setBarber(b);
@@ -166,43 +211,69 @@ export function HeroPhone({ p }: { p: Phone }) {
     </Screen>,
 
     // 2. Times: one card like the real time card, the week as rounded squares (the chosen
-    //    day an ink tile, a dot under days with free times), then the free times by part of day.
+    //    day an ink tile that springs from day to day, a dot under days with free times),
+    //    then that day's free times by part of day.
     <Screen key="t" title={p.pickTime} p={p} at={2} onBack={() => go(1)} dock={<Dock name={svc.name} sub={barberName} price={svc.price} />}>
-      <p className="sr-only">{p.day}</p>
+      <p className="sr-only" aria-live="polite">
+        {dayLabel(p, day)}
+      </p>
       <div className={`${c.card} px-2.5 pt-2 pb-2.5`}>
-        <div aria-hidden className="grid grid-cols-6 gap-1">
-          {p.week.map((w, d) => (
-            <span key={d} className="flex flex-col items-center gap-0.5">
-              <span className={`text-[8.5px] font-medium ${c.muted}`}>{w}</span>
-              <span
-                className={`relative grid h-[30px] w-[30px] place-items-center rounded-[9px] text-[12px] font-medium ${c.mono} ${
-                  d === 0 ? `${c.primary} font-semibold` : "text-[#0f0f0f]"
-                }`}
+        <div className="relative grid grid-cols-6 gap-1">
+          {/* The ink tile: one element under the numbers, moved with a transform. */}
+          <span aria-hidden className="hp-day-ink pointer-events-none absolute bottom-0 left-0 flex h-[30px] w-[calc((100%-20px)/6)] justify-center" style={{ "--d": day } as CSSProperties}>
+            <span className={`h-[30px] w-[30px] rounded-[9px] ${c.primary} hp-raised`} />
+          </span>
+          {p.week.map((w, d) => {
+            const on = d === day;
+            const open = freeOn(d).length > 0;
+            return (
+              <button
+                key={d}
+                type="button"
+                aria-pressed={on}
+                aria-label={dayLabel(p, d)}
+                onClick={() => pickDay(d)}
+                style={{ WebkitTapHighlightColor: "transparent" } as CSSProperties}
+                className="group relative flex flex-col items-center gap-0.5 rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f]"
               >
-                {dayNumber(p.day) + d}
-                <span className={`absolute bottom-[3px] h-[3px] w-[3px] rounded-full ${d === 0 ? "bg-white" : d === 3 ? "bg-transparent" : "bg-[#0f0f0f]"}`} />
-              </span>
-            </span>
-          ))}
+                <span className={`text-[8.5px] font-medium ${on ? "text-[#0f0f0f]" : c.muted}`}>{w}</span>
+                <span
+                  className={`relative grid h-[30px] w-[30px] place-items-center rounded-[9px] text-[12px] font-semibold ${c.mono} transition-colors duration-200 ${
+                    on ? "text-white" : "text-[#0f0f0f] group-hover:bg-[#f0f0f3]"
+                  }`}
+                >
+                  {dayNumber(p.day) + d}
+                  <span className={`absolute bottom-[3px] h-[3px] w-[3px] rounded-full transition-colors duration-200 ${!open ? "bg-transparent" : on ? "bg-white" : "bg-[#0f0f0f]"}`} />
+                </span>
+              </button>
+            );
+          })}
         </div>
-        <div className="mt-2 border-t border-[#ececef] pt-1.5">
+        <div key={day} className="mt-2 min-h-[124px] border-t border-[#ececef] pt-1.5">
+          {groups.length === 0 && (
+            <p className={`hp-rise pt-9 text-center text-[11px] font-medium ${c.muted}`} style={rise(0)}>
+              {p.noTimes}
+            </p>
+          )}
           {groups.map((group, g) => (
             <div key={g} className={g ? "mt-1.5" : ""}>
-              <p aria-hidden className={`mb-1 flex items-center gap-2 text-[9.5px] font-medium ${c.muted}`}>
-                {group[0]?.t.match(/[ap]\.?\s?m\.?$/i)?.[0]}
+              <p aria-hidden className={`hp-rise mb-1 flex items-center gap-2 text-[9.5px] font-medium ${c.muted}`} style={rise(g * 3)}>
+                {group[0].t.match(/[ap]\.?\s?m\.?$/i)?.[0]}
                 <span className="h-px flex-1 bg-[#ececef]" />
               </p>
               <div className="grid grid-cols-3 gap-1.5">
-                {group.map(({ t, i }) => (
+                {group.map(({ t, i }, k) => (
                   <button
                     key={t}
                     type="button"
-                    onClick={() => {
-                      setTime(i);
-                      setBooked((n) => n + 1);
-                      go(3);
-                    }}
-                    className={`min-h-[32px] rounded-[10px] ${c.fill} px-1 text-[11px] font-medium ${c.mono} transition-[background-color,box-shadow,translate,scale] duration-150 hover:-translate-y-px hover:bg-white hover:shadow-[0_0_0_1px_rgba(0,0,0,.06),0_6px_14px_-6px_rgba(0,0,0,.2)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f]`}
+                    aria-pressed={picked === i}
+                    onClick={() => pickTime(i)}
+                    style={rise(g * 3 + 1 + k)}
+                    className={`hp-rise min-h-[32px] rounded-[10px] px-1 text-[11px] font-medium ${c.mono} transition-[background-color,color,box-shadow,translate,scale] duration-150 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f] ${
+                      picked === i
+                        ? `${c.primary} hp-raised -translate-y-px`
+                        : `${c.fill} hover:-translate-y-px hover:bg-white hover:shadow-[0_0_0_1px_rgba(0,0,0,.06),0_6px_14px_-6px_rgba(0,0,0,.2)]`
+                    }`}
                   >
                     {t}
                   </button>
@@ -214,44 +285,52 @@ export function HeroPhone({ p }: { p: Phone }) {
       </div>
     </Screen>,
 
-    // 3. Booked: the red check, and the Booking as a ticket with a tear line.
+    // 3. Booked: the red check, and the Booking as a ticket with a tear line and two notches
+    //    cut out of the card (a mask), its shadow following the cut.
     <Screen key="d" p={p} at={3}>
       <div className="flex h-full flex-col items-center pt-2 text-center">
-        <span key={booked} className="landing-pop grid h-11 w-11 place-items-center rounded-full bg-[#cc2827] text-white">
+        <span key={booked} className="landing-pop grid h-11 w-11 place-items-center rounded-full bg-[#cc2827] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.25),0_2px_4px_rgba(204,40,39,.25),0_10px_20px_-8px_rgba(204,40,39,.45)]">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
             <path d="M20 6 9 17l-5-5" />
           </svg>
         </span>
-        <p data-screen-title tabIndex={-1} className="mt-3 text-[18px] font-semibold tracking-[-0.025em] outline-none">
+        <p data-screen-title tabIndex={-1} className="hp-rise mt-3 text-[18px] font-semibold tracking-[-0.025em] outline-none" style={rise(1)}>
           {p.bookedTitle}
         </p>
-        <div className={`${c.card} mt-3 w-full text-left`}>
-          <div className="px-3 pt-2.5 pb-2">
-            <p className={`text-[10px] font-medium ${c.muted}`}>{p.day}</p>
-            <p className={`text-[20px] leading-6 font-semibold tracking-[-0.02em] ${c.mono}`}>{p.times[time]}</p>
-          </div>
-          <div aria-hidden className="relative mx-3 border-t border-dashed border-[#dcdce0]">
-            <span className="absolute -top-[7px] -left-[20px] h-3.5 w-3.5 rounded-full bg-[#f2f2f4] shadow-[inset_0_0_0_1px_rgba(0,0,0,.06)]" />
-            <span className="absolute -top-[7px] -right-[20px] h-3.5 w-3.5 rounded-full bg-[#f2f2f4] shadow-[inset_0_0_0_1px_rgba(0,0,0,.06)]" />
-          </div>
-          <div className="flex items-center justify-between gap-2 px-3 py-2.5">
-            <span className="min-w-0">
-              <span className="block truncate text-[12.5px] font-medium">{svc.name}</span>
-              <span className={`block text-[10.5px] ${c.muted}`}>
-                {p.bookedWith} {barberName}
+        <div className="hp-rise hp-ticket-shadow mt-3 w-full" style={rise(2)}>
+          <div className="hp-ticket text-left">
+            <div className="flex h-[60px] flex-col justify-center px-3">
+              <p className={`text-[10px] font-medium ${c.muted}`}>{dayLabel(p, day)}</p>
+              <p className={`text-[20px] leading-6 font-semibold tracking-[-0.02em] ${c.mono}`}>{p.times[time]}</p>
+            </div>
+            <div aria-hidden className="mx-3 border-t border-dashed border-[#dcdce0]" />
+            <div className="flex items-center justify-between gap-2 px-3 py-2.5">
+              <span className="min-w-0">
+                <span className="block truncate text-[12.5px] font-medium">{svc.name}</span>
+                <span className={`block text-[10.5px] ${c.muted}`}>
+                  {p.bookedWith} {barberName}
+                </span>
               </span>
-            </span>
-            <span className={`text-[13px] font-semibold ${c.mono}`}>${svc.price}</span>
+              <span className={`text-[13px] font-semibold ${c.mono}`}>${svc.price}</span>
+            </div>
           </div>
         </div>
-        <p className={`mt-2.5 text-[10.5px] leading-[1.45] text-pretty ${c.muted}`}>{p.bookedNote}</p>
-        <button
-          type="button"
-          onClick={() => go(0)}
-          className={`mt-auto mb-2 min-h-11 w-full rounded-full ${c.primary} text-[13px] font-medium transition-transform active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f0f0f]`}
-        >
-          {p.again}
-        </button>
+        <p className={`hp-rise mt-2.5 text-[10.5px] leading-[1.45] text-pretty ${c.muted}`} style={rise(3)}>
+          {p.bookedNote}
+        </p>
+        <div className="hp-rise mt-auto w-full" style={rise(4)}>
+          <button
+            type="button"
+            onClick={() => {
+              setPicked(null);
+              go(0);
+            }}
+            className="hp-btn min-h-12 w-full rounded-full text-[13px] font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f0f0f]"
+          >
+            <span aria-hidden className="hp-btn-sheen" />
+            <span className="relative">{p.again}</span>
+          </button>
+        </div>
       </div>
     </Screen>,
   ];
@@ -284,7 +363,7 @@ export function HeroPhone({ p }: { p: Phone }) {
                   {screens[step]}
                 </div>
               </ViewTransition>
-              <span aria-hidden className="pointer-events-none absolute bottom-[7px] left-1/2 z-10 h-[4px] w-[96px] -translate-x-1/2 rounded-full bg-[#0f0f0f]/85" />
+              <span aria-hidden className="pointer-events-none absolute bottom-[8px] left-1/2 z-10 h-[4px] w-[96px] -translate-x-1/2 rounded-full bg-[#0f0f0f]/85" />
             </div>
           </div>
         </div>
@@ -337,6 +416,12 @@ function dayNumber(day: string) {
   return Number(day.match(/\d+/)?.[0] ?? 1);
 }
 
+/** The strip's day `d` as the page writes it: "Thu, Nov 12" → "Fri, Nov 13", "jue, 12 nov" → "vie, 13 nov". */
+function dayLabel(p: Phone, d: number) {
+  if (d === 0) return p.day;
+  return p.day.replace(p.dayShort, p.week[d]).replace(/\d+/, String(dayNumber(p.day) + d));
+}
+
 /** "Fresh Cuts Barbershop" → "FC", the Shop's monogram when it has no logo. */
 function monogram(name: string) {
   return name
@@ -355,8 +440,9 @@ function Screen({ title, p, at, onBack, dock, children }: { title?: string; p: P
   // The screen never scrolls on its own (every screen fits), so a wheel or swipe over the
   // phone always moves the page.
   return (
-    <div className="flex h-full flex-col overflow-y-hidden px-3.5 pb-3 [scrollbar-width:none]">
-      <div className="flex items-center gap-2.5 pt-2.5">
+    // pb-[22px]: the dock and the last button end 10px above the home bar, clear of the corners.
+    <div className="flex h-full flex-col overflow-y-hidden px-3.5 pb-[22px] [scrollbar-width:none]">
+      <div className="hp-rise flex items-center gap-2.5 pt-2.5" style={rise(0)}>
         <span aria-hidden className={`${c.card} grid h-8 w-8 shrink-0 place-items-center rounded-full! text-[10.5px] font-semibold tracking-[-0.02em]`}>
           {monogram(p.shop)}
         </span>
@@ -365,7 +451,7 @@ function Screen({ title, p, at, onBack, dock, children }: { title?: string; p: P
           <p className={`truncate text-[10px] ${c.muted}`}>{p.address}</p>
         </div>
       </div>
-      <div className="mt-2 flex min-h-8 items-center gap-2">
+      <div className="hp-rise mt-2 flex min-h-8 items-center gap-2" style={rise(1)}>
         {onBack && (
           <button
             type="button"
@@ -385,11 +471,13 @@ function Screen({ title, p, at, onBack, dock, children }: { title?: string; p: P
         </span>
       </div>
       {title && (
-        <p data-screen-title tabIndex={-1} className="mt-1.5 mb-2.5 text-[17px] leading-tight font-semibold tracking-[-0.025em] outline-none">
+        <p data-screen-title tabIndex={-1} style={rise(2)} className="hp-rise mt-1.5 mb-2.5 text-[17px] leading-tight font-semibold tracking-[-0.025em] outline-none">
           {title}
         </p>
       )}
-      <div className="flex-1">{children}</div>
+      <div className="hp-rise flex-1" style={rise(3)}>
+        {children}
+      </div>
       {dock}
     </div>
   );
@@ -398,7 +486,10 @@ function Screen({ title, p, at, onBack, dock, children }: { title?: string; p: P
 /** The glass dock: the chosen Service (and Barber) and its price, pinned under the content. */
 function Dock({ name, sub, price }: { name: string; sub?: string; price: number }) {
   return (
-    <div className="mt-2 flex items-center gap-2 rounded-[1.25rem] border border-black/[.06] border-t-black/[.035] bg-white/90 p-1.5 pr-3 shadow-[inset_0_1px_0_rgba(255,255,255,.9),0_1px_2px_rgba(0,0,0,.04),0_8px_20px_-6px_rgba(0,0,0,.1),0_24px_48px_-20px_rgba(0,0,0,.18)] backdrop-blur-md">
+    <div
+      style={rise(9)}
+      className="hp-rise mt-2 flex shrink-0 items-center gap-2 rounded-[1.25rem] border border-black/[.06] border-t-black/[.03] bg-white/90 p-1.5 pr-3 shadow-[inset_0_1px_0_#fff,0_1px_2px_rgba(0,0,0,.05),0_6px_16px_-6px_rgba(0,0,0,.12),0_18px_36px_-18px_rgba(0,0,0,.22)] backdrop-blur-md"
+    >
       <span aria-hidden className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${c.fill} text-[10.5px] font-semibold`}>
         {(sub ?? name)[0]}
       </span>

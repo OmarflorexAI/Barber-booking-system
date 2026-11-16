@@ -46,6 +46,7 @@ const en = {
     week: ["Thu", "Fri", "Sat", "Sun", "Mon", "Tue"], // the day strip, from the day above
     times: ["10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM"],
     taken: [1, 4, 5, 9],
+    noTimes: "No free times this day",
     bookedTitle: "You're booked",
     bookedWith: "with",
     bookedAt: "at",
@@ -266,6 +267,7 @@ const es: LandingDictionary = {
     week: ["jue", "vie", "sáb", "dom", "lun", "mar"],
     times: ["10:00 a.m.", "10:30 a.m.", "11:00 a.m.", "11:30 a.m.", "1:00 p.m.", "1:30 p.m.", "2:00 p.m.", "2:30 p.m.", "3:00 p.m.", "3:30 p.m.", "4:00 p.m.", "4:30 p.m."],
     taken: [1, 4, 5, 9],
+    noTimes: "No hay horas libres este día",
     bookedTitle: "Tu cita está lista",
     bookedWith: "con",
     bookedAt: "a las",

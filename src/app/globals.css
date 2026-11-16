@@ -382,6 +382,145 @@ body:has(.landing) {
     inset 0 0 0 1px rgb(0 0 0 / 0.9);
 }
 
+/*
+ * Inside the hero phone (hero-phone.tsx). Items rise in with a short stagger when a screen
+ * appears (--i sets the order; fill "backwards" so hover/press transforms win afterwards).
+ * The chosen day's ink tile springs between days. The ticket's notches are cut with a mask
+ * and its shadow is a drop-shadow on a wrapper, so the shadow follows the cut. The primary
+ * button: an ink capsule lit from above, lifted on hover, springing back from a press, with
+ * a light sheen that sweeps once when it appears and again on hover. Only transform and
+ * opacity animate; reduced motion: none of it, the button only changes colour.
+ */
+@keyframes hp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes hp-sheen {
+  from {
+    transform: translateX(-130%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(130%) skewX(-18deg);
+  }
+}
+.hp-raised {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    0 1px 1px rgb(0 0 0 / 0.18),
+    0 3px 6px -1px rgb(0 0 0 / 0.18),
+    0 8px 16px -8px rgb(0 0 0 / 0.4);
+}
+.hp-day-ink {
+  transform: translateX(calc(var(--d, 0) * (100% + 4px)));
+}
+.hp-ticket-shadow {
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.05)) drop-shadow(0 4px 8px rgb(0 0 0 / 0.06))
+    drop-shadow(0 18px 26px rgb(0 0 0 / 0.16));
+}
+.hp-ticket {
+  --tear: 60px;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 0 var(--tear), rgb(0 0 0 / 0.09) 7px, transparent 10.5px),
+    radial-gradient(circle at 100% var(--tear), rgb(0 0 0 / 0.09) 7px, transparent 10.5px),
+    linear-gradient(#fff, #fcfcfd);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 0 0 1px rgb(0 0 0 / 0.05);
+  -webkit-mask:
+    radial-gradient(circle at 0 var(--tear), transparent 7px, #000 7.5px) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% var(--tear), transparent 7px, #000 7.5px) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle at 0 var(--tear), transparent 7px, #000 7.5px) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% var(--tear), transparent 7px, #000 7.5px) right / 51% 100% no-repeat;
+}
+.hp-btn {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(to bottom, #2a2a2d, #121213 55%, #0b0b0b);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    inset 0 -1px 0 rgb(0 0 0 / 0.3),
+    0 1px 2px rgb(0 0 0 / 0.24),
+    0 10px 22px -10px rgb(0 0 0 / 0.45);
+  transition: background-color 150ms;
+  -webkit-tap-highlight-color: transparent;
+}
+/* The deeper hover shadow sits on its own layer and fades in (opacity, not box-shadow). */
+.hp-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow:
+    0 2px 4px rgb(0 0 0 / 0.2),
+    0 16px 30px -10px rgb(0 0 0 / 0.5);
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+.hp-btn-sheen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.hp-btn-sheen::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 60%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.16) 50%, transparent);
+  transform: translateX(-130%) skewX(-18deg);
+  opacity: 0;
+}
+@media (hover: hover) {
+  .hp-btn:hover::before {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hp-rise {
+    animation: hp-rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    animation-delay: calc(40ms + var(--i, 0) * 35ms);
+  }
+  .hp-day-ink {
+    transition: transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .hp-btn {
+    transition: transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .hp-btn:active {
+    transform: scale(0.97);
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+  }
+  .hp-btn-sheen::before {
+    opacity: 1;
+    animation: hp-sheen 900ms cubic-bezier(0.4, 0, 0.2, 1) 650ms backwards;
+  }
+  @media (hover: hover) {
+    .hp-btn:hover {
+      transform: translateY(-1px);
+    }
+    .hp-btn:hover:active {
+      transform: translateY(0) scale(0.97);
+    }
+    .hp-btn:hover .hp-btn-sheen::before {
+      transform: translateX(130%) skewX(-18deg);
+      transition: transform 800ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hp-btn:hover {
+    background: linear-gradient(to bottom, #333336, #1a1a1b 55%, #121212);
+  }
+}
+
 /* The hero phone: the booked check pops in. */
 @keyframes landing-pop {
   0% {
