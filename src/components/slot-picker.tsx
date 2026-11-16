@@ -73,7 +73,7 @@ function MonthButton(props: { label: string; disabled: boolean; onClick: () => v
       aria-label={props.label}
       disabled={props.disabled}
       onClick={props.onClick}
-      className="press grid size-11 place-items-center rounded-full text-ink transition-colors hover:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:text-muted/40 disabled:hover:bg-transparent"
+      className="press grid size-11 place-items-center rounded-full text-ink transition-colors motion-reduce:transition-none hover:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:text-muted/40 disabled:hover:bg-transparent"
     >
       <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
         <path d={props.dir === 1 ? "M7.5 4.5 13 10l-5.5 5.5" : "M12.5 4.5 7 10l5.5 5.5"} />
@@ -187,11 +187,21 @@ export function SlotPicker(props: {
   }
 
   const loading = state.key !== key;
-  const slots = loading ? null : state.slots;
+  // The time card keeps the last day's list on screen (dimmed, inert, hidden from assistive
+  // tech) while the next day loads, so the card never drops to a skeleton of another height
+  // and back. The skeleton is only for the very first load; the staff day strip keeps it.
+  const stale = calendar && loading && state.key !== "";
+  const listed = loading && !stale ? null : state;
+  const slots = listed ? listed.slots : null;
 
   const times = (
     <>
-      {loading && (
+      {stale && (
+        <p role="status" className="sr-only">
+          {t.loadingSlots}
+        </p>
+      )}
+      {loading && !stale && (
         <div className={calendar ? "grid grid-cols-3 gap-2 pt-7 md:grid-cols-2" : "grid grid-cols-3 gap-2 sm:grid-cols-4"} role="status" aria-busy="true">
           <span className="sr-only">{t.loadingSlots}</span>
           {Array.from({ length: 9 }, (_, i) => (
@@ -200,65 +210,78 @@ export function SlotPicker(props: {
         </div>
       )}
 
-      {!loading && state.error && (
-        <Notice role="alert">
-          <p>{t.errors[state.error] ?? t.errors.UNKNOWN}</p>
-        </Notice>
-      )}
-
-      {!loading && slots && slots.length === 0 && (
-        <div className="c-slots-empty flex flex-col items-center gap-4 rounded-2xl px-5 py-8 text-center">
-          <CalendarIcon />
-          <p className="max-w-[28ch] text-pretty text-muted">{search === "none" ? t.noSlotsAhead : t.noSlots}</p>
-          {search !== "none" && days.indexOf(date) < days.length - 1 && (
-            <button
-              type="button"
-              className="c-btn c-btn-secondary press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-              disabled={search === "searching"}
-              aria-busy={search === "searching" || undefined}
-              onClick={nextFreeDay}
-            >
-              {t.nextFreeDay}
-              <ArrowIcon />
-            </button>
+      {listed && (
+        <div
+          key={listed.key}
+          className={calendar ? `c-times-list flex flex-col gap-5 ${stale ? "is-stale" : ""}` : "contents"}
+          inert={stale}
+          aria-hidden={stale || undefined}
+        >
+          {listed.error && (
+            <Notice role="alert">
+              <p>{t.errors[listed.error] ?? t.errors.UNKNOWN}</p>
+            </Notice>
           )}
-        </div>
-      )}
 
-      {!loading && slots && slots.length > 0 && (
-        <div key={key} className="flex flex-col gap-5">
-          {GROUPS.map((g) => {
-            const group = slots.filter((s) => groupOf(s.time) === g);
-            if (group.length === 0) return null;
-            return (
-              <section key={g} className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium text-muted">{t.dayParts[g]}</h3>
-                <div className={calendar ? "grid grid-cols-3 gap-2 md:grid-cols-2" : "grid grid-cols-3 gap-2 sm:grid-cols-4"}>
-                  {group.map((s) => {
-                    const on = selected === s.startsAt;
-                    return (
-                      <button
-                        key={s.startsAt}
-                        type="button"
-                        onClick={() => onPick(s)}
-                        aria-pressed={on}
-                        style={calendar ? ({ "--i": slots.indexOf(s) } as React.CSSProperties) : undefined}
-                        className={
-                          calendar
-                            ? `c-time min-h-12 px-2 text-[0.9375rem] font-medium whitespace-nowrap tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${on ? "bg-ink text-paper" : "text-ink"}`
-                            : `min-h-12 rounded-full border px-2 font-mono text-base font-medium whitespace-nowrap tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                                on ? "bg-ink text-paper" : "bg-surface text-ink"
-                              }`
-                        }
-                      >
-                        {to12h(s.time, locale)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
+          {slots && slots.length === 0 && (
+            <div className="c-slots-empty flex flex-col items-center gap-4 rounded-2xl px-5 py-8 text-center">
+              <span className="c-empty-tile">
+                <CalendarIcon />
+              </span>
+              <p className="max-w-[28ch] text-pretty text-muted">{search === "none" ? t.noSlotsAhead : t.noSlots}</p>
+              {search !== "none" && days.indexOf(date) < days.length - 1 && (
+                <button
+                  type="button"
+                  className="c-btn c-btn-secondary press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                  disabled={search === "searching"}
+                  aria-busy={search === "searching" || undefined}
+                  onClick={nextFreeDay}
+                >
+                  <span className="c-btn-label">
+                    {t.nextFreeDay}
+                    <ArrowIcon />
+                  </span>
+                  <span aria-hidden="true" className="c-spin" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {slots && slots.length > 0 && (
+            <div className="flex flex-col gap-5">
+              {GROUPS.map((g) => {
+                const group = slots.filter((s) => groupOf(s.time) === g);
+                if (group.length === 0) return null;
+                return (
+                  <section key={g} className="flex flex-col gap-2">
+                    <h3 className="text-sm font-medium text-muted">{t.dayParts[g]}</h3>
+                    <div className={calendar ? "grid grid-cols-3 gap-2 md:grid-cols-2" : "grid grid-cols-3 gap-2 sm:grid-cols-4"}>
+                      {group.map((s) => {
+                        const on = selected === s.startsAt;
+                        return (
+                          <button
+                            key={s.startsAt}
+                            type="button"
+                            onClick={() => onPick(s)}
+                            aria-pressed={on}
+                            className={
+                              calendar
+                                ? `c-time min-h-12 px-2 text-[0.9375rem] font-medium whitespace-nowrap tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${on ? "bg-ink text-paper" : "text-ink"}`
+                                : `min-h-12 rounded-full border px-2 font-mono text-base font-medium whitespace-nowrap tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                                    on ? "bg-ink text-paper" : "bg-surface text-ink"
+                                  }`
+                            }
+                          >
+                            {to12h(s.time, locale)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </>
@@ -367,7 +390,7 @@ export function SlotPicker(props: {
                   aria-current={today ? "date" : undefined}
                   onClick={() => pickDay(d)}
                   className={`c-day relative grid aspect-square max-h-12 w-full place-items-center border text-[0.9375rem] font-medium tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                    on ? "bg-ink text-paper" : hasTimes === false ? "text-muted" : "text-ink"
+                    on ? "text-paper" : hasTimes === false ? "text-muted" : "text-ink"
                   } ${today && !on ? "is-today" : ""}`}
                 >
                   {n}
@@ -381,7 +404,7 @@ export function SlotPicker(props: {
               type="button"
               onClick={() => pickDay(days[0])}
               disabled={date === days[0]}
-              className="-ml-1 min-h-11 rounded px-1 text-sm font-medium text-ink transition-colors focus-visible:outline-2 focus-visible:outline-ink disabled:text-muted"
+              className="-ml-1 min-h-11 rounded px-1 text-sm font-medium text-ink transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-ink disabled:text-muted"
             >
               {t.today}
             </button>

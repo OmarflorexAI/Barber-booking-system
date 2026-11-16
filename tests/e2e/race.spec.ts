@@ -50,6 +50,7 @@ test("two Clients race for one Slot: exactly one gets it", async ({ browser }) =
     await page.getByRole("button", { name: timeA, exact: true }).click();
     await page.getByLabel("Your name").fill(`${TAG} ${n}`);
     await page.getByLabel("Mobile phone").fill(`(718) 555-0${100 + n}`);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); // the button shows once the end of the page is reached
   }
   // Let the bot check (Cloudflare's always-pass test key) issue its tokens.
   await a.waitForTimeout(3000);

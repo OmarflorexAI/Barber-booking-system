@@ -50,6 +50,7 @@ for (const [i, viewport] of ([null, { width: 1280, height: 800 }, { width: 360, 
     await expect(page.getByText("Step 4 of 5 · Your details")).toBeVisible();
     await page.getByLabel("Your name").fill(`${TAG} ${viewport ? "d" : "p"}`);
     await page.getByLabel("Mobile phone").fill(`(718) 555-01${70 + i}`);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); // the button shows once the end of the page is reached
     await page.getByRole("button", { name: "Book now" }).click(); // no waiting for the bot check
 
     const booked = page.getByRole("heading", { name: "You're booked" });
@@ -69,6 +70,7 @@ test("after an error, pressing again gets a fresh bot check and books", async ({
   await toDetails(page);
   await page.getByLabel("Your name").fill(`${TAG} retry`);
   await page.getByLabel("Mobile phone").fill("555-0000"); // not a real number: the engine says so
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); // the button shows once the end of the page is reached
   const button = page.locator("main form button[type=submit]");
   await expect(button).toHaveText("Book now", { timeout: 20_000 });
   await button.click();

@@ -1929,9 +1929,21 @@ body:has(.landing) {
  * - Selected row: .c-selected or aria-pressed/aria-checked="true" = a --raised fill, no
  *   frame. A pressed chip, a chosen day or time fills --ink.
  * - Chip: .c-chip = 44px white capsule on --c-press (a --raised fill inside a card).
- * - Field: .c-field = 52px white well, hairline, --c-focus halo on focus.
- * - Buttons: .c-btn.c-btn-primary (48px pill, --ink fill, --paper text, one per view)
- *   and .c-btn.c-btn-secondary (outlined, hover fills --raised). Add .press. Never red.
+ * - Field: .c-field = 52px white well; its rim is an inset shadow (never a stroke, which
+ *   can rasterise broken at fractional zoom), --c-focus halo on focus, solid when invalid.
+ * - Buttons: .c-btn.c-btn-primary = full-width capsule, ink with a lighter top (--c-btn-top
+ *   to --c-btn-bot; white in dark), 1px inner top highlight, contact + wide soft shadow.
+ *   Hover lifts 1px and deepens; press springs to 0.97 (cubic-bezier(.34,1.56,.64,1), 350ms);
+ *   a sheen sweeps once on arrival (::after) and on hover (::before). Submitting: aria-busy,
+ *   the .c-btn-label crossfades to a .c-spin spinner (the label stays the accessible name).
+ *   .c-btn-secondary = the same motion on a raised white capsule. One primary per view.
+ *   A dock that holds only the button is .c-dock-bare: no capsule around it (no white ring).
+ * - Inside a card, controls on --raised (times, chips, tags, today) carry a --c-rim-in hairline.
+ *   Never red. Reduced motion: no sheen, no spring, the label stays (no spinner).
+ * - Payment: .c-pay = one raised card per option (gap-3, never a shared frame), icon in a
+ *   .c-tile, a .c-radio that fills --ink; the chosen card lifts 1px on a single ink ring.
+ * - Depth: --c-depth (contact + key + ambient) on cards, --c-depth-hi on hover; tappable
+ *   cards (.c-pay, rows' cards via .lift) rise 2px; wells (.c-slots-empty) are inset.
  * - Section heading: .c-h2 = 1.5rem semibold, -0.025em, text-balance; a muted 0.875rem
  *   medium line (step counter, meta) sits above or below it, never a pill label.
  * - Numbers: Hanken with tabular figures (--font-jetbrains is remapped here, so a stray
@@ -1941,6 +1953,7 @@ body:has(.landing) {
  * - Motion: .c-in rises 12px + fades once on load (stagger with style="--i: n", 60ms);
  *   .c-in-photo settles from 1.04 scale. Hover: .lift (cards rise 2px), .c-link (underline
  *   draws). Only transform/opacity animate; reduced motion shows the final state.
+ * - Ticket (/m): .m-ticket adds a deeper key shadow; .m-notch bites are inset-shadowed.
  * - Red: only the booked check (and /m's confirmed check). Errors use <Notice>.
  */
 .client-page {
@@ -1948,22 +1961,35 @@ body:has(.landing) {
   /* iOS grouped surfaces: the page a soft grey, cards white above it, fills a step darker
      inside a card. The color utilities read these (they are @theme inline), so bg-paper,
      bg-surface, bg-raised and divide-line follow inside the Client pages only. */
-  --paper: oklch(96.4% 0.002 286);
+  --paper: oklch(94% 0.004 286); /* #ebebee: an iOS grouped ground the white cards stand off */
   --surface: oklch(100% 0 0);
-  --raised: oklch(95.6% 0.002 286);
-  --line: oklch(91.5% 0.002 286);
-  --muted: oklch(47% 0.004 286);
+  --raised: oklch(94.8% 0.003 286);
+  --line: oklch(89% 0.003 286);
+  --muted: oklch(47% 0.004 286); /* 5.7:1 on --paper, 6.8:1 on --surface, 5.9:1 on --raised */
   /* Numbers in the landing's face with tabular figures, never monospace. */
   --font-jetbrains: var(--font-hanken);
-  --c-rim: oklch(0% 0 0 / 0.06);
-  --c-rim-top: oklch(0% 0 0 / 0.035);
+  /* The hairline rim: darker than the ground (never white), a touch lighter on the lit top edge. */
+  --c-rim: oklch(0% 0 0 / 0.1);
+  --c-rim-top: oklch(0% 0 0 / 0.07);
+  /* Controls inside a card (time buttons, chips, tags): a fainter rim on their --raised fill. */
+  --c-rim-in: oklch(0% 0 0 / 0.07);
   --c-glint: oklch(100% 0 0 / 0.9);
-  /* Cards: a hairline contact, a soft near shadow and a wide faint one. */
-  --c-depth: 0 1px 1px oklch(0% 0 0 / 0.03), 0 2px 6px -1px oklch(0% 0 0 / 0.05), 0 12px 32px -12px oklch(0% 0 0 / 0.1);
+  /* Cards: a tight contact shadow, a medium key and a wide soft ambient one. */
+  --c-depth: 0 1px 2px oklch(0% 0 0 / 0.1), 0 4px 10px -3px oklch(0% 0 0 / 0.1), 0 18px 40px -16px oklch(0% 0 0 / 0.24);
+  --c-depth-hi: 0 1px 2px oklch(0% 0 0 / 0.12), 0 8px 18px -6px oklch(0% 0 0 / 0.14), 0 28px 56px -20px oklch(0% 0 0 / 0.3);
+  /* The primary capsule: ink, lighter at the top, standing on a crisp contact + a wide key. */
+  --c-btn-top: oklch(34% 0.003 286);
+  --c-btn-bot: oklch(15% 0.002 286);
+  --c-btn-hi: oklch(100% 0 0 / 0.2);
+  --c-btn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 6px 14px -6px oklch(0% 0 0 / 0.35), 0 18px 34px -14px oklch(0% 0 0 / 0.45);
+  --c-btn-shadow-hi: 0 2px 3px oklch(0% 0 0 / 0.35), 0 10px 20px -8px oklch(0% 0 0 / 0.4), 0 26px 44px -16px oklch(0% 0 0 / 0.55);
+  --c-sheen: oklch(100% 0 0 / 0.24);
+  /* Wells (the empty day, the ticket's bites): pressed into the surface. */
+  --c-well: inset 0 1px 3px oklch(0% 0 0 / 0.09), inset 0 0 0 1px oklch(0% 0 0 / 0.06);
   /* The one raised surface per screen (the time card, the dock). */
-  --c-lift: 0 1px 2px oklch(0% 0 0 / 0.04), 0 8px 20px -6px oklch(0% 0 0 / 0.1), 0 32px 64px -24px oklch(0% 0 0 / 0.18);
+  --c-lift: 0 1px 2px oklch(0% 0 0 / 0.1), 0 10px 24px -8px oklch(0% 0 0 / 0.16), 0 36px 72px -28px oklch(0% 0 0 / 0.3);
   /* Small controls (chips, fields, time buttons on hover). */
-  --c-press: 0 1px 1px oklch(0% 0 0 / 0.04), 0 2px 6px -2px oklch(0% 0 0 / 0.1);
+  --c-press: 0 1px 2px oklch(0% 0 0 / 0.1), 0 3px 8px -3px oklch(0% 0 0 / 0.14);
   --c-focus: 0 0 0 4px color-mix(in oklch, var(--ink) 12%, transparent);
   --c-glass: color-mix(in oklch, var(--paper) 72%, transparent);
   background: var(--paper);
@@ -1972,14 +1998,23 @@ body:has(.landing) {
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .client-page {
     --paper: oklch(0% 0 0);
-    --surface: oklch(19.5% 0.003 286);
-    --raised: oklch(26% 0.004 286);
-    --line: oklch(29% 0.004 286);
+    --surface: oklch(20.5% 0.003 286);
+    --raised: oklch(27.5% 0.004 286);
+    --line: oklch(31% 0.004 286);
     --muted: oklch(70% 0.004 286);
-    --c-rim: oklch(100% 0 0 / 0.06);
-    --c-rim-top: oklch(100% 0 0 / 0.12);
-    --c-glint: oklch(100% 0 0 / 0.06);
-    --c-depth: 0 1px 2px oklch(0% 0 0 / 0.6), 0 16px 32px -16px oklch(0% 0 0 / 0.9);
+    --c-rim: oklch(100% 0 0 / 0.08);
+    --c-rim-top: oklch(100% 0 0 / 0.16);
+    --c-rim-in: oklch(100% 0 0 / 0.06);
+    --c-glint: oklch(100% 0 0 / 0.08);
+    --c-depth: 0 1px 2px oklch(0% 0 0 / 0.6), 0 4px 10px -4px oklch(0% 0 0 / 0.6), 0 18px 36px -16px oklch(0% 0 0 / 0.95);
+    --c-depth-hi: 0 1px 2px oklch(0% 0 0 / 0.7), 0 8px 16px -6px oklch(0% 0 0 / 0.7), 0 28px 52px -18px oklch(0% 0 0 / 1);
+    --c-btn-top: oklch(100% 0 0);
+    --c-btn-bot: oklch(89% 0.002 286);
+    --c-btn-hi: oklch(100% 0 0 / 0.95);
+    --c-btn-shadow: 0 1px 2px oklch(0% 0 0 / 0.7), 0 4px 10px -4px oklch(0% 0 0 / 0.6), 0 14px 28px -12px oklch(0% 0 0 / 0.9);
+    --c-btn-shadow-hi: 0 2px 3px oklch(0% 0 0 / 0.7), 0 8px 18px -6px oklch(0% 0 0 / 0.7), 0 22px 44px -14px oklch(0% 0 0 / 1), 0 0 24px -6px oklch(100% 0 0 / 0.12);
+    --c-sheen: oklch(100% 0 0 / 0.85);
+    --c-well: inset 0 1px 3px oklch(0% 0 0 / 0.55), inset 0 0 0 1px oklch(100% 0 0 / 0.04);
     --c-lift: 0 1px 2px oklch(0% 0 0 / 0.7), 0 28px 56px -20px oklch(0% 0 0 / 1);
     --c-press: 0 1px 2px oklch(0% 0 0 / 0.5);
     --c-focus: 0 0 0 4px color-mix(in oklch, var(--ink) 22%, transparent);
@@ -1988,14 +2023,23 @@ body:has(.landing) {
 }
 :root[data-theme="dark"] .client-page {
   --paper: oklch(0% 0 0);
-  --surface: oklch(19.5% 0.003 286);
-  --raised: oklch(26% 0.004 286);
-  --line: oklch(29% 0.004 286);
+  --surface: oklch(20.5% 0.003 286);
+  --raised: oklch(27.5% 0.004 286);
+  --line: oklch(31% 0.004 286);
   --muted: oklch(70% 0.004 286);
-  --c-rim: oklch(100% 0 0 / 0.06);
-  --c-rim-top: oklch(100% 0 0 / 0.12);
-  --c-glint: oklch(100% 0 0 / 0.06);
-  --c-depth: 0 1px 2px oklch(0% 0 0 / 0.6), 0 16px 32px -16px oklch(0% 0 0 / 0.9);
+  --c-rim: oklch(100% 0 0 / 0.08);
+  --c-rim-top: oklch(100% 0 0 / 0.16);
+  --c-rim-in: oklch(100% 0 0 / 0.06);
+  --c-glint: oklch(100% 0 0 / 0.08);
+  --c-depth: 0 1px 2px oklch(0% 0 0 / 0.6), 0 4px 10px -4px oklch(0% 0 0 / 0.6), 0 18px 36px -16px oklch(0% 0 0 / 0.95);
+  --c-depth-hi: 0 1px 2px oklch(0% 0 0 / 0.7), 0 8px 16px -6px oklch(0% 0 0 / 0.7), 0 28px 52px -18px oklch(0% 0 0 / 1);
+  --c-btn-top: oklch(100% 0 0);
+  --c-btn-bot: oklch(89% 0.002 286);
+  --c-btn-hi: oklch(100% 0 0 / 0.95);
+  --c-btn-shadow: 0 1px 2px oklch(0% 0 0 / 0.7), 0 4px 10px -4px oklch(0% 0 0 / 0.6), 0 14px 28px -12px oklch(0% 0 0 / 0.9);
+  --c-btn-shadow-hi: 0 2px 3px oklch(0% 0 0 / 0.7), 0 8px 18px -6px oklch(0% 0 0 / 0.7), 0 22px 44px -14px oklch(0% 0 0 / 1), 0 0 24px -6px oklch(100% 0 0 / 0.12);
+  --c-sheen: oklch(100% 0 0 / 0.85);
+  --c-well: inset 0 1px 3px oklch(0% 0 0 / 0.55), inset 0 0 0 1px oklch(100% 0 0 / 0.04);
   --c-lift: 0 1px 2px oklch(0% 0 0 / 0.7), 0 28px 56px -20px oklch(0% 0 0 / 1);
   --c-press: 0 1px 2px oklch(0% 0 0 / 0.5);
   --c-focus: 0 0 0 4px color-mix(in oklch, var(--ink) 22%, transparent);
@@ -2013,7 +2057,8 @@ body:has(.landing) {
   border-top-color: var(--c-rim-top);
   box-shadow:
     inset 0 1px 0 var(--c-glint),
-    0 10px 30px -16px oklch(0% 0 0 / 0.28);
+    0 1px 2px oklch(0% 0 0 / 0.1),
+    0 12px 32px -14px oklch(0% 0 0 / 0.34);
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
   backdrop-filter: blur(20px) saturate(1.6);
 }
@@ -2079,9 +2124,11 @@ body:has(.landing) {
 .c-card .c-chip {
   background: var(--raised);
   border-color: transparent;
-  box-shadow: none;
+  box-shadow: inset 0 0 0 1px var(--c-rim-in);
 }
 .c-btn {
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   min-height: 3.25rem;
   align-items: center;
@@ -2098,15 +2145,45 @@ body:has(.landing) {
   opacity: 0.4;
   pointer-events: none;
 }
+.c-btn-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+/* The submitting spinner: hidden until the button is aria-busy (Client pages only). */
+.c-spin {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  border: 2px solid color-mix(in oklch, currentColor 25%, transparent);
+  border-top-color: currentColor;
+  opacity: 0;
+  pointer-events: none;
+}
 .c-btn-primary {
-  background-color: var(--ink);
-  background-image: linear-gradient(180deg, color-mix(in oklch, var(--paper) 16%, transparent), transparent 55%);
+  overflow: hidden;
+  background-color: var(--c-btn-bot, var(--ink));
+  background-image: linear-gradient(180deg, var(--c-btn-top, var(--ink)), var(--c-btn-bot, var(--ink)));
   color: var(--paper);
   box-shadow:
-    inset 0 1px 0 color-mix(in oklch, var(--paper) 28%, transparent),
-    inset 0 -1px 0 oklch(0% 0 0 / 0.25),
-    0 1px 2px oklch(0% 0 0 / 0.18),
-    0 10px 22px -10px oklch(0% 0 0 / 0.45);
+    inset 0 1px 0 var(--c-btn-hi, transparent),
+    var(--c-btn-shadow, 0 0 #0000);
+}
+/* The sheen: a soft diagonal band, under the label (z-index -1 inside the button's own
+   stacking context). ::after sweeps once on arrival, ::before on each hover. */
+.c-btn-primary::before,
+.c-btn-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(105deg, transparent 32%, var(--c-sheen, transparent) 50%, transparent 68%);
+  opacity: 0;
+  translate: -110% 0;
+  pointer-events: none;
 }
 .c-btn-secondary {
   border: 1px solid var(--c-rim, var(--line));
@@ -2116,6 +2193,10 @@ body:has(.landing) {
   box-shadow:
     inset 0 1px 0 var(--c-glint, transparent),
     var(--c-depth, 0 0 #0000);
+}
+.client-page .c-btn[aria-busy="true"] {
+  opacity: 1;
+  cursor: progress;
 }
 .c-h2 {
   font-size: 1.5rem;
@@ -2153,16 +2234,15 @@ body:has(.landing) {
     background: var(--surface);
     border-color: var(--c-rim, var(--line));
   }
-  .c-btn-secondary:hover {
-    translate: 0 -1px;
-  }
   .c-btn-primary:hover:not(:disabled) {
-    background-color: color-mix(in oklch, var(--ink) 88%, var(--paper));
     box-shadow:
-      inset 0 1px 0 color-mix(in oklch, var(--paper) 30%, transparent),
-      inset 0 -1px 0 oklch(0% 0 0 / 0.25),
-      0 1px 2px oklch(0% 0 0 / 0.18),
-      0 14px 28px -12px oklch(0% 0 0 / 0.5);
+      inset 0 1px 0 var(--c-btn-hi, transparent),
+      var(--c-btn-shadow-hi, 0 0 #0000);
+  }
+  .client-page .c-btn-secondary:hover:not(:disabled) {
+    box-shadow:
+      inset 0 1px 0 var(--c-glint, transparent),
+      var(--c-depth-hi);
   }
   .c-link:hover,
   .c-link:focus-visible {
@@ -2170,6 +2250,21 @@ body:has(.landing) {
   }
 }
 
+@keyframes c-sheen {
+  from {
+    opacity: 1;
+    translate: -110% 0;
+  }
+  to {
+    opacity: 1;
+    translate: 110% 0;
+  }
+}
+@keyframes c-spin {
+  to {
+    rotate: 1turn;
+  }
+}
 @keyframes c-in {
   from {
     opacity: 0;
@@ -2196,6 +2291,36 @@ body:has(.landing) {
       scale var(--dur-fast) var(--ease-spring),
       background-color var(--dur-fast) var(--ease-out);
   }
+  /* The Client buttons: a 350ms overshooting spring back from the press. */
+  .client-page .c-btn {
+    transition:
+      translate 220ms var(--ease-out),
+      scale 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 220ms var(--ease-out),
+      background-color var(--dur-fast) var(--ease-out),
+      opacity var(--dur-fast) var(--ease-out);
+  }
+  .client-page .c-btn:active:not(:disabled, [aria-disabled="true"]) {
+    scale: 0.97;
+    transition-duration: 120ms, 120ms, 120ms, var(--dur-fast), var(--dur-fast);
+  }
+  .c-btn-primary:not(:disabled)::after {
+    animation: c-sheen 1100ms cubic-bezier(0.4, 0, 0.2, 1) 500ms both;
+  }
+  .client-page .c-btn-label,
+  .client-page .c-spin {
+    transition:
+      opacity 200ms var(--ease-out),
+      scale 260ms var(--ease-out);
+  }
+  .client-page .c-btn[aria-busy="true"] .c-btn-label {
+    opacity: 0;
+    scale: 0.92;
+  }
+  .client-page .c-btn[aria-busy="true"] .c-spin {
+    opacity: 1;
+    animation: c-spin 700ms linear infinite;
+  }
   .c-row,
   .c-chip,
   .client-page .c-card > li {
@@ -2216,6 +2341,9 @@ body:has(.landing) {
     .c-btn:hover:not(:disabled) {
       translate: 0 -1px;
     }
+    .c-btn-primary:hover:not(:disabled)::before {
+      animation: c-sheen 900ms cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
     a:hover > .c-photo img,
     a.c-photo:hover img,
     button:hover > .c-photo img {
@@ -2226,9 +2354,23 @@ body:has(.landing) {
 
 /* /m/<token>: the ticket's tear-line notches (paper showing through), the cancel sheet's
    top-lit rim, and the sticky dock under the time picker (paper fading in above it). */
+.m-ticket {
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    var(--c-depth),
+    0 36px 64px -32px oklch(0% 0 0 / 0.22);
+}
+/* The bites are pressed in: an inner shadow along the card's edge (left bite, right bite). */
 .m-notch {
   background: var(--paper);
-  box-shadow: inset 0 0 0 1px var(--c-rim);
+  box-shadow:
+    inset 0 0 0 1px var(--c-rim),
+    inset -2px 1px 3px oklch(0% 0 0 / 0.08);
+}
+.m-notch:last-child {
+  box-shadow:
+    inset 0 0 0 1px var(--c-rim),
+    inset 2px 1px 3px oklch(0% 0 0 / 0.08);
 }
 /* The tear line: in light a firmer dash so it reads on white (dark keeps --line). */
 .m-tear {
@@ -2267,15 +2409,39 @@ body:has(.landing) {
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
   backdrop-filter: blur(20px) saturate(1.6);
 }
+/* The details step's dock holds only the primary button: no capsule around it (a white
+   ring that washed out on the grey ground). The button stands on its own shadow. */
+.c-dock.c-dock-bare {
+  padding: 0;
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* The ground fades in behind it, so text scrolling under the button stops short of it. */
+.c-dock.c-dock-bare::before {
+  content: "";
+  position: absolute;
+  inset: -1.5rem -1rem calc(-1 * max(0.75rem, env(safe-area-inset-bottom)));
+  z-index: -1;
+  background: linear-gradient(to bottom, transparent, var(--paper) 1.5rem);
+  pointer-events: none;
+}
 .c-field {
   min-height: 3.25rem;
   width: 100%;
   scroll-margin-bottom: 7rem; /* a focused field scrolls clear of the dock */
-  border: 1px solid var(--c-rim);
-  border-top-color: var(--c-rim-top);
+  /* The rim is drawn as an inset ring, not a border: a 1px stroke at a few % alpha can
+     rasterise as a broken (dashed-looking) line at fractional zoom. The border stays
+     transparent and solid so nothing (a UA or :user-invalid style) can restyle it. */
+  border: 1px solid transparent;
   border-radius: 0.875rem;
   background: var(--surface);
-  box-shadow: var(--c-press);
+  box-shadow:
+    inset 0 0 0 1px var(--c-field-rim),
+    inset 0 1px 2px oklch(0% 0 0 / 0.04),
+    var(--c-press);
   padding: 0 1rem;
   font-size: 1rem;
   color: var(--ink);
@@ -2284,20 +2450,104 @@ body:has(.landing) {
     border-color var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out);
 }
+.client-page {
+  --c-field-rim: oklch(0% 0 0 / 0.16);
+}
+:root[data-theme="dark"] .client-page {
+  --c-field-rim: oklch(100% 0 0 / 0.13);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .client-page {
+    --c-field-rim: oklch(100% 0 0 / 0.13);
+  }
+}
 .c-field:focus {
-  border-color: color-mix(in oklch, var(--ink) 55%, transparent);
   box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--ink) 55%, transparent),
     var(--c-press),
     var(--c-focus);
 }
 .c-field:user-invalid:not(:focus) {
-  border-color: color-mix(in oklch, var(--ink) 45%, transparent);
+  border-style: solid;
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1.5px color-mix(in oklch, var(--ink) 45%, transparent),
+    var(--c-press);
+}
+/* The ways to pay: one raised card each, the chosen one lifted on a single ink ring (the
+   rim and the ring are both box-shadows, so there is never a doubled frame). */
+.c-pay {
+  display: flex;
+  min-height: 4.5rem;
+  cursor: pointer;
+  align-items: center;
+  gap: 0.875rem;
+  border-radius: 1.125rem;
+  padding: 0.875rem 1rem;
+  background: var(--surface);
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    0 0 0 1px var(--c-rim),
+    var(--c-depth);
+  text-align: left;
+}
+.c-pay.is-on {
+  translate: 0 -1px;
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    0 0 0 1.5px color-mix(in oklch, var(--ink) 30%, transparent),
+    var(--c-depth-hi);
+}
+.c-pay:has(:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+/* An icon in a soft raised tile (payment options, the shop-pay line). */
+.c-tile {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: var(--raised);
+  color: var(--ink);
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    0 0 0 1px var(--c-rim),
+    0 1px 2px oklch(0% 0 0 / 0.06);
+}
+.c-pay.is-on .c-tile {
+  background: var(--surface);
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    0 0 0 1px var(--c-rim),
+    0 1px 2px oklch(0% 0 0 / 0.08),
+    0 4px 10px -4px oklch(0% 0 0 / 0.18);
+}
+/* A filled iOS radio: a hollow ring, then an --ink disc with a --paper dot. */
+.c-radio {
+  display: grid;
+  width: 1.375rem;
+  height: 1.375rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1.5px color-mix(in oklch, var(--muted) 70%, transparent);
+}
+.c-pay.is-on .c-radio {
+  background: var(--ink);
+  box-shadow: 0 1px 2px oklch(0% 0 0 / 0.2);
 }
 .c-radio-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--paper);
   scale: 0;
 }
 /* Waiting (bot check, booking): a calm outlined pill, plainly not pressable. */
-.c-btn-primary:disabled {
+.c-btn-primary:disabled:not([aria-busy="true"]) {
   opacity: 1;
   background: var(--raised);
   color: var(--muted);
@@ -2344,10 +2594,13 @@ body:has(.landing) {
 /* ── The time card (SlotPicker `calendar`, after the user's reference) ─────────────────────
  * One raised card: the month on the left, the chosen day's times on the right (stacked on a
  * phone). From md it is wider than the Client column (centred on it), like a booking widget.
- * Days are rounded squares: the chosen day a solid --ink tile that settles in with a spring,
- * today a ring, a dot under days with free times. Times are rounded rectangles on --raised
- * that lift on hover; the day's list rises in one after another when the day changes, and the
- * month slides in from the side it was asked for. Reduced motion: everything just appears.
+ * Days are rounded squares: the chosen day a solid --ink tile (its ::before, so only that
+ * layer moves) that grows in with a spring while the old one just goes, today a ring, a dot
+ * under days with free times. Times are rounded rectangles on --raised that lift on hover.
+ * When the day changes the old list stays (dimmed after 120ms, inert) until the new one has
+ * loaded, then the new list fades up as one block: the card never drops to a skeleton and
+ * back. The month slides in from the side it was asked for. Only transform/opacity animate;
+ * reduced motion: everything just appears.
  */
 .c-timecard {
   background: var(--surface);
@@ -2391,7 +2644,7 @@ body:has(.landing) {
 }
 .c-duration {
   background: var(--raised);
-  box-shadow: inset 0 0 0 1px var(--line);
+  box-shadow: inset 0 0 0 1px var(--c-rim-in, var(--line));
   color: var(--ink);
 }
 .c-cal-grid > * {
@@ -2406,19 +2659,51 @@ body:has(.landing) {
 }
 .c-slots .c-day.is-today {
   background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--c-rim-in, transparent);
   font-weight: 700;
 }
-.c-slots .c-day[aria-selected="true"] {
-  border-color: transparent;
+.c-slots .c-day {
+  isolation: isolate;
+}
+/* The chosen day's fill and shadow live on ::before, so choosing a day moves one layer
+   (scale + opacity) and never transitions a background or a shadow. */
+.c-slots .c-day::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--ink);
   box-shadow:
     inset 0 1px 0 oklch(100% 0 0 / 0.16),
     0 2px 4px oklch(0% 0 0 / 0.12),
     0 8px 18px -8px oklch(0% 0 0 / 0.55);
+  opacity: 0;
+  scale: 0.86;
+  pointer-events: none;
+}
+.c-slots .c-day[aria-selected="true"] {
+  border-color: transparent;
+}
+.c-slots .c-day[aria-selected="true"]::before {
+  opacity: 1;
+  scale: 1;
+}
+/* While the next day loads, the last list stays put, dimmed and inert. */
+.c-times-list.is-stale {
+  opacity: 0.45;
+}
+/* A stale "no free times" or error would say something untrue about the new day: its well
+   keeps its size (so the card holds still) but its words go at once. */
+.c-times-list.is-stale .c-slots-empty > *,
+.c-times-list.is-stale [role="alert"] {
+  visibility: hidden;
 }
 .c-time {
   border-radius: 0.875rem;
   border: 1px solid transparent;
   background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--c-rim-in, transparent);
 }
 .c-time[aria-pressed="true"] {
   box-shadow:
@@ -2439,20 +2724,16 @@ body:has(.landing) {
     translate: 0 -1px;
   }
 }
+/* Fades start part-way (not 0) so the swap never blinks to an empty frame. */
 @keyframes c-cal-in {
   from {
-    opacity: 0;
+    opacity: 0.4;
     translate: calc(var(--dir, 1) * 14px) 0;
-  }
-}
-@keyframes c-day-on {
-  from {
-    scale: 0.82;
   }
 }
 @keyframes c-time-in {
   from {
-    opacity: 0;
+    opacity: 0.45;
     translate: 0 6px;
   }
 }
@@ -2460,12 +2741,22 @@ body:has(.landing) {
   .c-cal-grid {
     animation: c-cal-in var(--dur-slow) var(--ease-out);
   }
-  .c-slots .c-day[aria-selected="true"] {
-    animation: c-day-on var(--dur-slow) var(--ease-spring);
+  /* Only the newly chosen tile moves (the transition sits on the chosen state, so the old
+     tile's fill simply goes). The fill is opaque at once so the paper-coloured number never
+     sits on a half-faded tile. */
+  .c-slots .c-day[aria-selected="true"]::before {
+    transition: scale var(--dur-slow) var(--ease-spring);
+  }
+  /* A new day's list fades up as one block ("backwards": once done it no longer holds
+     opacity, so .is-stale can dim it). Dimming waits 120ms so a fast load never flickers. */
+  .c-times-list {
+    animation: c-time-in 280ms var(--ease-out) backwards;
+    transition: opacity 200ms var(--ease-out);
+  }
+  .c-times-list.is-stale {
+    transition-delay: 120ms;
   }
   .c-time {
-    animation: c-time-in 320ms var(--ease-out) backwards;
-    animation-delay: calc(min(var(--i, 0), 14) * 22ms);
     transition:
       background-color var(--dur-fast) var(--ease-out),
       border-color var(--dur-fast) var(--ease-out),
@@ -2478,10 +2769,27 @@ body:has(.landing) {
     scale: 0.96;
   }
 }
-/* No free times: a quiet dashed well (an absence, not a card), the next-free-day pill in it. */
+/* No free times: a well pressed into the card (an absence, not a card), the calendar in a
+   soft raised tile, the next-free-day capsule standing on it. */
 .c-slots-empty {
   border-radius: 1rem;
   background: var(--raised);
+}
+.client-page .c-slots-empty {
+  box-shadow: var(--c-well);
+}
+.client-page .c-empty-tile {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border-radius: 0.875rem;
+  background: var(--surface);
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    0 0 0 1px var(--c-rim),
+    0 1px 2px oklch(0% 0 0 / 0.06),
+    0 6px 14px -6px oklch(0% 0 0 / 0.2);
 }
 /* Notices and payment tags on the Client pages: the same card language (a soft rounded
    card on its shadow; a filled tag), while the staff app keeps its hairline boxes. */
@@ -2497,10 +2805,11 @@ body:has(.landing) {
 .client-page dialog .c-notice {
   background: var(--raised);
   border-color: transparent;
-  box-shadow: none;
+  box-shadow: inset 0 0 0 1px var(--c-rim-in);
 }
 .client-page .c-tag {
   border-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--c-rim-in);
   background: var(--raised);
   color: var(--ink);
 }
@@ -2508,10 +2817,30 @@ body:has(.landing) {
   cursor: progress;
 }
 @media (hover: hover) and (pointer: fine) {
-  .c-slots [role="tab"]:hover:not([aria-selected="true"]),
-  .c-slots button[aria-pressed="false"]:hover {
+  /* The staff day strip only: the time card has its own hover rules above, which this
+     (more specific, later) rule used to override mid-hover. */
+  .c-slots:not(.c-timecard) [role="tab"]:hover:not([aria-selected="true"]),
+  .c-slots:not(.c-timecard) button[aria-pressed="false"]:hover {
     border-color: color-mix(in oklch, var(--ink) 35%, var(--line));
     background: var(--raised);
+  }
+}
+/* The details step's dock waits below until the Client reaches the end of the page
+   (RevealDock in booking-flow.tsx): low and transparent, inert and aria-hidden, holding its
+   place so nothing shifts when it comes up. Its sheen sweeps on arrival, not while hidden. */
+.c-dock-reveal.is-concealed {
+  opacity: 0;
+  translate: 0 1rem;
+  pointer-events: none;
+}
+.c-dock-reveal.is-concealed .c-btn-primary::after {
+  animation: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .c-dock-reveal {
+    transition:
+      opacity 220ms var(--ease-out),
+      translate var(--dur-slow) var(--ease-out);
   }
 }
 @keyframes c-step {
@@ -2565,7 +2894,44 @@ body:has(.landing) {
       translate: 2px 0;
     }
     .c-field:hover:not(:focus) {
-      border-color: color-mix(in oklch, var(--ink) 30%, var(--line));
+      box-shadow:
+        inset 0 0 0 1px color-mix(in oklch, var(--ink) 28%, transparent),
+        var(--c-press);
+    }
+  }
+}
+
+/* Payment cards in motion: hover rises 2px on a deeper shadow; the chosen card's ring and
+   lift ease in, its radio fills with a spring. */
+@media (prefers-reduced-motion: no-preference) {
+  .c-pay {
+    transition:
+      translate 220ms var(--ease-out),
+      scale 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 220ms var(--ease-out);
+  }
+  .c-pay:active {
+    scale: 0.985;
+  }
+  .c-tile,
+  .c-radio {
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-fast) var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .c-pay:hover {
+      translate: 0 -2px;
+      box-shadow:
+        inset 0 1px 0 var(--c-glint),
+        0 0 0 1px color-mix(in oklch, var(--ink) 16%, transparent),
+        var(--c-depth-hi);
+    }
+    .c-pay.is-on:hover {
+      box-shadow:
+        inset 0 1px 0 var(--c-glint),
+        0 0 0 1.5px color-mix(in oklch, var(--ink) 30%, transparent),
+        var(--c-depth-hi);
     }
   }
 }

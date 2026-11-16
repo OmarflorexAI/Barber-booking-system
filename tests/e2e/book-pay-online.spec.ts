@@ -46,6 +46,7 @@ test("book, pay online by card, and land confirmed", async ({ page }) => {
   await page.getByLabel("Your name").fill(`${TAG} ${Math.random().toString(36).slice(2, 7)}`);
   await page.getByLabel("Mobile phone").fill(`(212) 555-01${String(Math.floor(Math.random() * 100)).padStart(2, "0")}`);
   await page.getByText("Pay now by card").click();
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); // the button shows once the end of the page is reached
   const go = page.getByRole("button", { name: "Continue to payment" });
   await expect(go).toBeEnabled({ timeout: 20_000 }); // waits for the bot check
   await go.click();

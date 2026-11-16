@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { flushSync } from "react-dom";
 import type { BookingEngine } from "@/server/booking-engine";
 import { SlotPicker, type Slot } from "@/components/slot-picker";
 import { Turnstile } from "@/components/turnstile";
@@ -432,13 +433,13 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
 
             {step === "details" && service && barberId && slot && (
               <form
-                className="flex flex-1 flex-col gap-6"
+                className="relative flex flex-1 flex-col gap-6"
                 onSubmit={(e) => {
                   e.preventDefault();
                   submit();
                 }}
               >
-                <dl className="c-card divide-y divide-line text-sm">
+                <dl className="c-card c-in divide-y divide-line text-sm" style={{ "--i": 0 } as React.CSSProperties}>
                   <SummaryRow label={t.service} value={serviceName(service)} />
                   <SummaryRow label={t.barber} value={barberId === "any" ? t.anyBarber : (chosenBarber?.displayName ?? "")} />
                   <SummaryRow
@@ -453,7 +454,7 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                   {price && <SummaryRow label={t.total} value={<span className="font-mono font-medium tabular-nums">{formatMoney(price.priceCents)}</span>} />}
                 </dl>
 
-                <div className="flex flex-col gap-4">
+                <div className="c-in flex flex-col gap-4" style={{ "--i": 1 } as React.CSSProperties}>
                   <label className="flex flex-col gap-1.5">
                     <span className="text-sm font-medium">{t.name}</span>
                     <input className="c-field" name="name" autoComplete="name" required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
@@ -475,9 +476,9 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                 </div>
 
                 {shop.onlinePayments ? (
-                  <fieldset className="flex flex-col">
+                  <fieldset className="c-in flex flex-col" style={{ "--i": 2 } as React.CSSProperties}>
                     <legend className="mb-2 text-sm font-medium">{t.payment}</legend>
-                    <div className="c-card divide-y divide-line overflow-hidden">
+                    <div className="flex flex-col gap-3">
                       <PayOption
                         checked={payment === "in_person"}
                         onChange={() => setPayment("in_person")}
@@ -489,15 +490,17 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                     </div>
                   </fieldset>
                 ) : (
-                  <div className="c-card flex items-center gap-3 px-4 py-3.5 text-sm">
-                    <ShopIcon />
+                  <div className="c-card c-in flex items-center gap-3 px-4 py-3.5 text-sm" style={{ "--i": 2 } as React.CSSProperties}>
+                    <span className="c-tile">
+                      <ShopIcon className="h-5 w-5" />
+                    </span>
                     <p>
                       <span className="font-medium">{t.payment}:</span> {t.payInPerson}
                     </p>
                   </div>
                 )}
 
-                <ul className="flex flex-col gap-2.5 text-sm leading-relaxed text-muted">
+                <ul className="c-in flex flex-col gap-2.5 text-sm leading-relaxed text-muted" style={{ "--i": 3 } as React.CSSProperties}>
                   <FinePrint icon="refund">{t.refundRule(formatCutoff(shop.cancelCutoffMinutes, locale))}</FinePrint>
                   <FinePrint icon="tip">{t.tipsInPerson}</FinePrint>
                   <FinePrint icon="text">{t.smsConsent}</FinePrint>
@@ -505,19 +508,28 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
 
                 <Turnstile key={turnstileKey} onToken={setTurnstileToken} lang={locale} />
 
-                <Dock
+                <RevealDock
                   t={t}
                   title={serviceName(service)}
                   meta={dockMeta}
                   price={dockPrice}
                   avatar={chosenBarber && barberId !== "any" ? chosenBarber : null}
                   compact
+                  force={!!error || pending}
                 >
                   {notice}
-                  <button type="submit" className={`c-btn c-btn-primary press w-full ${focusRing}`} disabled={pending || !botCheckDone}>
-                    {pending ? t.booking : !botCheckDone ? t.verifying : payment === "online" ? t.continueToPay : t.confirm}
+                  <button
+                    type="submit"
+                    className={`c-btn c-btn-primary press w-full ${focusRing}`}
+                    disabled={pending || !botCheckDone}
+                    aria-busy={pending || undefined}
+                  >
+                    <span className="c-btn-label">
+                      {pending ? t.booking : !botCheckDone ? t.verifying : payment === "online" ? t.continueToPay : t.confirm}
+                    </span>
+                    <span aria-hidden="true" className="c-spin" />
                   </button>
-                </Dock>
+                </RevealDock>
               </form>
             )}
 
@@ -568,21 +580,30 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
  * all of it) drops the summary line so the dock covers as little of the form as possible. It sits last in its column, so `mt-auto` keeps it low on a
  * short step and `sticky` keeps it in thumb reach on a long one.
  */
-function Dock(props: {
+type DockProps = {
   t: Dictionary;
   title: string;
   meta: string[];
   price: { from: boolean; cents: number } | null;
   avatar: Barber | null;
   compact?: boolean;
+  /** Set (by RevealDock): true while hidden below, false once shown. */
+  concealed?: boolean;
+  ref?: React.Ref<HTMLDivElement>;
   children?: React.ReactNode;
-}) {
+};
+function Dock({ ref, ...props }: DockProps) {
   const { t, price } = props;
+  const reveal = props.concealed === undefined ? "" : `c-dock-reveal ${props.concealed ? "is-concealed" : ""}`;
   return (
     <div
+      ref={ref}
+      tabIndex={props.concealed === undefined ? undefined : -1}
       role="group"
       aria-label={t.yourBooking}
-      className={`c-dock sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 mt-auto flex flex-col gap-3 ${props.compact ? "rounded-[2rem] p-1.5" : "rounded-[1.75rem] p-2.5"}`}
+      inert={props.concealed || undefined}
+      aria-hidden={props.concealed || undefined}
+      className={`c-dock sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 mt-auto flex flex-col gap-3 ${reveal} ${props.compact ? "c-dock-bare rounded-[2rem] p-1.5" : "rounded-[1.75rem] p-2.5"}`}
     >
       {!props.compact && (
         <div className="flex min-h-11 items-center gap-3 pr-2.5 pl-1.5">
@@ -601,6 +622,52 @@ function Dock(props: {
       )}
       {props.children}
     </div>
+  );
+}
+
+/**
+ * The details step's dock (the Book now button), shown only once the Client has reached the
+ * end of the page: it stays in the DOM and holds its place, but sits 1rem low at opacity 0,
+ * inert and aria-hidden, until an IntersectionObserver sees the sentinel at the form's end;
+ * then it slides up (.c-dock-reveal, transform/opacity; reduced motion: it just appears) and
+ * stays. A page that doesn't scroll sees the sentinel at once. Keyboard: the sentinel is the
+ * next tab stop while the dock is hidden, so tabbing on from the last field scrolls to the end,
+ * reveals the dock and moves focus to its button. An error or a booking in flight shows it too.
+ */
+function RevealDock({ force = false, ...dock }: DockProps & { force?: boolean }) {
+  const [seen, setSeen] = useState(false);
+  const shown = seen || force;
+  const dockRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const end = endRef.current;
+    if (shown || !end) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) setSeen(true);
+    });
+    io.observe(end);
+    return () => io.disconnect();
+  }, [shown]);
+
+  function revealFromKeyboard() {
+    flushSync(() => setSeen(true)); // drops inert now, so the button can take focus
+    // The button, or (while the bot check still holds it disabled) the dock itself, so focus
+    // stays at the end of the form and the next Tab reaches the button once it is ready.
+    const dockEl = dockRef.current;
+    (dockEl?.querySelector<HTMLElement>("button:not(:disabled)") ?? dockEl)?.focus();
+  }
+
+  return (
+    <>
+      <Dock {...dock} ref={dockRef} concealed={!shown} />
+      <span
+        ref={endRef}
+        tabIndex={shown ? undefined : 0}
+        onFocus={shown ? undefined : revealFromKeyboard}
+        className="pointer-events-none absolute bottom-0 left-0 size-px outline-none"
+      />
+    </>
   );
 }
 
@@ -715,41 +782,28 @@ function SummaryRow({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
+/** One raised card per way to pay (.c-pay): the icon in a soft tile, a filled radio; the chosen one lifts on an ink ring. */
 function PayOption(props: { checked: boolean; onChange: () => void; title: string; hint: string; icon: "shop" | "card" }) {
   return (
-    <label
-      className={`c-row min-h-[4.5rem]! cursor-pointer items-start! gap-3.5! py-4! transition-colors has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-ink ${
-        props.checked ? "c-selected" : ""
-      }`}
-    >
+    <label className={`c-pay press ${props.checked ? "is-on" : ""}`}>
       <input type="radio" name="payment" checked={props.checked} onChange={props.onChange} className="sr-only" />
-      <span
-        aria-hidden="true"
-        className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-[1.5px] ${props.checked ? "border-ink" : "border-muted"}`}
-      >
-        <span className={`c-radio-dot size-2.5 rounded-full bg-ink ${props.checked ? "is-on" : ""}`} />
+      <span className="c-tile">
+        {props.icon === "card" ? (
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+            <rect x="2.5" y="5.5" width="19" height="13" rx="2" />
+            <path d="M2.5 10h19M6 15h4" />
+          </svg>
+        ) : (
+          <ShopIcon className="h-5 w-5" />
+        )}
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="font-semibold">{props.title}</span>
         <span className="text-sm text-muted">{props.hint}</span>
       </span>
-      {props.icon === "card" ? (
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="mt-0.5 h-6 w-6 shrink-0 text-muted"
-        >
-          <rect x="2.5" y="5.5" width="19" height="13" rx="2" />
-          <path d="M2.5 10h19M6 15h4" />
-        </svg>
-      ) : (
-        <ShopIcon className="mt-0.5 h-6 w-6 shrink-0 text-muted" />
-      )}
+      <span aria-hidden="true" className="c-radio">
+        <span className={`c-radio-dot ${props.checked ? "is-on" : ""}`} />
+      </span>
     </label>
   );
 }
@@ -979,7 +1033,7 @@ function Confirmation(props: {
 
       <button
         type="button"
-        className={`c-btn c-btn-secondary press c-in self-start ${focusRing}`}
+        className={`c-btn c-btn-secondary press c-in w-full ${focusRing}`}
         style={{ "--i": 3 } as React.CSSProperties}
         onClick={onAgain}
       >

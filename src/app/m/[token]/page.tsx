@@ -276,7 +276,7 @@ function Summary({
     booking.paymentMethod === "online" && booking.paymentStatus !== "unpaid" ? (booking.paymentStatus === "refunded" ? m.refundedTag : m.paidOnline) : null;
 
   return (
-    <section aria-labelledby="booking-status" className="c-card c-in relative overflow-hidden" style={stagger(0)}>
+    <section aria-labelledby="booking-status" className="c-card m-ticket c-in relative overflow-hidden" style={stagger(0)}>
       <StatusLine view={view} m={m} />
       <dl className={inactive ? "text-muted" : "text-ink"}>
         <div className="px-5 pt-5 pb-5">
