@@ -1,10 +1,19 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-17, second session (depth, buttons, contrast and motion on /b, /m and the hero phone; all pushed). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-17, end of the third session (six /b milestones, booked check animation, light depth; all pushed, last commit `badaef8`). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-### Fourth round 2026-11-17: six /b milestones (all QA PASS; NOT committed yet)
+### START HERE next session (written 2026-11-17, end of the third session)
+
+Everything below is committed and pushed to `origin/main`. Nothing is running. Open items, in order:
+1. **Show the user and get feedback** on the redesigned /b (light theme, step indicator, desktop sizes). The user has twice said the light theme looked plain; this round (QA PASS, card vs ground contrast 1.5–2.1) is the boldest yet but the user has not seen it live. The "Book now" gloss fix (`--c-btn-gloss` soft fade, `--c-btn-ink` white label) was made after QA and only checked by computed colour, not by eye.
+2. **Leftover test data in demo-shop:** an open Booking Nov 17 12:30 PM with Carlos, "Visual Check" (718) 555-0101 (past the online cutoff: cancel in `/app/day`, or a DB cancel only with the user's OK), plus several cancelled "Visual Check" Bookings and Client rows.
+3. **/m not restyled for desktop by eye:** Job C checked `/m/invalid-token` only; a real manage page at ≥1024px wasn't seen. The shared `client-shell.tsx` column change applies there too.
+4. **Production:** set `NEXT_PUBLIC_SITE_URL` (calendar events fall back to the page origin anyway). `DESIGN.md` still says red is the one live-signal colour; the booked check is now green (`--c-success`) by user request — update `DESIGN.md` with `impeccable-documenter` when convenient.
+5. Older open items from the second session (dashed fields, booked-step choices, day-change height jump, unused dictionary string, demo photos, "text 2 hours before" claim, book-pay-online e2e) are listed under the second session's START HERE below.
+
+### Fourth round 2026-11-17: six /b milestones (all QA PASS; committed `74e725b`, pushed)
 
 User asks: new step indicator, green centred check, Google Calendar link instead of the raw URL, reserve button hides again on scroll up, desktop at 100% zoom not oversized/colliding, light theme with real Apple-style depth. Four `bm-worker` jobs + one `bm-qa` each.
 - **A (step indicator + booked step):** `.c-pager*` iOS page control (done dots, ink capsule for the current step, glass track, spring slide; role=progressbar). Booked check uses new `--c-success` green (light oklch 64% 0.17 150, dark 72% 0.19 150), check + heading centred. Raw URL + Copy row removed; "Add to Google Calendar" link (`googleCalendarHref`, UTC dates; manage link base = `NEXT_PUBLIC_SITE_URL` else `window.location.origin`). Copy reworded ("Need to change or cancel? Use the button below.").
@@ -14,12 +23,12 @@ User asks: new step indicator, green centred check, Google Calendar link instead
 - Checks: typecheck + lint clean; e2e book-now, manage, race, barber-profile 9/9.
 - **Needs the user:** a test Booking from QA is still open in demo-shop: Nov 17 12:30 PM with Carlos, "Visual Check" (718) 555-0101 — past the online cutoff, cancel it in /app/day (or OK a DB cancel). Several cancelled "Visual Check" Bookings and their Client rows remain too. Set `NEXT_PUBLIC_SITE_URL` in production so calendar events carry the real domain (falls back to the page origin anyway).
 
-### Third session 2026-11-17: booked check animation + deeper light-mode depth (committed `adce419`, `ca85193`; not pushed)
+### Third session 2026-11-17: booked check animation + deeper light-mode depth (committed `adce419`, `ca85193`; pushed)
 
 - **Booked check (`/b` final step):** the red disc springs in (scale 0.3 → 1.06 → 1, 560ms), the white tick draws itself (`stroke-dashoffset`, `pathLength=1`, from 380ms), then one soft ring ripples out and fades (from 640ms); a red drop-shadow glow under the disc. CSS `.c-check*` in `globals.css`, markup in `booking-flow.tsx`. Reduced motion: no animation, the resting state is the finished check. Checked frame by frame in the browser by pausing the animations (a real booking was not made, to avoid DB rows and texts).
 - **Light-mode depth, Apple-style:** `--c-depth`, `--c-depth-hi`, `--c-lift`, `--c-btn-shadow(-hi)`, `--c-press` now four layers (hairline contact, tight key, medium, wide ambient), stronger. New tokens `--c-sel` (chosen day/time ink tile) and `--c-tile-rest` (free time tiles stand a hair off the card); the dark blocks set both to the old values, so dark mode is unchanged. Time-tile hover uses `--c-press`.
 
-### START HERE next session (written 2026-11-17, end of the second session)
+### Earlier: START HERE (written 2026-11-17, end of the second session)
 
 **What this session did (all QA PASS, committed and pushed: `f0f0feb` hero phone, `feaf62a` footer removed, `5d77b6b` Client depth/buttons/calendar/reveal):** two rounds of user asks, each split into two parallel `bm-worker` jobs with their own files, then a `bm-qa` pass per job, small fixes by the orchestrator. Details of both rounds below. Checks at the end: typecheck, lint, landing e2e 12/12, book-now + manage + race 8/8, day.spec 14/14 (the walk-in test passed this time). Not re-run: `book-pay-online` (needs `npm run stripe:listen`; its click step was changed to scroll to the bottom first).
 
