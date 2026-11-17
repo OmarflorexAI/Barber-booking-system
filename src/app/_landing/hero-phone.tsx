@@ -15,7 +15,7 @@ type Phone = LandingDictionary["heroPhone"];
 const c = {
   card: "hp-card",
   rows: "hp-rows",
-  row: "flex w-full items-center gap-2.5 px-3 text-left hover:bg-[oklch(97.5%_0.002_260)] active:bg-[oklch(95.4%_0.003_260)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#0f0f0f]",
+  row: "hp-row flex w-full items-center gap-2.5 px-3 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#0f0f0f]",
   fill: "hp-disc",
   ink: "text-[oklch(17%_0_0)]",
   muted: "hp-muted",
@@ -205,7 +205,7 @@ export function HeroPhone({ p }: { p: Phone }) {
               >
                 <span className={`text-[8.5px] font-medium ${on ? "" : c.muted}`}>{w}</span>
                 {/* The chosen day's ink is this tile's ::before (fades in, settles from 0.9). */}
-                <span className={`hp-day grid h-[30px] w-[30px] place-items-center text-[12px] font-semibold ${c.mono} ${on ? "is-on" : ""} ${d === 0 ? "is-today" : ""}`}>
+                <span className={`hp-day grid h-[30px] w-[30px] place-items-center text-[12px] font-semibold ${c.mono} ${on ? "is-on" : ""}`}>
                   {dayNumber(p.day) + d}
                   <span className={`absolute bottom-[3px] h-[3px] w-[3px] rounded-full ${!open ? "bg-transparent" : on ? "bg-white" : "bg-current"}`} />
                 </span>
@@ -414,9 +414,9 @@ function Screen({ title, p, at, onBack, dock, children }: { title?: string; p: P
           <button
             type="button"
             onClick={onBack}
-            className={`-ml-1 flex min-h-8 min-w-11 items-center justify-self-start gap-0.5 rounded px-1 text-[11px] ${c.ink} focus-visible:outline-2 focus-visible:outline-[#0f0f0f]`}
+            className={`hp-back -ml-1 flex min-h-8 min-w-11 items-center justify-self-start gap-0.5 rounded px-1 text-[11px] ${c.ink} focus-visible:outline-2 focus-visible:outline-[#0f0f0f]`}
           >
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="hp-back-chev h-3 w-3">
               <path d="M15 18l-6-6 6-6" />
             </svg>
             {p.back}
@@ -471,7 +471,7 @@ function Dock({ name, sub, price }: { name: string; sub?: string; price: number 
 
 function Chevron() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 shrink-0 text-[oklch(42%_0.012_255)]">
+    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 hp-chev shrink-0 text-[oklch(42%_0.012_255)]">
       <path d="M7.5 4.5 13 10l-5.5 5.5" />
     </svg>
   );
