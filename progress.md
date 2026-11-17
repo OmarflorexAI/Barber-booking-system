@@ -4,6 +4,16 @@ Last updated: 2026-11-17, second session (depth, buttons, contrast and motion on
 
 ## Where we are
 
+### Fourth round 2026-11-17: six /b milestones (all QA PASS; NOT committed yet)
+
+User asks: new step indicator, green centred check, Google Calendar link instead of the raw URL, reserve button hides again on scroll up, desktop at 100% zoom not oversized/colliding, light theme with real Apple-style depth. Four `bm-worker` jobs + one `bm-qa` each.
+- **A (step indicator + booked step):** `.c-pager*` iOS page control (done dots, ink capsule for the current step, glass track, spring slide; role=progressbar). Booked check uses new `--c-success` green (light oklch 64% 0.17 150, dark 72% 0.19 150), check + heading centred. Raw URL + Copy row removed; "Add to Google Calendar" link (`googleCalendarHref`, UTC dates; manage link base = `NEXT_PUBLIC_SITE_URL` else `window.location.origin`). Copy reworded ("Need to change or cancel? Use the button below.").
+- **B (reserve dock):** `RevealDock` uses two observers on the sentinel (show at 0px, hide once the end is >160px below the screen) + `recheck()` on focus leaving the dock and when `force` ends; hide = quick slide-down/fade, reveal = spring.
+- **C (desktop sizing):** ≥1024px: 38rem column, one-row shop header, step label + pager on one row, h2 22px, buttons 48px, fields 46px, service rows 64px, barber rows ~68px, calendar cells 42px, time card = nav width (46.5rem). Summary dock on steps 1-3 is static (in flow) from 768px up, so it never covers the calendar. Checked at 1280x720, 1366x768, 1440x900, 1920x1080, 1024x576, 853x480.
+- **D (light theme):** cool ground (#ebecf0 top → `--paper` #d4d5db), three drifting low-chroma blobs (blue-grey, sand, white; 36s, transform only, off under reduced motion), five-layer card shadows, card vs ground contrast 1.5-2.1 (was 1.19), muted 5.66:1 on paper. Glossy primary capsule (`--c-btn-gloss`, label `--c-btn-ink` white); headings semibold -0.02em. Dark unchanged.
+- Checks: typecheck + lint clean; e2e book-now, manage, race, barber-profile 9/9.
+- **Needs the user:** a test Booking from QA is still open in demo-shop: Nov 17 12:30 PM with Carlos, "Visual Check" (718) 555-0101 — past the online cutoff, cancel it in /app/day (or OK a DB cancel). Several cancelled "Visual Check" Bookings and their Client rows remain too. Set `NEXT_PUBLIC_SITE_URL` in production so calendar events carry the real domain (falls back to the page origin anyway).
+
 ### Third session 2026-11-17: booked check animation + deeper light-mode depth (committed `adce419`, `ca85193`; not pushed)
 
 - **Booked check (`/b` final step):** the red disc springs in (scale 0.3 → 1.06 → 1, 560ms), the white tick draws itself (`stroke-dashoffset`, `pathLength=1`, from 380ms), then one soft ring ripples out and fades (from 640ms); a red drop-shadow glow under the disc. CSS `.c-check*` in `globals.css`, markup in `booking-flow.tsx`. Reduced motion: no animation, the resting state is the finished check. Checked frame by frame in the browser by pausing the animations (a real booking was not made, to avoid DB rows and texts).
