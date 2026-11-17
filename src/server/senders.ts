@@ -1,5 +1,6 @@
 import "server-only";
 import { createAlerts, type Alerts, type ChatProvider, type EmailProvider } from "./alerts";
+import { createClientEmail, type ClientEmail } from "./client-email";
 import { getSql } from "./db";
 import { requireManageLinkSecret } from "./booking-engine/manage-token";
 import { createDispatcher, type Senders } from "./dispatch";
@@ -67,6 +68,7 @@ let alertsModule: Alerts | undefined;
 let paymentsModule: Payments | null | undefined;
 let dispatcher: ReturnType<typeof createDispatcher> | undefined;
 let leadsModule: Leads | undefined;
+let clientEmailModule: ClientEmail | undefined;
 
 /** Client texts (B3). */
 export function texting(): Texting {
@@ -81,6 +83,16 @@ export function texting(): Texting {
     },
   });
   return textingModule;
+}
+
+/** Client emails (confirmation, cancelled, rescheduled), when the Client left an email. */
+export function clientEmail(): ClientEmail {
+  clientEmailModule ??= createClientEmail({
+    sql: getSql(),
+    email: emailProvider(),
+    config: { siteUrl: siteUrl(), manageLinkSecret: requireManageLinkSecret(process.env.MANAGE_LINK_SECRET) },
+  });
+  return clientEmailModule;
 }
 
 /** Barber alerts, Telegram linking and the Owner's daily email (B4). */
@@ -115,6 +127,7 @@ export function payments(): Payments | null {
 
 const senders: Senders = {
   sms: (m) => texting().send(m),
+  clientEmail: (m) => clientEmail().send(m),
   barberAlert: (m) => alerts().send(m),
   async refund(r) {
     const p = payments();

@@ -24,6 +24,16 @@ export class RetryLater extends Error {
 export type SmsTemplate = "confirmation" | "reminder" | "cancelled" | "rescheduled";
 
 export type SmsMessage = { shopId: string; bookingId: string; to: string; template: SmsTemplate };
+export type ClientEmailKind = "confirmation" | "cancelled" | "rescheduled";
+/** `by` is who made the change; `from` is the old start time of a moved Booking (ISO). */
+export type ClientEmailMessage = {
+  shopId: string;
+  bookingId: string;
+  to: string;
+  kind: ClientEmailKind;
+  by?: "client" | "barber" | "owner";
+  from?: string;
+};
 export type BarberAlert = {
   shopId: string;
   bookingId: string;
@@ -37,6 +47,7 @@ export type RefundFailure = { shopId: string; bookingId: string; amountCents: nu
 
 export type Senders = {
   sms(m: SmsMessage): Promise<void>;
+  clientEmail(m: ClientEmailMessage): Promise<void>;
   barberAlert(m: BarberAlert): Promise<void>;
   refund(r: RefundRequest): Promise<void>;
   refundFailed(f: RefundFailure): Promise<void>;
@@ -130,6 +141,22 @@ export function createDispatcher({ sql, senders }: { sql: Sql; senders: Senders 
     return r.phone_e164;
   }
 
+  /**
+   * Where to email the Client, decided at send time like texts: null when they left no
+   * email, or when the Booking was cancelled before a confirmation or move email went out.
+   */
+  async function emailRecipient(bookingId: string, kind: ClientEmailKind): Promise<string | null> {
+    const [r] = await sql<{ status: string; email: string | null }[]>`
+      select b.status, c.email
+      from public.bookings b
+      left join public.clients c on c.id = b.client_id
+      where b.id = ${bookingId}
+    `;
+    if (!r || !r.email) return null;
+    if (r.status === "cancelled" && kind !== "cancelled") return null;
+    return r.email;
+  }
+
   async function deliver(row: OutboxRow): Promise<"sent" | "skipped"> {
     const p = row.payload;
     // The Booking was deleted (Shop data removed, test cleanup): nothing left to tell anyone.
@@ -149,6 +176,16 @@ export function createDispatcher({ sql, senders }: { sql: Sql; senders: Senders 
         const to = await textRecipient(row.booking_id!, template);
         if (!to) return "skipped";
         await senders.sms({ shopId: row.shop_id, bookingId: row.booking_id!, to, template });
+        return "sent";
+      }
+      case "email_confirmation":
+      case "email_cancelled":
+      case "email_rescheduled": {
+        const kind = row.type.slice("email_".length) as ClientEmailKind;
+        const to = await emailRecipient(row.booking_id!, kind);
+        if (!to) return "skipped";
+        const { by, from } = p as { by?: ClientEmailMessage["by"]; from?: string };
+        await senders.clientEmail({ shopId: row.shop_id, bookingId: row.booking_id!, to, kind, by, from });
         return "sent";
       }
       case "refund_failed": {

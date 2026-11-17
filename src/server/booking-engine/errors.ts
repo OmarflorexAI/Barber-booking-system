@@ -17,7 +17,7 @@ export type BookingErrorCode =
   | "SLOT_TAKEN" // the time is no longer free (race lost or not on the grid / in hours)
   | "OUTSIDE_WINDOW" // earlier than 30 min from now or later than 30 days ahead
   | "INVALID_INPUT"
-  | "INVALID_EMAIL" // a Barber's alert email doesn't look like an email
+  | "INVALID_EMAIL" // a Barber's alert email or a Client's booking email doesn't look like an email
   | "NOT_FOUND"
   | "SHOP_UNAVAILABLE"
   | "PHONE_BLOCKED"

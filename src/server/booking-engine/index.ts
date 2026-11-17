@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type postgres from "postgres";
 import type { ISql, Sql } from "postgres";
 import type { Locale } from "@/lib/i18n/dictionaries";
+import { normalizeEmail } from "@/lib/email";
 import { normalizePhone } from "@/lib/phone";
 import { bookingWindow, computeSlots, RULES, type DayHours, type Interval } from "./availability";
 import {
@@ -158,13 +159,19 @@ async function writeOutbox(db: Db, shopId: string, bookingId: string | null, typ
   `;
 }
 
-/** Schedule (or reschedule) the 2-hour reminder; skip it when the Booking is less than 2 hours away. */
-/** A Booking became real: schedule the reminder, alert the Barber, text the Client (when allowed). */
-async function announceConfirmed(db: Db, b: BookingRow, textTo: string | null, now: Date) {
+/**
+ * A Booking became real: schedule the reminder, alert the Barber, text the Client (when
+ * allowed) and email them (when they left an email). The address itself is looked up
+ * again at send time, so the outbox row carries none.
+ */
+async function announceConfirmed(db: Db, b: BookingRow, textTo: string | null, hasEmail: boolean, now: Date) {
   await scheduleReminder(db, b, now);
   await writeOutbox(db, b.shop_id, b.id, "barber_alert", { event: "created", barberId: b.barber_id });
   if (textTo) await writeOutbox(db, b.shop_id, b.id, "sms_confirmation", { phone: textTo });
+  if (hasEmail) await writeOutbox(db, b.shop_id, b.id, "email_confirmation", {});
 }
+
+/** Schedule (or reschedule) the 2-hour reminder; skip it when the Booking is less than 2 hours away. */
 
 async function scheduleReminder(db: Db, b: { id: string; shop_id: string; starts_at: Date }, now: Date) {
   const sendAt = new Date(b.starts_at.getTime() - RULES.reminderLeadMin * MINUTE);
@@ -444,7 +451,8 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     serviceId: string;
     barberId: string | "any";
     startsAt: Date;
-    client: { name: string; phone: string };
+    /** `email` is optional: empty or missing means no Client emails for this Booking. */
+    client: { name: string; phone: string; email?: string | null };
     paymentMethod: PaymentMethod;
     /** The language the Client booked in; their texts use it. */
     locale?: Locale;
@@ -456,6 +464,8 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     if (name.length < 1 || name.length > 80) throw invalid("Please enter your name.");
     const phone = normalizePhone(args.client.phone);
     if (!phone) throw invalid("Please enter a valid phone number.");
+    const email = normalizeEmail(args.client.email);
+    if (email === "invalid") throw new BookingError("INVALID_EMAIL", "That email doesn't look right.");
     if (Number.isNaN(startsAt.getTime())) throw invalid("Invalid time");
 
     const { earliest, latest } = bookingWindow(now);
@@ -490,10 +500,11 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
         const booking = await sql.begin(async (tx) => {
           // Upserting the Client row locks it until commit, so two Bookings for one
           // phone are counted one after the other (the unpaid limit cannot be raced).
-          const [client] = await tx<{ id: string; blocked: boolean; sms_opt_out: boolean }[]>`
-            insert into public.clients (shop_id, name, phone_e164) values (${shopId}, ${name}, ${phone})
-            on conflict (shop_id, phone_e164) do update set name = excluded.name
-            returning id, blocked, sms_opt_out
+          // A repeat Client who leaves the email empty keeps the one they gave before.
+          const [client] = await tx<{ id: string; blocked: boolean; sms_opt_out: boolean; email: string | null }[]>`
+            insert into public.clients (shop_id, name, phone_e164, email) values (${shopId}, ${name}, ${phone}, ${email})
+            on conflict (shop_id, phone_e164) do update set name = excluded.name, email = coalesce(excluded.email, public.clients.email)
+            returning id, blocked, sms_opt_out, email
           `;
           if (client.blocked) {
             throw new BookingError("PHONE_BLOCKED", "This number cannot book online. Please call the shop.");
@@ -533,7 +544,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
           `;
 
           // An online Booking only holds the time; it is confirmed (and announced) when paid.
-          if (!online) await announceConfirmed(tx, b, shop.sms_enabled && !client.sms_opt_out ? phone : null, now);
+          if (!online) await announceConfirmed(tx, b, shop.sms_enabled && !client.sms_opt_out ? phone : null, !!client.email, now);
           return b;
         });
         return { booking: toSummary(booking), manageToken: token };
@@ -550,7 +561,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     const rows =
       actor.kind === "client"
         ? await tx<(BookingRow & ShopFields)[]>`
-            select b.*, s.cancel_cutoff_minutes, (s.sms_enabled and s.plan = 'pro') as sms_enabled, s.timezone, c.sms_opt_out, c.phone_e164
+            select b.*, s.cancel_cutoff_minutes, (s.sms_enabled and s.plan = 'pro') as sms_enabled, s.timezone, c.sms_opt_out, c.phone_e164, c.email as client_email
             from public.bookings b
             join public.shops s on s.id = b.shop_id
             left join public.clients c on c.id = b.client_id
@@ -558,7 +569,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
             for update of b
           `
         : await tx<(BookingRow & ShopFields)[]>`
-            select b.*, s.cancel_cutoff_minutes, (s.sms_enabled and s.plan = 'pro') as sms_enabled, s.timezone, c.sms_opt_out, c.phone_e164
+            select b.*, s.cancel_cutoff_minutes, (s.sms_enabled and s.plan = 'pro') as sms_enabled, s.timezone, c.sms_opt_out, c.phone_e164, c.email as client_email
             from public.bookings b
             join public.shops s on s.id = b.shop_id
             left join public.clients c on c.id = b.client_id
@@ -582,7 +593,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     }
     return { b, cancelledBy };
   }
-  type ShopFields = { cancel_cutoff_minutes: number; sms_enabled: boolean; timezone: string; sms_opt_out: boolean | null; phone_e164: string | null };
+  type ShopFields = { cancel_cutoff_minutes: number; sms_enabled: boolean; timezone: string; sms_opt_out: boolean | null; phone_e164: string | null; client_email: string | null };
 
   async function cancelBooking(args: { actor: Actor; bookingId?: string; now: Date }): Promise<BookingSummary> {
     const { actor, now } = args;
@@ -602,6 +613,8 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
       if (cancelledBy !== "client" && b.sms_enabled && b.phone_e164 && !b.sms_opt_out) {
         await writeOutbox(tx, b.shop_id, b.id, "sms_cancelled", { phone: b.phone_e164 });
       }
+      // Unlike the text, the email also goes when the Client cancelled: it is their receipt.
+      if (b.client_email) await writeOutbox(tx, b.shop_id, b.id, "email_cancelled", { by: cancelledBy });
       return updated;
     });
     return toSummary(row);
@@ -644,6 +657,9 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
         });
         if (cancelledBy !== "client" && b.sms_enabled && b.phone_e164 && !b.sms_opt_out) {
           await writeOutbox(tx, b.shop_id, b.id, "sms_rescheduled", { phone: b.phone_e164 });
+        }
+        if (b.client_email) {
+          await writeOutbox(tx, b.shop_id, b.id, "email_rescheduled", { by: cancelledBy, from: b.starts_at.toISOString() });
         }
         return updated;
       });
@@ -824,8 +840,8 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
     args: { bookingId: string; paymentRef: string; now: Date },
     db: Db = sql,
   ): Promise<"confirmed" | "refunding" | "already_paid"> {
-    const [b] = await db<(BookingRow & { sms_enabled: boolean; sms_opt_out: boolean | null; phone_e164: string | null })[]>`
-      select b.*, (s.sms_enabled and s.plan = 'pro') as sms_enabled, c.sms_opt_out, c.phone_e164
+    const [b] = await db<(BookingRow & { sms_enabled: boolean; sms_opt_out: boolean | null; phone_e164: string | null; client_email: string | null })[]>`
+      select b.*, (s.sms_enabled and s.plan = 'pro') as sms_enabled, c.sms_opt_out, c.phone_e164, c.email as client_email
       from public.bookings b
       join public.shops s on s.id = b.shop_id
       left join public.clients c on c.id = b.client_id
@@ -841,7 +857,7 @@ export function createBookingEngine(sql: Sql, opts: { manageLinkSecret: string }
         set status = 'confirmed', payment_status = 'paid', payment_ref = ${args.paymentRef}, hold_expires_at = null
         where id = ${b.id} returning *
       `;
-      await announceConfirmed(db, updated, b.sms_enabled && b.phone_e164 && !b.sms_opt_out ? b.phone_e164 : null, args.now);
+      await announceConfirmed(db, updated, b.sms_enabled && b.phone_e164 && !b.sms_opt_out ? b.phone_e164 : null, !!b.client_email, args.now);
       return "confirmed";
     }
     // Paid after the hold was released (or the Booking was otherwise cancelled): give it all back.

@@ -17,7 +17,8 @@ import { createReporting } from "@/server/reporting";
  */
 
 export type ChatProvider = { send(m: { chatId: number; text: string }): Promise<void> };
-export type EmailProvider = { send(m: { to: string[]; subject: string; text: string }): Promise<void> };
+/** `html` is optional; without it the email is plain text. */
+export type EmailProvider = { send(m: { to: string[]; subject: string; text: string; html?: string }): Promise<void> };
 
 export type AlertsConfig = {
   siteUrl: string;

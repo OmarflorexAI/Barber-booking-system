@@ -14,6 +14,8 @@ const Input = z.object({
   startsAt: z.iso.datetime(),
   name: z.string().trim().min(1).max(80),
   phone: z.string().trim().min(7).max(25),
+  // Optional: empty means no emails. The engine checks it again and lowercases it.
+  email: z.string().trim().max(254).pipe(z.union([z.literal(""), z.email()])).optional(),
   paymentMethod: z.enum(["in_person", "online"]),
   locale: z.enum(["en", "es"]).default("en"),
   turnstileToken: z.string().optional(),
@@ -26,7 +28,10 @@ export type CreateBookingResult =
 /** The public booking form. Holds no rules itself: it checks the bot test and asks the engine. */
 export async function createBookingAction(raw: z.input<typeof Input>): Promise<CreateBookingResult> {
   const parsed = Input.safeParse(raw);
-  if (!parsed.success) return { ok: false, code: "INVALID_INPUT" };
+  if (!parsed.success) {
+    const emailBad = parsed.error.issues.some((i) => i.path[0] === "email");
+    return { ok: false, code: emailBad ? "INVALID_EMAIL" : "INVALID_INPUT" };
+  }
   const input = parsed.data;
 
   const h = await headers();
@@ -39,7 +44,7 @@ export async function createBookingAction(raw: z.input<typeof Input>): Promise<C
       serviceId: input.serviceId,
       barberId: input.barberId,
       startsAt: new Date(input.startsAt),
-      client: { name: input.name, phone: input.phone },
+      client: { name: input.name, phone: input.phone, email: input.email || null },
       paymentMethod: input.paymentMethod,
       locale: input.locale,
       now: new Date(),

@@ -73,6 +73,7 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
   const [slot, setSlot] = useState<Slot | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [payment, setPayment] = useState<"in_person" | "online">("in_person");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   // A Turnstile token works once: after any answer that keeps the Client here, a fresh widget issues a new one.
@@ -134,6 +135,7 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
         startsAt: slot.startsAt,
         name,
         phone,
+        email: email.trim(),
         paymentMethod: payment,
         locale,
         turnstileToken: turnstileToken ?? undefined,
@@ -488,6 +490,22 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                       onChange={(e) => setPhone(e.target.value)}
                     />
                     <span className="text-sm text-muted">{t.phoneHint}</span>
+                  </label>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium">{t.clientEmail}</span>
+                    <input
+                      className="c-field"
+                      name="email"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      autoCapitalize="none"
+                      spellCheck={false}
+                      maxLength={254}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <span className="text-sm text-muted">{t.clientEmailHint}</span>
                   </label>
                 </div>
 

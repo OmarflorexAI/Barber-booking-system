@@ -18,7 +18,7 @@ function fakeSenders() {
       if (failing.has(channel)) throw new Error(`${channel} provider down`);
       sent.push({ channel, msg: msg as Record<string, unknown> });
     };
-  const senders: Senders = { sms: rec("sms"), barberAlert: rec("barberAlert"), refund: rec("refund"), refundFailed: rec("refundFailed") };
+  const senders: Senders = { sms: rec("sms"), clientEmail: rec("clientEmail"), barberAlert: rec("barberAlert"), refund: rec("refund"), refundFailed: rec("refundFailed") };
   return { senders, sent, failing };
 }
 
