@@ -313,14 +313,61 @@ body:has(.landing) {
  * doesn't grow), side buttons as pseudo-elements sticking 3px out (absolute, no layout),
  * a faint light edge so it separates from the near-black hero, and a soft wide shadow.
  */
-.hero-phone-tilt {
-  transform-origin: 50% 45%;
-  transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+/* The hover: no 3D lean (a rotated screen is re-sampled and its text goes soft). Instead a
+   light catches the graphite rim where the pointer is: one soft blob, moved with translate
+   inside a ring-shaped mask, so the screen itself never moves and stays pin-sharp. The layer
+   is always there (opacity 0 at rest), so hovering never changes how the screen is drawn. */
+.hero-phone-glint {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 2px;
+  overflow: hidden;
+  pointer-events: none;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  opacity: 0;
+  transition: opacity 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.hero-phone-glint > span {
+  position: absolute;
+  top: -110px;
+  left: -110px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.25) 45%, rgb(255 255 255 / 0));
+  will-change: transform;
+}
+/* Behind the device: a faint light spilling past its edges near the pointer (56px reach,
+   HALO in hero-phone.tsx), so the hover reads without touching the screen. */
+.hero-phone-halo {
+  position: absolute;
+  inset: -56px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.hero-phone-halo > span {
+  position: absolute;
+  top: -170px;
+  left: -170px;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.06) 55%, rgb(255 255 255 / 0));
+  will-change: transform;
+}
+.hero-phone-glint[data-on],
+.hero-phone-halo[data-on] {
+  opacity: 1;
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero-phone-tilt {
-    transition: none;
-    transform: none !important;
+  .hero-phone-glint,
+  .hero-phone-halo {
+    display: none;
   }
 }
 .hero-phone-frame {
@@ -383,14 +430,225 @@ body:has(.landing) {
 }
 
 /*
- * Inside the hero phone (hero-phone.tsx). Items rise in with a short stagger when a screen
- * appears (--i sets the order; fill "backwards" so hover/press transforms win afterwards).
- * The chosen day's ink tile springs between days. The ticket's notches are cut with a mask
- * and its shadow is a drop-shadow on a wrapper, so the shadow follows the cut. The primary
- * button: an ink capsule lit from above, lifted on hover, springing back from a press, with
- * a light sheen that sweeps once when it appears and again on hover. Only transform and
- * opacity animate; reduced motion: none of it, the button only changes colour.
+ * Inside the hero phone (hero-phone.tsx): the real /b booking page in LIGHT mode, scaled to
+ * the phone (about 0.75x). .hp-screen carries the page's light tokens (the cool grey ground,
+ * the rims, the layered depth), and each .hp-* part mirrors its .c-* twin: .hp-card = .c-card,
+ * .hp-timecard = .c-timecard, .hp-day/.hp-time = .c-day/.c-time, .hp-pager = .c-pager,
+ * .hp-dock = .c-dock, .hp-btn = .c-btn-primary, .hp-check = .c-check. Change one, change both.
+ * Items rise in with a short stagger when a screen appears (--i sets the order; fill
+ * "backwards" so hover/press transforms win afterwards). Picks are calm: the chosen day or
+ * time is an ink layer that shows at once and settles from 0.9 scale with an ease-out that
+ * never passes 1, so nothing leaves its tile. Only transform and opacity animate; reduced
+ * motion: none of it.
  */
+.hp-screen {
+  --hp-ink: oklch(17% 0 0);
+  --hp-raised: oklch(95.4% 0.003 260);
+  --hp-line: oklch(87% 0.005 260);
+  --hp-muted: oklch(42% 0.012 255);
+  --hp-rim: oklch(0% 0 0 / 0.085);
+  --hp-rim-top: oklch(0% 0 0 / 0.05);
+  --hp-rim-in: oklch(0% 0 0 / 0.09);
+  --hp-glint: oklch(100% 0 0);
+  --hp-depth:
+    0 1px 1px oklch(0% 0 0 / 0.08), 0 2px 5px -2px oklch(0% 0 0 / 0.1), 0 9px 18px -6px oklch(0% 0 0 / 0.14),
+    0 22px 44px -15px oklch(0% 0 0 / 0.3), 0 44px 88px -30px oklch(22% 0.02 255 / 0.28);
+  --hp-lift:
+    0 1px 1px oklch(0% 0 0 / 0.08), 0 2px 6px -2px oklch(0% 0 0 / 0.1), 0 12px 25px -8px oklch(0% 0 0 / 0.16),
+    0 26px 52px -16px oklch(0% 0 0 / 0.32), 0 58px 110px -36px oklch(22% 0.02 255 / 0.32);
+  --hp-press: 0 1px 2px oklch(0% 0 0 / 0.1), 0 3px 8px -3px oklch(0% 0 0 / 0.16);
+  --hp-tile-rest: inset 0 1px 0 oklch(100% 0 0 / 0.7), 0 1px 1.5px oklch(0% 0 0 / 0.1);
+  --hp-sel: 0 1px 2px oklch(0% 0 0 / 0.22), 0 3px 6px -2px oklch(0% 0 0 / 0.22), 0 9px 16px -6px oklch(0% 0 0 / 0.5);
+  --hp-well: inset 0 1px 3px oklch(0% 0 0 / 0.1), inset 0 0 0 1px oklch(0% 0 0 / 0.07);
+  --hp-btn-top: oklch(42% 0.006 255);
+  --hp-btn-bot: oklch(13% 0.004 255);
+  --hp-btn-hi: oklch(100% 0 0 / 0.34);
+  --hp-success: oklch(64% 0.17 150);
+  color: var(--hp-ink);
+  font-variant-numeric: tabular-nums;
+  /* The page's ground: a cool vertical light with its three faint blobs (white up left,
+     blue-grey up right, sand mid left), sized to the screen. */
+  background:
+    radial-gradient(closest-side, oklch(100% 0 0 / 0.6), oklch(100% 0 0 / 0)) 22% 2% / 90% 40% no-repeat,
+    radial-gradient(closest-side, oklch(76% 0.03 240 / 0.6), oklch(76% 0.03 240 / 0)) 84% 22% / 96% 48% no-repeat,
+    radial-gradient(closest-side, oklch(85% 0.03 75 / 0.7), oklch(85% 0.03 75 / 0)) 10% 58% / 86% 44% no-repeat,
+    linear-gradient(180deg, oklch(94.4% 0.004 260) 0%, oklch(88.2% 0.006 260) 32%, oklch(87.4% 0.006 260) 70%, oklch(87% 0.006 260) 86%);
+}
+.hp-muted {
+  color: var(--hp-muted);
+}
+.hp-card,
+.hp-timecard {
+  background: #fff;
+  border: 1px solid var(--hp-rim);
+  border-top-color: var(--hp-rim-top);
+  border-radius: 15px;
+  box-shadow:
+    inset 0 1px 0 var(--hp-glint),
+    var(--hp-depth);
+}
+.hp-timecard {
+  box-shadow:
+    inset 0 1px 0 var(--hp-glint),
+    var(--hp-lift);
+}
+/* iOS separators: a hairline under every row but the last, inset from the left (--sep). */
+.hp-rows > li:not(:last-child) {
+  position: relative;
+}
+.hp-rows > li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  inset-inline: var(--sep, 12px) 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--hp-line);
+  pointer-events: none;
+}
+.hp-rule {
+  background: var(--hp-line);
+}
+/* A grey disc (initials, the "any" icon, the dock's letter) with a crisp inner rim. */
+.hp-disc {
+  background: var(--hp-raised);
+  box-shadow: inset 0 0 0 1px var(--hp-rim-in);
+}
+/* A white raised capsule inside a card (the "Special" tag). */
+.hp-tag {
+  background: #fff;
+  box-shadow:
+    inset 0 1px 0 var(--hp-glint),
+    0 0 0 1px var(--hp-rim),
+    0 1px 2px oklch(0% 0 0 / 0.08);
+}
+/* The page control (.c-pager at 0.75x): done dots solid, the current step an ink capsule,
+   the rest faint, on a slim inset track. Mark j sits at j * pitch; marks after the current
+   one shift right by --pg-extra to make room for the capsule. */
+.hp-pager {
+  --pg-dot: 6px;
+  --pg-pitch: 12px;
+  --pg-extra: 18px;
+  --pg-pad: 4px;
+  position: relative;
+  display: block;
+  box-sizing: content-box;
+  width: calc(4 * var(--pg-pitch) + var(--pg-dot) + var(--pg-extra));
+  height: var(--pg-dot);
+  padding: var(--pg-pad) calc(var(--pg-pad) + 1px);
+  border-radius: 999px;
+  background: oklch(17% 0 0 / 0.05);
+  box-shadow: var(--hp-well);
+}
+.hp-pager-dot,
+.hp-pager-cap {
+  position: absolute;
+  top: var(--pg-pad);
+  left: calc(var(--pg-pad) + 1px);
+  height: var(--pg-dot);
+  border-radius: 999px;
+}
+.hp-pager-dot {
+  width: var(--pg-dot);
+  translate: calc(var(--j) * var(--pg-pitch) + var(--after) * var(--pg-extra)) 0;
+  background: oklch(17% 0 0 / 0.2);
+}
+.hp-pager-dot.is-done {
+  background: var(--hp-ink);
+}
+.hp-pager-dot.is-now {
+  opacity: 0;
+}
+.hp-pager-cap {
+  width: calc(var(--pg-dot) + var(--pg-extra));
+  translate: calc(var(--i) * var(--pg-pitch)) 0;
+  background:
+    linear-gradient(to bottom, var(--hp-btn-hi), transparent 55%),
+    linear-gradient(to bottom, var(--hp-btn-top), var(--hp-btn-bot));
+  box-shadow:
+    0 1px 2px oklch(0% 0 0 / 0.25),
+    0 2px 6px -1px oklch(17% 0 0 / 0.35);
+}
+/* The week (.c-day): the chosen day's ink lives on ::before, so choosing a day changes one
+   layer's opacity and scale (never a background or a shadow). */
+.hp-day {
+  position: relative;
+  isolation: isolate;
+  border-radius: 9px;
+}
+.hp-day.is-today {
+  background: var(--hp-raised);
+  box-shadow: inset 0 0 0 1px var(--hp-rim-in);
+}
+.hp-day.is-on {
+  color: #fff;
+}
+.hp-day::before,
+.hp-time::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--hp-ink);
+  box-shadow:
+    inset 0 1px 0 oklch(100% 0 0 / 0.16),
+    var(--hp-sel);
+  opacity: 0;
+  scale: 0.9;
+  pointer-events: none;
+}
+.hp-day.is-on::before,
+.hp-time[aria-pressed="true"]::before {
+  opacity: 1;
+  scale: 1;
+}
+/* A free time (.c-time): a --raised tile a hair off the card. On hover a white raised layer
+   fades in over it (no movement). */
+.hp-time {
+  position: relative;
+  isolation: isolate;
+  border-radius: 10px;
+  background: var(--hp-raised);
+  box-shadow:
+    inset 0 0 0 1px var(--hp-rim-in),
+    var(--hp-tile-rest);
+}
+.hp-time[aria-pressed="true"] {
+  background: transparent;
+  box-shadow: none;
+  color: #fff;
+}
+.hp-time::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: #fff;
+  box-shadow:
+    inset 0 0 0 1px var(--hp-rim),
+    var(--hp-press);
+  opacity: 0;
+  pointer-events: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .hp-day:not(.is-on):hover {
+    background: var(--hp-raised);
+  }
+  .hp-time[aria-pressed="false"]:hover::after {
+    opacity: 1;
+  }
+}
+/* The dock (.c-dock): near-solid white on a rim and the lifted shadow. No backdrop blur: in
+   the phone the dock never sits over content. */
+.hp-dock {
+  background: oklch(100% 0 0 / 0.94);
+  border: 1px solid var(--hp-rim);
+  border-top-color: var(--hp-rim-top);
+  box-shadow:
+    inset 0 1px 0 var(--hp-glint),
+    var(--hp-lift);
+}
 @keyframes hp-rise {
   from {
     opacity: 0;
@@ -405,30 +663,21 @@ body:has(.landing) {
     transform: translateX(130%) skewX(-18deg);
   }
 }
-.hp-raised {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.22),
-    0 1px 1px rgb(0 0 0 / 0.18),
-    0 3px 6px -1px rgb(0 0 0 / 0.18),
-    0 8px 16px -8px rgb(0 0 0 / 0.4);
-}
-.hp-day-ink {
-  transform: translateX(calc(var(--d, 0) * (100% + 4px)));
-}
+/* The ticket: notches cut with a mask, its shadow a drop-shadow on a wrapper so it follows the cut. */
 .hp-ticket-shadow {
-  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.05)) drop-shadow(0 4px 8px rgb(0 0 0 / 0.06))
-    drop-shadow(0 18px 26px rgb(0 0 0 / 0.16));
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.08)) drop-shadow(0 6px 10px rgb(0 0 0 / 0.1))
+    drop-shadow(0 22px 30px rgb(0 0 0 / 0.2));
 }
 .hp-ticket {
   --tear: 60px;
-  border-radius: 18px;
+  border-radius: 15px;
   background:
-    radial-gradient(circle at 0 var(--tear), rgb(0 0 0 / 0.09) 7px, transparent 10.5px),
-    radial-gradient(circle at 100% var(--tear), rgb(0 0 0 / 0.09) 7px, transparent 10.5px),
-    linear-gradient(#fff, #fcfcfd);
+    radial-gradient(circle at 0 var(--tear), rgb(0 0 0 / 0.1) 7px, transparent 10.5px),
+    radial-gradient(circle at 100% var(--tear), rgb(0 0 0 / 0.1) 7px, transparent 10.5px),
+    #fff;
   box-shadow:
     inset 0 1px 0 #fff,
-    inset 0 0 0 1px rgb(0 0 0 / 0.05);
+    inset 0 0 0 1px var(--hp-rim);
   -webkit-mask:
     radial-gradient(circle at 0 var(--tear), transparent 7px, #000 7.5px) left / 51% 100% no-repeat,
     radial-gradient(circle at 100% var(--tear), transparent 7px, #000 7.5px) right / 51% 100% no-repeat;
@@ -436,34 +685,28 @@ body:has(.landing) {
     radial-gradient(circle at 0 var(--tear), transparent 7px, #000 7.5px) left / 51% 100% no-repeat,
     radial-gradient(circle at 100% var(--tear), transparent 7px, #000 7.5px) right / 51% 100% no-repeat;
 }
+/* The primary capsule (.c-btn-primary): glossy ink, lighter at the top, a lit top edge, on a
+   crisp contact and a wide key; a sheen sweeps once on arrival and on hover. */
 .hp-btn {
   position: relative;
   isolation: isolate;
-  background: linear-gradient(to bottom, #2a2a2d, #121213 55%, #0b0b0b);
+  overflow: hidden;
+  background-color: var(--hp-btn-bot);
+  background-image:
+    linear-gradient(180deg, oklch(100% 0 0 / 0.16), oklch(100% 0 0 / 0.05) 42%, oklch(100% 0 0 / 0) 72%),
+    linear-gradient(180deg, var(--hp-btn-top), var(--hp-btn-bot));
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.2),
-    inset 0 -1px 0 rgb(0 0 0 / 0.3),
-    0 1px 2px rgb(0 0 0 / 0.24),
-    0 10px 22px -10px rgb(0 0 0 / 0.45);
-  transition: background-color 150ms;
+    inset 0 1px 0 var(--hp-btn-hi),
+    0 1px 2px oklch(15% 0.01 255 / 0.4),
+    0 3px 6px -2px oklch(15% 0.01 255 / 0.3),
+    0 10px 20px -6px oklch(15% 0.01 255 / 0.4),
+    0 22px 40px -14px oklch(15% 0.01 255 / 0.42);
   -webkit-tap-highlight-color: transparent;
-}
-/* The deeper hover shadow sits on its own layer and fades in (opacity, not box-shadow). */
-.hp-btn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  box-shadow:
-    0 2px 4px rgb(0 0 0 / 0.2),
-    0 16px 30px -10px rgb(0 0 0 / 0.5);
-  opacity: 0;
-  transition: opacity 200ms ease-out;
 }
 .hp-btn-sheen {
   position: absolute;
   inset: 0;
+  z-index: -1;
   overflow: hidden;
   border-radius: inherit;
   pointer-events: none;
@@ -473,13 +716,45 @@ body:has(.landing) {
   position: absolute;
   inset: 0 auto 0 0;
   width: 60%;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.16) 50%, transparent);
+  background: linear-gradient(90deg, transparent, oklch(100% 0 0 / 0.26) 50%, transparent);
   transform: translateX(-130%) skewX(-18deg);
   opacity: 0;
 }
-@media (hover: hover) {
-  .hp-btn:hover::before {
-    opacity: 1;
+/* The booked check (.c-check): the success green disc, the tick drawn by hand, one ring. */
+.hp-check {
+  color: var(--hp-success);
+  filter: drop-shadow(0 5px 10px color-mix(in oklch, var(--hp-success) 34%, transparent));
+}
+.hp-check-disc,
+.hp-check-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.hp-check-ring {
+  opacity: 0;
+}
+@keyframes hp-check-disc {
+  from {
+    opacity: 0;
+    scale: 0.4;
+  }
+}
+@keyframes hp-check-tick {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes hp-check-ring {
+  0% {
+    opacity: 0.45;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.45;
   }
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -487,50 +762,48 @@ body:has(.landing) {
     animation: hp-rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
     animation-delay: calc(40ms + var(--i, 0) * 35ms);
   }
-  .hp-day-ink {
-    transition: transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Calm picks: an ease-out whose curve never passes 1 (no overshoot). */
+  .hp-day.is-on::before,
+  .hp-time[aria-pressed="true"]::before {
+    transition: scale 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .hp-time::after {
+    transition: opacity 150ms ease-out;
+  }
+  .hp-time {
+    transition: scale 120ms ease-out;
+  }
+  .hp-time:active {
+    scale: 0.97;
   }
   .hp-btn {
-    transition: transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: scale 200ms cubic-bezier(0.22, 1, 0.36, 1);
   }
   .hp-btn:active {
-    transform: scale(0.97);
+    scale: 0.97;
     transition-duration: 90ms;
-    transition-timing-function: ease-out;
   }
   .hp-btn-sheen::before {
     opacity: 1;
     animation: hp-sheen 900ms cubic-bezier(0.4, 0, 0.2, 1) 650ms backwards;
   }
   @media (hover: hover) {
-    .hp-btn:hover {
-      transform: translateY(-1px);
-    }
-    .hp-btn:hover:active {
-      transform: translateY(0) scale(0.97);
-    }
     .hp-btn:hover .hp-btn-sheen::before {
       transform: translateX(130%) skewX(-18deg);
       transition: transform 800ms cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  .hp-btn:hover {
-    background: linear-gradient(to bottom, #333336, #1a1a1b 55%, #121212);
+  .hp-check-disc {
+    animation: hp-check-disc 480ms cubic-bezier(0.22, 1, 0.36, 1) 80ms backwards;
+  }
+  .hp-check-tick {
+    animation: hp-check-tick 380ms cubic-bezier(0.65, 0, 0.35, 1) 340ms backwards;
+  }
+  .hp-check-ring {
+    animation: hp-check-ring 900ms cubic-bezier(0.2, 0.7, 0.3, 1) 600ms;
   }
 }
 
-/* The hero phone: the booked check pops in. */
-@keyframes landing-pop {
-  0% {
-    scale: 0.85;
-    opacity: 0.3;
-  }
-  60% {
-    scale: 1.06;
-  }
-}
 /*
  * Live dots (the timeline's "starts here" dot, the phone's "try it" hint): a ring
  * expands and fades from the dot. Only transform and opacity animate, and only while
@@ -560,9 +833,6 @@ body:has(.landing) {
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .landing-pop {
-    animation: landing-pop 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
   .landing-live.is-on::after {
     animation: landing-ring 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
   }
@@ -910,7 +1180,7 @@ body:has(.landing) {
     background: linear-gradient(180deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0) 45%, rgb(0 0 0 / 0) 70%, rgb(0 0 0 / 0.4));
   }
   :root:not([data-theme="light"]) .client-page .nav-glass {
-    background-color: color-mix(in oklch, var(--paper) 66%, transparent);
+    background-color: color-mix(in oklch, var(--c-nav-tint, var(--paper)) 66%, transparent);
     background-image: radial-gradient(40% 140% at 10% 0%, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0) 70%);
   }
 }
@@ -926,7 +1196,7 @@ body:has(.landing) {
   background: linear-gradient(180deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0) 45%, rgb(0 0 0 / 0) 70%, rgb(0 0 0 / 0.4));
 }
 :root[data-theme="dark"] .client-page .nav-glass {
-  background-color: color-mix(in oklch, var(--paper) 66%, transparent);
+  background-color: color-mix(in oklch, var(--c-nav-tint, var(--paper)) 66%, transparent);
   background-image: radial-gradient(40% 140% at 10% 0%, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0) 70%);
 }
 /*
@@ -2028,8 +2298,12 @@ body:has(.landing) {
   --c-press: 0 1px 2px oklch(0% 0 0 / 0.1), 0 4px 10px -3px oklch(0% 0 0 / 0.16);
   /* The calendar's tiles: a free time stands a hair off the card (lit top, crisp contact);
      the chosen day and time sit on a dark ink tile with a deep, tight shadow under it. */
-  --c-tile-rest: inset 0 1px 0 oklch(100% 0 0 / 0.7), 0 1px 1.5px oklch(0% 0 0 / 0.1);
-  --c-sel: 0 1px 2px oklch(0% 0 0 / 0.22), 0 4px 8px -2px oklch(0% 0 0 / 0.22), 0 12px 22px -8px oklch(0% 0 0 / 0.55);
+  --c-tile-rest:
+    inset 0 1px 0 oklch(100% 0 0 / 0.9), 0 1px 1px oklch(0% 0 0 / 0.07), 0 2px 4px -1px oklch(0% 0 0 / 0.07),
+    0 6px 12px -5px oklch(0% 0 0 / 0.12), 0 12px 22px -12px oklch(22% 0.02 255 / 0.18);
+  --c-sel:
+    0 1px 1px oklch(0% 0 0 / 0.2), 0 3px 6px -1px oklch(0% 0 0 / 0.2), 0 8px 16px -4px oklch(0% 0 0 / 0.26),
+    0 18px 32px -10px oklch(0% 0 0 / 0.4), 0 28px 48px -20px oklch(22% 0.02 255 / 0.36);
   --c-focus: 0 0 0 4px color-mix(in oklch, var(--ink) 12%, transparent);
   --c-glass: color-mix(in oklch, oklch(95% 0.004 260) 68%, transparent);
   /* The booked check: a rich Apple-like green, used for nothing else. */
@@ -2040,81 +2314,109 @@ body:has(.landing) {
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .client-page {
-    --paper: oklch(0% 0 0);
-    --surface: oklch(20.5% 0.003 286);
-    --raised: oklch(27.5% 0.004 286);
-    --line: oklch(31% 0.004 286);
-    --muted: oklch(70% 0.004 286);
-    --c-rim: oklch(100% 0 0 / 0.08);
-    --c-rim-top: oklch(100% 0 0 / 0.16);
-    --c-rim-in: oklch(100% 0 0 / 0.06);
-    --c-glint: oklch(100% 0 0 / 0.08);
-    --c-depth: 0 1px 2px oklch(0% 0 0 / 0.6), 0 4px 10px -4px oklch(0% 0 0 / 0.6), 0 18px 36px -16px oklch(0% 0 0 / 0.95);
-    --c-depth-hi: 0 1px 2px oklch(0% 0 0 / 0.7), 0 8px 16px -6px oklch(0% 0 0 / 0.7), 0 28px 52px -18px oklch(0% 0 0 / 1);
+    /* Dark, Apple-style: elevation is a lighter surface with a top-lit hairline, not a heavier
+       black shadow. The ground is a cool near-black lit faintly from the top, the cards a clear
+       step up from it (>= 1.4:1), fills inside a card a step further. */
+    --paper: oklch(12.5% 0.005 262);
+    --surface: oklch(30.5% 0.006 264);
+    --raised: oklch(36.5% 0.007 264);
+    --line: oklch(39.5% 0.007 264);
+    --muted: oklch(76% 0.006 264); /* 6.2:1 on --surface, 4.9:1 on --raised */
+    --c-rim: oklch(100% 0 0 / 0.075);
+    --c-rim-top: oklch(100% 0 0 / 0.2);
+    --c-rim-in: oklch(100% 0 0 / 0.08);
+    --c-glint: oklch(100% 0 0 / 0.1);
+    --c-depth:
+      0 1px 1px oklch(0% 0 0 / 0.45), 0 4px 10px -3px oklch(0% 0 0 / 0.5), 0 18px 40px -14px oklch(0% 0 0 / 0.75),
+      0 50px 100px -40px oklch(0% 0 0 / 0.8);
+    --c-depth-hi:
+      0 1px 2px oklch(0% 0 0 / 0.55), 0 8px 18px -6px oklch(0% 0 0 / 0.6), 0 26px 52px -16px oklch(0% 0 0 / 0.85),
+      0 64px 120px -44px oklch(0% 0 0 / 0.9);
     --c-btn-top: oklch(100% 0 0);
     --c-btn-bot: oklch(89% 0.002 286);
     --c-btn-hi: oklch(100% 0 0 / 0.95);
     --c-btn-shadow: 0 1px 2px oklch(0% 0 0 / 0.7), 0 4px 10px -4px oklch(0% 0 0 / 0.6), 0 14px 28px -12px oklch(0% 0 0 / 0.9);
     --c-btn-shadow-hi: 0 2px 3px oklch(0% 0 0 / 0.7), 0 8px 18px -6px oklch(0% 0 0 / 0.7), 0 22px 44px -14px oklch(0% 0 0 / 1), 0 0 24px -6px oklch(100% 0 0 / 0.12);
     --c-sheen: oklch(100% 0 0 / 0.85);
-    --c-well: inset 0 1px 3px oklch(0% 0 0 / 0.55), inset 0 0 0 1px oklch(100% 0 0 / 0.04);
-    --c-lift: 0 1px 2px oklch(0% 0 0 / 0.7), 0 28px 56px -20px oklch(0% 0 0 / 1);
-    --c-press: 0 1px 2px oklch(0% 0 0 / 0.5);
-    --c-tile-rest: 0 0 #0000;
-    --c-sel: 0 2px 4px oklch(0% 0 0 / 0.12), 0 8px 18px -8px oklch(0% 0 0 / 0.55);
+    --c-well: inset 0 1px 3px oklch(0% 0 0 / 0.5), inset 0 0 0 1px oklch(100% 0 0 / 0.05);
+    --c-lift:
+      0 1px 2px oklch(0% 0 0 / 0.6), 0 10px 24px -8px oklch(0% 0 0 / 0.6), 0 36px 72px -22px oklch(0% 0 0 / 0.85),
+      0 80px 140px -50px oklch(0% 0 0 / 0.9);
+    --c-press: 0 1px 2px oklch(0% 0 0 / 0.5), 0 4px 10px -4px oklch(0% 0 0 / 0.45);
+    --c-tile-rest: inset 0 1px 0 oklch(100% 0 0 / 0.11), 0 1px 1px oklch(0% 0 0 / 0.5), 0 3px 6px -2px oklch(0% 0 0 / 0.5), 0 8px 16px -8px oklch(0% 0 0 / 0.65);
+    --c-sel: 0 1px 2px oklch(0% 0 0 / 0.6), 0 6px 14px -4px oklch(0% 0 0 / 0.65), 0 16px 30px -10px oklch(0% 0 0 / 0.75), 0 0 24px -8px oklch(100% 0 0 / 0.26);
     --c-focus: 0 0 0 4px color-mix(in oklch, var(--ink) 22%, transparent);
-    --c-glass: color-mix(in oklch, var(--paper) 68%, transparent);
-    /* Dark keeps its flat black ground and the nav's original frost. */
-    --c-ground: none;
-    --c-aura: none;
-    --c-nav-frost: blur(24px) saturate(1.7);
-    --c-nav-shade: 0.55;
-    --c-nav-tint: var(--paper);
+    --c-glass: color-mix(in oklch, oklch(17% 0.006 262) 70%, transparent);
+    /* The ground: a cool top light easing into the near-black under the column, and three dim,
+       low-chroma blobs drifting behind it (a soft white up left, slate blue up right, warm umber
+       mid left). Never violet, never red; kept off the bottom so the dock meets plain --paper. */
+    --c-ground: linear-gradient(180deg, oklch(20% 0.008 258) 0%, oklch(14.5% 0.006 260) 20%, oklch(13% 0.005 262) 55%, var(--paper) 86%);
+    --c-aura:
+      radial-gradient(closest-side, oklch(70% 0.004 260 / 0.075), oklch(70% 0.004 260 / 0)) 18% 0% / 56vmax 44vmax no-repeat,
+      radial-gradient(closest-side, oklch(42% 0.04 240 / 0.22), oklch(42% 0.04 240 / 0)) 88% 16% / 60vmax 54vmax no-repeat,
+      radial-gradient(closest-side, oklch(40% 0.03 65 / 0.15), oklch(40% 0.03 65 / 0)) 6% 60% / 54vmax 48vmax no-repeat;
+    --c-nav-frost: blur(28px) saturate(1.8);
+    --c-nav-shade: 0.7;
+    --c-nav-tint: oklch(17% 0.006 262); /* the glass takes the ground's top tone */
     --c-btn-gloss: none;
     --c-btn-ink: var(--paper);
     --c-chip-in: var(--raised);
-    --c-chip-in-shadow: inset 0 0 0 1px var(--c-rim-in);
+    --c-chip-in-shadow: inset 0 1px 0 var(--c-glint), inset 0 0 0 1px var(--c-rim-in);
     --c-success: oklch(72% 0.19 150);
   }
 }
 :root[data-theme="dark"] .client-page {
-  --paper: oklch(0% 0 0);
-  --surface: oklch(20.5% 0.003 286);
-  --raised: oklch(27.5% 0.004 286);
-  --line: oklch(31% 0.004 286);
-  --muted: oklch(70% 0.004 286);
-  --c-rim: oklch(100% 0 0 / 0.08);
-  --c-rim-top: oklch(100% 0 0 / 0.16);
-  --c-rim-in: oklch(100% 0 0 / 0.06);
-  --c-glint: oklch(100% 0 0 / 0.08);
-  --c-depth: 0 1px 2px oklch(0% 0 0 / 0.6), 0 4px 10px -4px oklch(0% 0 0 / 0.6), 0 18px 36px -16px oklch(0% 0 0 / 0.95);
-  --c-depth-hi: 0 1px 2px oklch(0% 0 0 / 0.7), 0 8px 16px -6px oklch(0% 0 0 / 0.7), 0 28px 52px -18px oklch(0% 0 0 / 1);
+  /* Dark, Apple-style: elevation is a lighter surface with a top-lit hairline, not a heavier
+     black shadow. The ground is a cool near-black lit faintly from the top, the cards a clear
+     step up from it (>= 1.4:1), fills inside a card a step further. */
+  --paper: oklch(12.5% 0.005 262);
+  --surface: oklch(30.5% 0.006 264);
+  --raised: oklch(36.5% 0.007 264);
+  --line: oklch(39.5% 0.007 264);
+  --muted: oklch(76% 0.006 264); /* 6.2:1 on --surface, 4.9:1 on --raised */
+  --c-rim: oklch(100% 0 0 / 0.075);
+  --c-rim-top: oklch(100% 0 0 / 0.2);
+  --c-rim-in: oklch(100% 0 0 / 0.08);
+  --c-glint: oklch(100% 0 0 / 0.1);
+  --c-depth:
+    0 1px 1px oklch(0% 0 0 / 0.45), 0 4px 10px -3px oklch(0% 0 0 / 0.5), 0 18px 40px -14px oklch(0% 0 0 / 0.75),
+    0 50px 100px -40px oklch(0% 0 0 / 0.8);
+  --c-depth-hi:
+    0 1px 2px oklch(0% 0 0 / 0.55), 0 8px 18px -6px oklch(0% 0 0 / 0.6), 0 26px 52px -16px oklch(0% 0 0 / 0.85),
+    0 64px 120px -44px oklch(0% 0 0 / 0.9);
   --c-btn-top: oklch(100% 0 0);
   --c-btn-bot: oklch(89% 0.002 286);
   --c-btn-hi: oklch(100% 0 0 / 0.95);
   --c-btn-shadow: 0 1px 2px oklch(0% 0 0 / 0.7), 0 4px 10px -4px oklch(0% 0 0 / 0.6), 0 14px 28px -12px oklch(0% 0 0 / 0.9);
   --c-btn-shadow-hi: 0 2px 3px oklch(0% 0 0 / 0.7), 0 8px 18px -6px oklch(0% 0 0 / 0.7), 0 22px 44px -14px oklch(0% 0 0 / 1), 0 0 24px -6px oklch(100% 0 0 / 0.12);
   --c-sheen: oklch(100% 0 0 / 0.85);
-  --c-well: inset 0 1px 3px oklch(0% 0 0 / 0.55), inset 0 0 0 1px oklch(100% 0 0 / 0.04);
-  --c-lift: 0 1px 2px oklch(0% 0 0 / 0.7), 0 28px 56px -20px oklch(0% 0 0 / 1);
-  --c-press: 0 1px 2px oklch(0% 0 0 / 0.5);
-  --c-tile-rest: 0 0 #0000;
-  --c-sel: 0 2px 4px oklch(0% 0 0 / 0.12), 0 8px 18px -8px oklch(0% 0 0 / 0.55);
+  --c-well: inset 0 1px 3px oklch(0% 0 0 / 0.5), inset 0 0 0 1px oklch(100% 0 0 / 0.05);
+  --c-lift:
+    0 1px 2px oklch(0% 0 0 / 0.6), 0 10px 24px -8px oklch(0% 0 0 / 0.6), 0 36px 72px -22px oklch(0% 0 0 / 0.85),
+    0 80px 140px -50px oklch(0% 0 0 / 0.9);
+  --c-press: 0 1px 2px oklch(0% 0 0 / 0.5), 0 4px 10px -4px oklch(0% 0 0 / 0.45);
+  --c-tile-rest: inset 0 1px 0 oklch(100% 0 0 / 0.11), 0 1px 1px oklch(0% 0 0 / 0.5), 0 3px 6px -2px oklch(0% 0 0 / 0.5), 0 8px 16px -8px oklch(0% 0 0 / 0.65);
+  --c-sel: 0 1px 2px oklch(0% 0 0 / 0.6), 0 6px 14px -4px oklch(0% 0 0 / 0.65), 0 16px 30px -10px oklch(0% 0 0 / 0.75), 0 0 24px -8px oklch(100% 0 0 / 0.26);
   --c-focus: 0 0 0 4px color-mix(in oklch, var(--ink) 22%, transparent);
-  --c-glass: color-mix(in oklch, var(--paper) 68%, transparent);
-  /* Dark keeps its flat black ground and the nav's original frost. */
-  --c-ground: none;
-  --c-aura: none;
-  --c-nav-frost: blur(24px) saturate(1.7);
-  --c-nav-shade: 0.55;
-  --c-nav-tint: var(--paper);
+  --c-glass: color-mix(in oklch, oklch(17% 0.006 262) 70%, transparent);
+  /* The ground: a cool top light easing into the near-black under the column, and three dim,
+     low-chroma blobs drifting behind it (a soft white up left, slate blue up right, warm umber
+     mid left). Never violet, never red; kept off the bottom so the dock meets plain --paper. */
+  --c-ground: linear-gradient(180deg, oklch(20% 0.008 258) 0%, oklch(14.5% 0.006 260) 20%, oklch(13% 0.005 262) 55%, var(--paper) 86%);
+  --c-aura:
+    radial-gradient(closest-side, oklch(70% 0.004 260 / 0.075), oklch(70% 0.004 260 / 0)) 18% 0% / 56vmax 44vmax no-repeat,
+    radial-gradient(closest-side, oklch(42% 0.04 240 / 0.22), oklch(42% 0.04 240 / 0)) 88% 16% / 60vmax 54vmax no-repeat,
+    radial-gradient(closest-side, oklch(40% 0.03 65 / 0.15), oklch(40% 0.03 65 / 0)) 6% 60% / 54vmax 48vmax no-repeat;
+  --c-nav-frost: blur(28px) saturate(1.8);
+  --c-nav-shade: 0.7;
+  --c-nav-tint: oklch(17% 0.006 262); /* the glass takes the ground's top tone */
   --c-btn-gloss: none;
   --c-btn-ink: var(--paper);
   --c-chip-in: var(--raised);
-  --c-chip-in-shadow: inset 0 0 0 1px var(--c-rim-in);
+  --c-chip-in-shadow: inset 0 1px 0 var(--c-glint), inset 0 0 0 1px var(--c-rim-in);
   --c-success: oklch(72% 0.19 150);
 }
-/* The ground (light only; dark sets both tokens to none): a soft vertical light pinned to
+/* The ground (both themes; each sets --c-ground and --c-aura): a soft vertical light pinned to
    the viewport, and over it two huge blurred blobs that drift on a slow loop (transform
    only, still under reduced motion). Both sit under the content (isolation on .client-page). */
 .client-page::before,
@@ -2204,6 +2506,54 @@ body:has(.landing) {
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   text-align: left;
+}
+/* Barber faces: a monogram on a lit disc (soft top-left light, a hairline rim, a glint on the
+   top edge). Never a fake photo. A real photo gets the same rim. */
+.c-avatar,
+.c-avatar-photo {
+  box-shadow:
+    inset 0 0 0 1px var(--c-rim-in, var(--line)),
+    inset 0 1px 0 var(--c-glint, transparent),
+    0 1px 2px oklch(0% 0 0 / 0.12),
+    0 4px 10px -4px oklch(0% 0 0 / 0.22);
+}
+.c-avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 9999px;
+  background:
+    radial-gradient(120% 120% at 28% 12%, color-mix(in oklch, var(--ink) 3%, var(--surface)), transparent 62%),
+    linear-gradient(160deg, color-mix(in oklch, var(--ink) 5%, var(--surface)), color-mix(in oklch, var(--ink) 15%, var(--raised)));
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+/* "Any available Barber": the inverted disc, the quick choice. */
+.c-avatar-any {
+  background: linear-gradient(180deg, var(--c-btn-top, var(--ink)), var(--c-btn-bot, var(--ink)));
+  color: var(--c-btn-ink, var(--paper));
+  box-shadow:
+    inset 0 1px 0 var(--c-btn-hi, transparent),
+    0 1px 2px oklch(0% 0 0 / 0.25),
+    0 4px 10px -4px color-mix(in oklch, var(--ink) 40%, transparent);
+}
+/* Prices: the sans face with tabular figures, confident and quiet. */
+.c-price {
+  font-weight: 600;
+  font-size: 1.0625rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+}
+.c-price-lg {
+  font-size: 1.3125rem;
+  line-height: 1;
+}
+/* The Profile pill sits back: a quieter tint so the name and price lead. */
+.c-card .c-chip.c-chip-quiet {
+  min-height: 2.75rem;
+  color: var(--muted);
+  font-size: 0.875rem;
 }
 .c-selected,
 .c-row[aria-pressed="true"],
@@ -2511,24 +2861,51 @@ body:has(.landing) {
   --pg-dot: 8px;
   --pg-pitch: 16px;
   --pg-extra: 24px;
-  --pg-pad: 5px;
+  --pg-pad: 6px;
+  /* Light: a frosted white capsule standing off the grey ground (lit top rim, hairline, layered soft shadow);
+     the dots are ink at 30% (upcoming) and 62% (done), the current capsule the full ink. */
+  --pg-fill: linear-gradient(to bottom, oklch(100% 0 0 / 0.78), oklch(100% 0 0 / 0.5));
+  --pg-shadow:
+    inset 0 1px 0 oklch(100% 0 0 / 1), inset 0 0 0 1px oklch(0% 0 0 / 0.07), inset 0 -1px 2px oklch(0% 0 0 / 0.05),
+    0 1px 1px oklch(0% 0 0 / 0.06), 0 3px 8px -2px oklch(0% 0 0 / 0.1), 0 12px 24px -10px oklch(0% 0 0 / 0.16);
+  --pg-todo: color-mix(in oklch, var(--ink) 30%, transparent);
+  --pg-done: color-mix(in oklch, var(--ink) 62%, transparent);
   position: relative;
   display: block;
   box-sizing: content-box;
   width: calc(4 * var(--pg-pitch) + var(--pg-dot) + var(--pg-extra));
   height: var(--pg-dot);
-  padding: var(--pg-pad) calc(var(--pg-pad) + 1px);
+  padding: var(--pg-pad) calc(var(--pg-pad) + 2px);
   border-radius: 999px;
-  background: color-mix(in oklch, var(--ink) 6%, var(--c-glass));
-  box-shadow: var(--c-well);
+  background: var(--pg-fill);
+  box-shadow: var(--pg-shadow);
   -webkit-backdrop-filter: blur(12px) saturate(1.4);
   backdrop-filter: blur(12px) saturate(1.4);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .client-page .c-pager {
+    /* Dark: a lifted surface (lighter than the ground), top-lit rim, soft black shadow under it. */
+    --pg-fill: linear-gradient(to bottom, oklch(33% 0.007 264), oklch(27.5% 0.006 264));
+    --pg-shadow:
+      inset 0 1px 0 oklch(100% 0 0 / 0.16), inset 0 0 0 1px oklch(100% 0 0 / 0.07), inset 0 -1px 2px oklch(0% 0 0 / 0.3),
+      0 1px 2px oklch(0% 0 0 / 0.55), 0 6px 14px -4px oklch(0% 0 0 / 0.6), 0 16px 32px -12px oklch(0% 0 0 / 0.7);
+    --pg-todo: color-mix(in oklch, var(--ink) 38%, transparent);
+    --pg-done: color-mix(in oklch, var(--ink) 70%, transparent);
+  }
+}
+:root[data-theme="dark"] .client-page .c-pager {
+  --pg-fill: linear-gradient(to bottom, oklch(33% 0.007 264), oklch(27.5% 0.006 264));
+  --pg-shadow:
+    inset 0 1px 0 oklch(100% 0 0 / 0.16), inset 0 0 0 1px oklch(100% 0 0 / 0.07), inset 0 -1px 2px oklch(0% 0 0 / 0.3),
+    0 1px 2px oklch(0% 0 0 / 0.55), 0 6px 14px -4px oklch(0% 0 0 / 0.6), 0 16px 32px -12px oklch(0% 0 0 / 0.7);
+  --pg-todo: color-mix(in oklch, var(--ink) 38%, transparent);
+  --pg-done: color-mix(in oklch, var(--ink) 70%, transparent);
 }
 .c-pager-dot,
 .c-pager-cap {
   position: absolute;
   top: var(--pg-pad);
-  left: calc(var(--pg-pad) + 1px);
+  left: calc(var(--pg-pad) + 2px);
   height: var(--pg-dot);
 }
 .c-pager-dot {
@@ -2543,10 +2920,10 @@ body:has(.landing) {
   border-radius: 999px;
 }
 .c-pager-dot::before {
-  background: color-mix(in oklch, var(--ink) 20%, transparent);
+  background: var(--pg-todo);
 }
 .c-pager-dot::after {
-  background: var(--ink);
+  background: var(--pg-done);
   opacity: 0;
   scale: 0.4;
 }
@@ -2571,24 +2948,28 @@ body:has(.landing) {
     linear-gradient(to bottom, var(--c-btn-top), var(--c-btn-bot));
   box-shadow:
     0 1px 2px oklch(0% 0 0 / 0.25),
-    0 2px 8px -1px color-mix(in oklch, var(--ink) 35%, transparent);
+    0 2px 6px -1px color-mix(in oklch, var(--ink) 30%, transparent);
 }
-/* On a step change the capsule stretches a touch along its travel and settles. */
+/* On a step change the capsule grows in from slightly smaller (never larger than its slot, so it
+   cannot leave the track) while the wrapper glides with no overshoot. */
 @keyframes c-pager-cap {
   from {
-    scale: 1.35 0.85;
+    scale: 0.8 0.9;
   }
 }
 .c-dock {
-  /* More solid than the top bar's glass: times and text scroll under it and must not read through. */
-  background-color: color-mix(in oklch, var(--surface) 90%, transparent);
+  /* More solid than the top bar's glass: times and text scroll under it and must not read through.
+     A summary sheet: lit top rim, a soft inner glow, a deeper lift. */
+  background-color: color-mix(in oklch, var(--surface) 86%, transparent);
+  background-image: linear-gradient(180deg, color-mix(in oklch, var(--ink) 3%, transparent), transparent 60%);
   border: 1px solid var(--c-rim);
   border-top-color: var(--c-rim-top);
   box-shadow:
     inset 0 1px 0 var(--c-glint),
+    inset 0 -1px 0 oklch(0% 0 0 / 0.03),
     var(--c-lift);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  backdrop-filter: blur(28px) saturate(1.8);
 }
 /* The details step's dock holds only the primary button: no capsule around it (a white
    ring that washed out on the grey ground). The button stands on its own shadow. */
@@ -2867,32 +3248,29 @@ body:has(.landing) {
 .c-slots .c-day {
   isolation: isolate;
 }
-/* The chosen day's fill and shadow live on ::before, so choosing a day moves one layer
-   (scale + opacity) and never transitions a background or a shadow. */
-.c-slots .c-day::before {
-  content: "";
+/* The chosen day is a whole second tile (.c-day-ink: ink fill, paper number and dot, its
+   shadow) over the plain one. Choosing a day only fades and gently scales that layer, on the
+   old day and the new one at once, so nothing pops, the number never changes colour mid-way,
+   and rapid clicks just retarget the fades. */
+.c-slots .c-day-ink {
   position: absolute;
-  inset: -1px;
-  z-index: -1;
+  inset: 0;
   border-radius: inherit;
   background: var(--ink);
   box-shadow:
     inset 0 1px 0 oklch(100% 0 0 / 0.16),
     var(--c-sel, 0 2px 4px oklch(0% 0 0 / 0.12), 0 8px 18px -8px oklch(0% 0 0 / 0.55));
   opacity: 0;
-  scale: 0.86;
+  scale: 0.94;
   pointer-events: none;
 }
-.c-slots .c-day[aria-selected="true"] {
-  border-color: transparent;
-}
-.c-slots .c-day[aria-selected="true"]::before {
+.c-slots .c-day[aria-selected="true"] .c-day-ink {
   opacity: 1;
   scale: 1;
 }
 /* While the next day loads, the last list stays put, dimmed and inert. */
 .c-times-list.is-stale {
-  opacity: 0.45;
+  opacity: 0.5;
 }
 /* A stale "no free times" or error would say something untrue about the new day: its well
    keeps its size (so the card holds still) but its words go at once. */
@@ -2908,20 +3286,26 @@ body:has(.landing) {
     inset 0 0 0 1px var(--c-rim-in, transparent),
     var(--c-tile-rest, 0 0 #0000);
 }
+/* The chosen time lifts a whole pixel off the card on a deeper shadow (never a fractional
+   move or a scale, so its digits stay crisp). */
 .c-time[aria-pressed="true"] {
+  background: var(--ink); /* the bg-ink utility sits in a layer under .c-time's fill */
   box-shadow:
     inset 0 1px 0 oklch(100% 0 0 / 0.16),
     var(--c-sel, 0 8px 18px -8px oklch(0% 0 0 / 0.55));
+  translate: 0 -1px;
 }
 @media (hover: hover) and (pointer: fine) {
   .c-slots .c-day[role="tab"]:hover:not([aria-selected="true"]) {
-    border-color: transparent;
     background: var(--raised);
   }
   .c-time[aria-pressed="false"]:hover {
     background: var(--surface);
     border-color: var(--c-rim);
-    box-shadow: var(--c-press);
+    box-shadow:
+      inset 0 1px 0 var(--c-glint, transparent),
+      var(--c-tile-rest, 0 0 #0000),
+      var(--c-press, 0 0 #0000);
     translate: 0 -1px;
   }
 }
@@ -2934,7 +3318,7 @@ body:has(.landing) {
 }
 @keyframes c-time-in {
   from {
-    opacity: 0.45;
+    opacity: 0;
     translate: 0 6px;
   }
 }
@@ -2942,32 +3326,33 @@ body:has(.landing) {
   .c-cal-grid {
     animation: c-cal-in var(--dur-slow) var(--ease-out);
   }
-  /* Only the newly chosen tile moves (the transition sits on the chosen state, so the old
-     tile's fill simply goes). The fill is opaque at once so the paper-coloured number never
-     sits on a half-faded tile. */
-  .c-slots .c-day[aria-selected="true"]::before {
-    transition: scale var(--dur-slow) var(--ease-spring);
+  /* The old day eases out a little faster than the new one eases in, so the eye lands on the
+     new day; plain ease-out, no spring, so the tile never grows past its cell. */
+  .c-slots .c-day-ink {
+    transition:
+      opacity 160ms var(--ease-out),
+      scale 220ms var(--ease-out);
   }
-  /* A new day's list fades up as one block ("backwards": once done it no longer holds
-     opacity, so .is-stale can dim it). Dimming waits 120ms so a fast load never flickers. */
+  .c-slots .c-day[aria-selected="true"] .c-day-ink {
+    transition:
+      opacity 200ms var(--ease-out),
+      scale 280ms var(--ease-out);
+  }
+  /* The list is mounted once (first load fades it up). After that a day change is one
+     opacity transition on the same element: it dims while the next day loads, then the new
+     times come back up from wherever the dim had reached, so rapid clicks never blink. */
   .c-times-list {
     animation: c-time-in 280ms var(--ease-out) backwards;
-    transition: opacity 200ms var(--ease-out);
+    transition: opacity 260ms var(--ease-out);
   }
   .c-times-list.is-stale {
-    transition-delay: 120ms;
+    transition-duration: 160ms;
   }
   .c-time {
-    transition:
-      background-color var(--dur-fast) var(--ease-out),
-      border-color var(--dur-fast) var(--ease-out),
-      box-shadow var(--dur-fast) var(--ease-out),
-      color var(--dur-fast) var(--ease-out),
-      translate var(--dur-fast) var(--ease-out),
-      scale var(--dur-fast) var(--ease-spring);
+    transition: translate var(--dur-fast) var(--ease-out);
   }
   .c-time:active {
-    scale: 0.96;
+    translate: 0 0;
   }
 }
 /* No free times: a well pressed into the card (an absence, not a card), the calendar in a
@@ -3111,16 +3496,16 @@ body:has(.landing) {
   .c-pager-dot,
   .c-pager-cap {
     transition:
-      translate var(--dur-slow) var(--ease-spring),
+      translate var(--dur-slow) var(--ease-out),
       opacity var(--dur-fast) var(--ease-out);
   }
   .c-pager-dot::after {
     transition:
       opacity var(--dur-slow) var(--ease-out),
-      scale var(--dur-slow) var(--ease-spring);
+      scale var(--dur-slow) var(--ease-out);
   }
   .c-pager-cap-in {
-    animation: c-pager-cap var(--dur-slow) var(--ease-spring);
+    animation: c-pager-cap var(--dur-slow) var(--ease-out);
   }
   .c-radio-dot {
     transition: scale var(--dur-fast) var(--ease-spring);
@@ -3150,8 +3535,9 @@ body:has(.landing) {
       color var(--dur-fast) var(--ease-out),
       scale var(--dur-fast) var(--ease-spring);
   }
-  .c-slots [role="tab"]:active,
-  .c-slots button[aria-pressed]:active {
+  /* Calendar days and hour tiles skip the press scale: they crossfade / sink 1px instead, so digits stay sharp. */
+  .c-slots [role="tab"]:not(.c-day):active,
+  .c-slots button[aria-pressed]:not(.c-time):active {
     scale: 0.96;
   }
   @media (hover: hover) and (pointer: fine) {

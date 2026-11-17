@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Notice } from "@/components/notice";
 import { dictionaries, type Locale } from "@/lib/i18n/dictionaries";
 
@@ -194,6 +194,24 @@ export function SlotPicker(props: {
   const listed = loading && !stale ? null : state;
   const slots = listed ? listed.slots : null;
 
+  // On a phone the times stack under the calendar, so a shorter day would pull the page up
+  // under the thumb. The list keeps the tallest height it has had for this Barber and
+  // Service (a floor, reset when either changes); a longer day still grows downwards.
+  const listRef = useRef<HTMLDivElement>(null);
+  const floor = useRef({ key: "", h: 0 });
+  useLayoutEffect(() => {
+    const el = listRef.current;
+    if (!calendar || !el) return;
+    if (!window.matchMedia("(max-width: 767.98px)").matches) {
+      el.style.minHeight = "";
+      return;
+    }
+    if (floor.current.key !== openKey) floor.current = { key: openKey, h: 0 };
+    el.style.minHeight = "";
+    floor.current.h = Math.max(floor.current.h, el.offsetHeight);
+    el.style.minHeight = `${floor.current.h}px`;
+  }, [calendar, openKey, state]);
+
   const times = (
     <>
       {stale && (
@@ -212,7 +230,10 @@ export function SlotPicker(props: {
 
       {listed && (
         <div
-          key={listed.key}
+          // The calendar's list stays mounted across days (only its content and opacity
+          // change), so a day change is one continuous dim-and-return, never a remount.
+          key={calendar ? "times" : listed.key}
+          ref={calendar ? listRef : undefined}
           className={calendar ? `c-times-list flex flex-col gap-5 ${stale ? "is-stale" : ""}` : "contents"}
           inert={stale}
           aria-hidden={stale || undefined}
@@ -389,12 +410,19 @@ export function SlotPicker(props: {
                   aria-label={longDate(d, locale) + (today ? `, ${t.today}` : "") + (hasTimes ? `, ${t.freeTimes}` : "")}
                   aria-current={today ? "date" : undefined}
                   onClick={() => pickDay(d)}
-                  className={`c-day relative grid aspect-square max-h-12 w-full place-items-center border text-[0.9375rem] font-medium tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                    on ? "text-paper" : hasTimes === false ? "text-muted" : "text-ink"
+                  className={`c-day relative grid aspect-square max-h-12 w-full place-items-center text-[0.9375rem] font-medium tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                    hasTimes === false ? "text-muted" : "text-ink"
                   } ${today && !on ? "is-today" : ""}`}
                 >
                   {n}
-                  {hasTimes && <span aria-hidden="true" className={`c-dot absolute bottom-[16%] left-1/2 size-1 -translate-x-1/2 rounded-full ${on ? "bg-paper" : "bg-ink"}`} />}
+                  {hasTimes && <span aria-hidden="true" className="c-dot absolute bottom-[16%] left-1/2 size-1 -translate-x-1/2 rounded-full bg-ink" />}
+                  {/* The chosen look is a whole second tile (ink fill, paper number and dot) laid
+                      over the plain one, so choosing a day only crossfades this layer: the old
+                      day eases out while the new one eases in, and no colour ever transitions. */}
+                  <span aria-hidden="true" className="c-day-ink grid place-items-center text-paper">
+                    {n}
+                    {hasTimes && <span className="absolute bottom-[16%] left-1/2 size-1 -translate-x-1/2 rounded-full bg-paper" />}
+                  </span>
                 </button>
               );
             })}

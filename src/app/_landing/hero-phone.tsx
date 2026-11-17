@@ -7,26 +7,19 @@ import { LiveDot } from "./live-dot";
 
 type Phone = LandingDictionary["heroPhone"];
 
-/* The real booking page's light look (globals.css, "Client pages (premium)": the iOS grouped
-   cards), so the demo looks like what clients get: a soft grey ground (#f2f2f4), white cards
-   with 18px corners, a hairline rim and a layered shadow, separators inset from the left,
-   filled grey times and avatars (#f0f0f3), ink #0f0f0f, muted #6b6b70, numbers in the page
-   face with tabular figures, the lit ink button, and the light red (#cc2827) only on the
-   booked check. */
+/* The real booking page's LIGHT look, scaled to the phone, so the demo looks like what
+   clients get. Every part is a .hp-* rule in globals.css that mirrors its .c-* twin on /b
+   (the cool grey ground, white cards on a hairline rim and five-layer depth, separators
+   inset from the left, the page-control pager, the raised times, the glossy ink button, the
+   green booked check). */
 const c = {
-  paper: "bg-[#f2f2f4]",
-  // Ambient + key light: a hairline contact, a soft near shadow, a long low one; a faint top highlight.
-  card: "rounded-[18px] border border-black/[.06] border-t-black/[.03] bg-white shadow-[inset_0_1px_0_#fff,0_1px_1px_rgba(0,0,0,.04),0_3px_8px_-2px_rgba(0,0,0,.06),0_14px_30px_-12px_rgba(0,0,0,.16)]",
-  // iOS separators: a hairline under every row but the last, starting at the text (--sep).
-  rows: "[&>li:not(:last-child)]:relative [&>li:not(:last-child)]:after:absolute [&>li:not(:last-child)]:after:right-0 [&>li:not(:last-child)]:after:bottom-0 [&>li:not(:last-child)]:after:left-(--sep) [&>li:not(:last-child)]:after:h-px [&>li:not(:last-child)]:after:bg-[#e6e6ea] [&>li:not(:last-child)]:after:content-['']",
-  row: "flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-150 hover:bg-[#f6f6f8] active:bg-[#f0f0f3] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#0f0f0f]",
-  fill: "bg-[#f0f0f3]",
-  ink: "text-[#0f0f0f]",
-  muted: "text-[#6b6b70]",
+  card: "hp-card",
+  rows: "hp-rows",
+  row: "flex w-full items-center gap-2.5 px-3 text-left hover:bg-[oklch(97.5%_0.002_260)] active:bg-[oklch(95.4%_0.003_260)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#0f0f0f]",
+  fill: "hp-disc",
+  ink: "text-[oklch(17%_0_0)]",
+  muted: "hp-muted",
   mono: "tabular-nums",
-  // The page's primary button: ink lit from above, an inner highlight and a soft drop.
-  primary:
-    "bg-[#0f0f0f] bg-linear-to-b from-white/[.16] to-transparent to-55% text-white shadow-[inset_0_1px_0_rgba(255,255,255,.28),inset_0_-1px_0_rgba(0,0,0,.25),0_1px_2px_rgba(0,0,0,.18),0_10px_22px_-10px_rgba(0,0,0,.45)]",
 } as const;
 
 /** Which of the day's times are taken, per day of the strip (index into p.times). Day 0
@@ -39,6 +32,9 @@ const TAKEN_LATER: number[][] = [
   [1, 2, 4, 7, 8, 10],
 ];
 
+/** How far the halo behind the phone reaches past its edges (px; .hero-phone-halo's inset). */
+const HALO = 56;
+
 /** An item that rises in when its screen appears; `i` sets its place in the stagger. */
 function rise(i: number): CSSProperties {
   return { "--i": i } as CSSProperties;
@@ -48,7 +44,7 @@ function rise(i: number): CSSProperties {
  * The hero phone, live: a pretend booking at the demo shop. Service, then barber,
  * then a time, then "You're booked". Each step is a view transition: the next screen
  * slides in from the right, Back slides the previous one in from the left.
- * Nothing is saved. With a mouse, the phone leans a little toward the pointer.
+ * Nothing is saved. With a mouse, a light catches the phone's rim under the pointer.
  */
 export function HeroPhone({ p }: { p: Phone }) {
   const [step, setStep] = useState(0);
@@ -59,9 +55,11 @@ export function HeroPhone({ p }: { p: Phone }) {
   const [picked, setPicked] = useState<number | null>(null); // the time chip raised just before "booked"
   const [booked, setBooked] = useState(0); // counts bookings, so the check mark replays each time
   const pending = useRef(0);
-  const box = useRef<HTMLDivElement>(null);
-  const device = useRef<HTMLDivElement>(null);
-  const aim = useRef({ x: 0, y: 0 });
+  const glint = useRef<HTMLSpanElement>(null);
+  const spot = useRef<HTMLSpanElement>(null);
+  const halo = useRef<HTMLSpanElement>(null);
+  const haloSpot = useRef<HTMLSpanElement>(null);
+  const aim = useRef<{ x: number; y: number } | null>(null);
   const frame = useRef(0);
   const screen = useRef<HTMLDivElement>(null);
   const moved = useRef(false);
@@ -86,8 +84,9 @@ export function HeroPhone({ p }: { p: Phone }) {
   const barberName = barber === null ? p.barbers[1] : p.barbers[barber];
   const svc = p.services[service];
 
-  // The lean: at most 5deg sideways and 4deg up/down, written straight to the style once
-  // per frame (no re-render); the CSS transition eases it. Mouse only, never under reduced motion.
+  // The rim glint: a soft light on the graphite rim under the pointer, written straight to
+  // the style once per frame (no re-render). The screen never tilts: a 3D lean re-samples it
+  // and its text goes soft. Mouse only, never under reduced motion.
   useEffect(
     () => () => {
       cancelAnimationFrame(frame.current);
@@ -97,18 +96,21 @@ export function HeroPhone({ p }: { p: Phone }) {
   );
   function paint() {
     frame.current = 0;
-    const { x, y } = aim.current;
-    // Resting straight drops the 3D layer so the screen stays pin-sharp.
-    if (device.current) device.current.style.transform = x === 0 && y === 0 ? "none" : `perspective(1400px) rotateY(${x * 10}deg) rotateX(${-y * 8}deg)`;
+    const a = aim.current;
+    // Only the glint moves (whole pixels); the screen never transforms, so its text stays sharp.
+    if (a && spot.current) spot.current.style.transform = `translate(${Math.round(a.x)}px, ${Math.round(a.y)}px)`;
+    if (a && haloSpot.current) haloSpot.current.style.transform = `translate(${Math.round(a.x) + HALO}px, ${Math.round(a.y) + HALO}px)`;
+    glint.current?.toggleAttribute("data-on", a !== null);
+    halo.current?.toggleAttribute("data-on", a !== null);
   }
-  function aimAt(x: number, y: number) {
-    aim.current = { x, y };
+  function aimAt(a: { x: number; y: number } | null) {
+    aim.current = a;
     if (!frame.current) frame.current = requestAnimationFrame(paint);
   }
   function lean(e: PointerEvent) {
     if (e.pointerType !== "mouse" || !matchMedia("(pointer: fine)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const r = box.current!.getBoundingClientRect();
-    aimAt((e.clientX - r.left) / r.width - 0.5, (e.clientY - r.top) / r.height - 0.5);
+    const r = glint.current!.getBoundingClientRect();
+    aimAt({ x: e.clientX - r.left, y: e.clientY - r.top });
   }
 
   // Like the real picker, taken times are not shown; the free ones split by part of the day.
@@ -152,8 +154,14 @@ export function HeroPhone({ p }: { p: Phone }) {
               <span className="min-w-0">
                 <span className="block text-[12.5px] leading-tight font-medium">{s.name}</span>
                 <span className={`mt-0.5 flex items-center gap-1.5 text-[10.5px] ${c.muted}`}>
-                  <span className={c.mono}>{s.min} min</span>
-                  {s.special && <span className={`rounded-full ${c.fill} px-1.5 text-[9.5px] font-medium text-[#0f0f0f]`}>{s.special}</span>}
+                  <span className={`flex items-center gap-1 ${c.mono}`}>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-2.5 w-2.5">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 7v5l3 2" />
+                    </svg>
+                    {s.min} min
+                  </span>
+                  {s.special && <span className="hp-tag rounded-full px-1.5 text-[9.5px] font-medium">{s.special}</span>}
                 </span>
               </span>
               <span className="flex shrink-0 items-center gap-1.5 text-right">
@@ -186,9 +194,7 @@ export function HeroPhone({ p }: { p: Phone }) {
               className="min-h-[46px] py-1.5"
             >
               <span
-                className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12px] font-semibold ${
-                  b === null ? "bg-[#0f0f0f] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.2),0_4px_10px_-4px_rgba(0,0,0,.4)]" : `${c.fill} text-[#0f0f0f]`
-                }`}
+                className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12px] font-semibold ${c.fill}`}
               >
                 {b === null ? (
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
@@ -217,12 +223,8 @@ export function HeroPhone({ p }: { p: Phone }) {
       <p className="sr-only" aria-live="polite">
         {dayLabel(p, day)}
       </p>
-      <div className={`${c.card} px-2.5 pt-2 pb-2.5`}>
-        <div className="relative grid grid-cols-6 gap-1">
-          {/* The ink tile: one element under the numbers, moved with a transform. */}
-          <span aria-hidden className="hp-day-ink pointer-events-none absolute bottom-0 left-0 flex h-[30px] w-[calc((100%-20px)/6)] justify-center" style={{ "--d": day } as CSSProperties}>
-            <span className={`h-[30px] w-[30px] rounded-[9px] ${c.primary} hp-raised`} />
-          </span>
+      <div className="hp-timecard px-2.5 pt-2 pb-2.5">
+        <div className="grid grid-cols-6 gap-1">
           {p.week.map((w, d) => {
             const on = d === day;
             const open = freeOn(d).length > 0;
@@ -236,20 +238,17 @@ export function HeroPhone({ p }: { p: Phone }) {
                 style={{ WebkitTapHighlightColor: "transparent" } as CSSProperties}
                 className="group relative flex flex-col items-center gap-0.5 rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f]"
               >
-                <span className={`text-[8.5px] font-medium ${on ? "text-[#0f0f0f]" : c.muted}`}>{w}</span>
-                <span
-                  className={`relative grid h-[30px] w-[30px] place-items-center rounded-[9px] text-[12px] font-semibold ${c.mono} transition-colors duration-200 ${
-                    on ? "text-white" : "text-[#0f0f0f] group-hover:bg-[#f0f0f3]"
-                  }`}
-                >
+                <span className={`text-[8.5px] font-medium ${on ? "" : c.muted}`}>{w}</span>
+                {/* The chosen day's ink is this tile's ::before (fades in, settles from 0.9). */}
+                <span className={`hp-day grid h-[30px] w-[30px] place-items-center text-[12px] font-semibold ${c.mono} ${on ? "is-on" : ""} ${d === 0 ? "is-today" : ""}`}>
                   {dayNumber(p.day) + d}
-                  <span className={`absolute bottom-[3px] h-[3px] w-[3px] rounded-full transition-colors duration-200 ${!open ? "bg-transparent" : on ? "bg-white" : "bg-[#0f0f0f]"}`} />
+                  <span className={`absolute bottom-[3px] h-[3px] w-[3px] rounded-full ${!open ? "bg-transparent" : on ? "bg-white" : "bg-current"}`} />
                 </span>
               </button>
             );
           })}
         </div>
-        <div key={day} className="mt-2 min-h-[124px] border-t border-[#ececef] pt-1.5">
+        <div key={day} className="mt-2 min-h-[124px] border-t border-[oklch(87%_0.005_260)] pt-1.5">
           {groups.length === 0 && (
             <p className={`hp-rise pt-9 text-center text-[11px] font-medium ${c.muted}`} style={rise(0)}>
               {p.noTimes}
@@ -259,7 +258,7 @@ export function HeroPhone({ p }: { p: Phone }) {
             <div key={g} className={g ? "mt-1.5" : ""}>
               <p aria-hidden className={`hp-rise mb-1 flex items-center gap-2 text-[9.5px] font-medium ${c.muted}`} style={rise(g * 3)}>
                 {group[0].t.match(/[ap]\.?\s?m\.?$/i)?.[0]}
-                <span className="h-px flex-1 bg-[#ececef]" />
+                <span className="hp-rule h-px flex-1" />
               </p>
               <div className="grid grid-cols-3 gap-1.5">
                 {group.map(({ t, i }, k) => (
@@ -269,11 +268,7 @@ export function HeroPhone({ p }: { p: Phone }) {
                     aria-pressed={picked === i}
                     onClick={() => pickTime(i)}
                     style={rise(g * 3 + 1 + k)}
-                    className={`hp-rise min-h-[32px] rounded-[10px] px-1 text-[11px] font-medium ${c.mono} transition-[background-color,color,box-shadow,translate,scale] duration-150 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f] ${
-                      picked === i
-                        ? `${c.primary} hp-raised -translate-y-px`
-                        : `${c.fill} hover:-translate-y-px hover:bg-white hover:shadow-[0_0_0_1px_rgba(0,0,0,.06),0_6px_14px_-6px_rgba(0,0,0,.2)]`
-                    }`}
+                    className={`hp-rise hp-time min-h-[32px] px-1 text-[11px] font-medium ${c.mono} focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f]`}
                   >
                     {t}
                   </button>
@@ -285,15 +280,16 @@ export function HeroPhone({ p }: { p: Phone }) {
       </div>
     </Screen>,
 
-    // 3. Booked: the red check, and the Booking as a ticket with a tear line and two notches
+    // 3. Booked: the green check, and the Booking as a ticket with a tear line and two notches
     //    cut out of the card (a mask), its shadow following the cut.
     <Screen key="d" p={p} at={3}>
       <div className="flex h-full flex-col items-center pt-2 text-center">
-        <span key={booked} className="landing-pop grid h-11 w-11 place-items-center rounded-full bg-[#cc2827] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.25),0_2px_4px_rgba(204,40,39,.25),0_10px_20px_-8px_rgba(204,40,39,.45)]">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
-        </span>
+        {/* The page's booked check: the green disc lands, the tick draws itself, one ring ripples out. */}
+        <svg key={booked} aria-hidden="true" viewBox="0 0 48 48" fill="none" strokeLinecap="round" strokeLinejoin="round" overflow="visible" className="hp-check h-11 w-11">
+          <circle className="hp-check-ring" cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="1.5" />
+          <circle className="hp-check-disc" cx="24" cy="24" r="22" fill="currentColor" />
+          <path className="hp-check-tick" d="M14.5 24.5l6.5 6.5 12.5-13" stroke="white" strokeWidth="3.5" pathLength={1} strokeDasharray="1" />
+        </svg>
         <p data-screen-title tabIndex={-1} className="hp-rise mt-3 text-[18px] font-semibold tracking-[-0.025em] outline-none" style={rise(1)}>
           {p.bookedTitle}
         </p>
@@ -303,7 +299,7 @@ export function HeroPhone({ p }: { p: Phone }) {
               <p className={`text-[10px] font-medium ${c.muted}`}>{dayLabel(p, day)}</p>
               <p className={`text-[20px] leading-6 font-semibold tracking-[-0.02em] ${c.mono}`}>{p.times[time]}</p>
             </div>
-            <div aria-hidden className="mx-3 border-t border-dashed border-[#dcdce0]" />
+            <div aria-hidden className="mx-3 border-t border-dashed border-[oklch(85%_0.005_260)]" />
             <div className="flex items-center justify-between gap-2 px-3 py-2.5">
               <span className="min-w-0">
                 <span className="block truncate text-[12.5px] font-medium">{svc.name}</span>
@@ -328,7 +324,7 @@ export function HeroPhone({ p }: { p: Phone }) {
             className="hp-btn min-h-12 w-full rounded-full text-[13px] font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f0f0f]"
           >
             <span aria-hidden className="hp-btn-sheen" />
-            <span className="relative">{p.again}</span>
+            {p.again}
           </button>
         </div>
       </div>
@@ -337,19 +333,27 @@ export function HeroPhone({ p }: { p: Phone }) {
 
   return (
     <div
-      ref={box}
       onPointerMove={lean}
-      onPointerLeave={() => aimAt(0, 0)}
+      onPointerLeave={() => aimAt(null)}
       className="relative mx-auto w-full max-w-[288px]"
     >
-      <div ref={device} className="hero-phone-tilt">
+      <div className="relative">
+        {/* A soft light spilling round the device where the pointer is (behind it, so it
+            only shows past the edges; always mounted, see .hero-phone-glint). */}
+        <span ref={halo} aria-hidden className="hero-phone-halo">
+          <span ref={haloSpot} />
+        </span>
         {/* The device: a graphite rim lit from the top left, side buttons, a black bezel. */}
         <div className="hero-phone-frame">
+          {/* The light on the rim that follows the pointer (always mounted; see .hero-phone-glint). */}
+          <span ref={glint} aria-hidden className="hero-phone-glint">
+            <span ref={spot} />
+          </span>
           <div className="hero-phone-bezel">
             <div
               role="group"
               aria-label={p.label}
-              className={`relative h-[476px] overflow-hidden rounded-[2.15rem] ${c.paper} ${c.ink} sm:h-[500px]`}
+              className="hp-screen relative h-[476px] overflow-hidden rounded-[2.15rem] sm:h-[500px]"
             >
               <StatusBar />
               <ViewTransition
@@ -433,10 +437,12 @@ function monogram(name: string) {
 
 /**
  * One screen of the phone, in the real page's order: the Shop's monogram and name, then
- * Back and the step segments, a title, the content, and (from the barber step) the glass
+ * Back and the page-control pager, a title, the content, and (from the barber step) the glass
  * dock with what is chosen so far.
  */
 function Screen({ title, p, at, onBack, dock, children }: { title?: string; p: Phone; at: number; onBack?: () => void; dock?: ReactNode; children: ReactNode }) {
+  // The pager's step: booked is the last of the five (the phone skips "details").
+  const pg = at === 3 ? 4 : at;
   // The screen never scrolls on its own (every screen fits), so a wheel or swipe over the
   // phone always moves the page.
   return (
@@ -451,23 +457,32 @@ function Screen({ title, p, at, onBack, dock, children }: { title?: string; p: P
           <p className={`truncate text-[10px] ${c.muted}`}>{p.address}</p>
         </div>
       </div>
-      <div className="hp-rise mt-2 flex min-h-8 items-center gap-2" style={rise(1)}>
-        {onBack && (
+      <div className="hp-rise mt-2 grid min-h-8 grid-cols-[1fr_auto_1fr] items-center" style={rise(1)}>
+        {onBack ? (
           <button
             type="button"
             onClick={onBack}
-            className={`-ml-1 flex min-h-8 min-w-11 items-center gap-0.5 rounded px-1 text-[11px] ${c.ink} focus-visible:outline-2 focus-visible:outline-[#0f0f0f]`}
+            className={`-ml-1 flex min-h-8 min-w-11 items-center justify-self-start gap-0.5 rounded px-1 text-[11px] ${c.ink} focus-visible:outline-2 focus-visible:outline-[#0f0f0f]`}
           >
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
               <path d="M15 18l-6-6 6-6" />
             </svg>
             {p.back}
           </button>
+        ) : (
+          <span />
         )}
-        <span aria-hidden className="flex flex-1 gap-1">
-          {[0, 1, 2, 3].map((i) => (
-            <span key={i} className={`h-[3px] flex-1 rounded-full transition-colors duration-300 ${i <= at ? "bg-[#0f0f0f]" : "bg-[#dedee2]"}`} />
+        {/* The page control, as on /b: five steps (the phone skips "details"), done dots
+            solid, the current step an ink capsule, the rest faint (CSS: .hp-pager). */}
+        <span aria-hidden className="hp-pager" style={{ "--i": pg } as CSSProperties}>
+          {[0, 1, 2, 3, 4].map((j) => (
+            <span
+              key={j}
+              className={`hp-pager-dot ${j < pg ? "is-done" : ""} ${j === pg ? "is-now" : ""}`}
+              style={{ "--j": j, "--after": j > pg ? 1 : 0 } as CSSProperties}
+            />
           ))}
+          <span className="hp-pager-cap" />
         </span>
       </div>
       {title && (
@@ -488,7 +503,7 @@ function Dock({ name, sub, price }: { name: string; sub?: string; price: number 
   return (
     <div
       style={rise(9)}
-      className="hp-rise mt-2 flex shrink-0 items-center gap-2 rounded-[1.25rem] border border-black/[.06] border-t-black/[.03] bg-white/90 p-1.5 pr-3 shadow-[inset_0_1px_0_#fff,0_1px_2px_rgba(0,0,0,.05),0_6px_16px_-6px_rgba(0,0,0,.12),0_18px_36px_-18px_rgba(0,0,0,.22)] backdrop-blur-md"
+      className="hp-rise hp-dock mt-2 flex shrink-0 items-center gap-2 rounded-[1.25rem] p-1.5 pr-3"
     >
       <span aria-hidden className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${c.fill} text-[10.5px] font-semibold`}>
         {(sub ?? name)[0]}
@@ -504,7 +519,7 @@ function Dock({ name, sub, price }: { name: string; sub?: string; price: number 
 
 function Chevron() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 shrink-0 text-[#b4b4ba]">
+    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 shrink-0 text-[oklch(42%_0.012_255)]">
       <path d="M7.5 4.5 13 10l-5.5 5.5" />
     </svg>
   );

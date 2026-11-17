@@ -340,7 +340,7 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                         className={`${rowClass} min-h-[4.75rem]! lg:min-h-[4.25rem]! lg:py-2.5!`}
                       >
                         <span className="flex min-w-0 items-center gap-3.5">
-                          <span className="grid size-14 lg:size-12 shrink-0 place-items-center rounded-full border border-line bg-raised text-ink">
+                          <span className="c-avatar c-avatar-any size-14 lg:size-12">
                             <svg
                               aria-hidden="true"
                               viewBox="0 0 24 24"
@@ -357,7 +357,7 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                             </svg>
                           </span>
                           <span className="flex min-w-0 flex-col gap-0.5">
-                            <span className="block font-semibold">{t.anyBarber}</span>
+                            <span className="block font-semibold tracking-[-0.01em]">{t.anyBarber}</span>
                             <span className="block text-sm text-muted">{t.anyBarberHint}</span>
                           </span>
                         </span>
@@ -381,14 +381,14 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                             <span className="flex min-w-0 items-center gap-3.5">
                               <Avatar barber={b} size="size-14 lg:size-12" />
                               <span className="flex min-w-0 flex-col gap-0.5">
-                                <span className="block truncate font-semibold">{b.displayName}</span>
+                                <span className="block truncate font-semibold tracking-[-0.01em]">{b.displayName}</span>
                                 {b.specialties.length > 0 && <span className="block truncate text-sm text-muted">{b.specialties.join(" · ")}</span>}
                               </span>
                             </span>
                             <span className="flex shrink-0 flex-col items-end">
-                              <span className="block font-mono text-[1.0625rem] font-medium tabular-nums">{formatMoney(p.priceCents)}</span>
+                              <span className="c-price block">{formatMoney(p.priceCents)}</span>
                               {p.specialEndsAt && (
-                                <span className="block font-mono text-sm text-muted tabular-nums line-through">{formatMoney(p.regularPriceCents)}</span>
+                                <span className="block text-sm text-muted tabular-nums line-through">{formatMoney(p.regularPriceCents)}</span>
                               )}
                             </span>
                           </button>
@@ -397,7 +397,7 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                               <button
                                 type="button"
                                 onClick={() => setProfile(b)}
-                                className={`c-chip press px-3.5! text-sm font-medium whitespace-nowrap ${focusRing}`}
+                                className={`c-chip c-chip-quiet press px-3.5! text-sm font-medium whitespace-nowrap ${focusRing}`}
                               >
                                 {b.gallery.length > 0 ? t.seeWork : t.aboutBarber}
                               </button>
@@ -621,19 +621,28 @@ function Dock({ ref, ...props }: DockProps) {
       aria-label={t.yourBooking}
       inert={props.concealed || undefined}
       aria-hidden={props.concealed || undefined}
-      className={`c-dock sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 mt-auto flex flex-col gap-3 ${reveal} ${props.compact ? "c-dock-bare rounded-[2rem] p-1.5" : "rounded-[1.75rem] p-2.5 md:static"}`}
+      className={`c-dock sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 mt-auto flex flex-col gap-3 ${reveal} ${props.compact ? "c-dock-bare rounded-[2rem] p-1.5" : "rounded-[1.75rem] p-3 md:static"}`}
     >
       {!props.compact && (
-        <div className="flex min-h-11 items-center gap-3 pr-2.5 pl-1.5">
-          {props.avatar && <Avatar barber={props.avatar} size="size-9 text-sm" />}
+        <div className="flex min-h-12 items-center gap-3 pr-2 pl-1">
+          {props.avatar ? (
+            <Avatar barber={props.avatar} size="size-10 text-sm" />
+          ) : (
+            <span aria-hidden="true" className="c-avatar c-avatar-any size-10">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                <path d="M4 7a2 2 0 0 1 2-2h8.2a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 0 2.8l-6.2 6.2a2 2 0 0 1-2.8 0L4.6 13.4A2 2 0 0 1 4 12Z" />
+                <circle cx="8.5" cy="9" r="1.1" />
+              </svg>
+            </span>
+          )}
           <span className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-sm font-semibold">{props.title}</span>
-            {props.meta.length > 0 && <span className="truncate text-sm text-muted">{props.meta.join(" · ")}</span>}
+            <span className="truncate text-[0.9375rem] leading-tight font-semibold tracking-[-0.01em]">{props.title}</span>
+            {props.meta.length > 0 && <span className="mt-0.5 truncate text-sm leading-tight text-muted">{props.meta.join(" · ")}</span>}
           </span>
           {price && (
-            <span className="flex shrink-0 items-baseline gap-1">
-              {price.from && <span className="text-xs text-muted">{t.from}</span>}
-              <span className="font-mono font-medium tabular-nums">{formatMoney(price.cents)}</span>
+            <span className="flex shrink-0 flex-col items-end leading-none">
+              {price.from && <span className="mb-1 text-xs text-muted">{t.from}</span>}
+              <span className="c-price c-price-lg">{formatMoney(price.cents)}</span>
             </span>
           )}
         </div>
@@ -808,7 +817,7 @@ function FinePrint({ icon, children }: { icon: "refund" | "tip" | "text"; childr
 function Avatar({ barber, size }: { barber: Barber; size: string }) {
   if (barber.photoUrl) {
     return (
-      <span className={`c-photo ${size} shrink-0 rounded-full border border-line`}>
+      <span className={`c-photo c-avatar-photo ${size} shrink-0 rounded-full`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- photos come from any host the Owner uses */}
         <img src={barber.photoUrl} alt="" width={112} height={112} loading="lazy" className="size-full object-cover" />
       </span>
@@ -817,7 +826,7 @@ function Avatar({ barber, size }: { barber: Barber; size: string }) {
   return (
     <span
       aria-hidden="true"
-      className={`${size} grid shrink-0 place-items-center rounded-full border border-line bg-raised font-semibold tracking-[-0.01em] text-ink`}
+      className={`c-avatar ${size}`}
     >
       {initials(barber.displayName)}
     </span>
