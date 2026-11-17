@@ -29,11 +29,11 @@ export function ClientShell(props: {
     <div className="client-page relative flex min-h-dvh w-full flex-col overflow-x-clip">
       <HtmlLang lang={locale} />
       <ClientNav locale={locale} t={{ otherLang: t.otherLang, themeSwitch: t.themeSwitch, backToSite: t.backToSite, talkToUs: t.talkToUs }} backHref={props.backHref} />
-      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pt-(--cbar-h) pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pt-(--cbar-h) pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:max-w-[38rem] lg:px-0 lg:pb-10">
         {shop && (
-          <div className="c-in flex flex-col items-start pt-6 pb-4">
+          <div className="c-in flex flex-col items-start pt-6 pb-4 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-4 lg:pt-8">
             <Name className="text-xl leading-tight font-semibold tracking-[-0.02em] text-balance">{shop.name}</Name>
-            {shop.address && <p className="mt-1 text-sm text-muted">{shop.address}</p>}
+            {shop.address && <p className="mt-1 text-sm text-muted lg:mt-0">{shop.address}</p>}
             {shop.phone && (
               <a
                 href={`tel:${shop.phone}`}

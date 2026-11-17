@@ -66,7 +66,7 @@ const en = {
     `You can cancel or change your time online until ${cutoff} before your booking. Paid online? Cancelling in time gets a full refund. After that, please call the shop.`,
   smsConsent:
     "By booking you agree to get a confirmation and a reminder text for this booking. Reply STOP to opt out.",
-  smsPending: "Text messages are not active yet for this shop. Save your booking link below.",
+  smsPending: "Text messages are not active yet for this shop.",
   confirm: "Book now",
   booking: "Booking…",
   verifying: "Checking you're not a robot…",
@@ -74,9 +74,8 @@ const en = {
   // confirmation
   booked: "You're booked",
   bookedWith: "with",
-  saveLink: "Save this link to cancel or change your time:",
-  copy: "Copy link",
-  copied: "Copied",
+  saveLink: "Need to change or cancel? Use the button below.",
+  addToCalendar: "Add to Google Calendar",
   bookAnother: "Book another",
   // manage
   yourBooking: "Your booking",
@@ -808,16 +807,15 @@ const es: Dictionary = {
     `Puedes cancelar o cambiar la hora en línea hasta ${cutoff} antes de tu cita. ¿Pagaste en línea? Si cancelas a tiempo te devolvemos todo. Después, llama a la barbería.`,
   smsConsent:
     "Al reservar aceptas recibir un mensaje de confirmación y un recordatorio para esta cita. Responde STOP para no recibir más.",
-  smsPending: "Los mensajes de texto aún no están activos en esta barbería. Guarda el enlace de tu cita.",
+  smsPending: "Los mensajes de texto aún no están activos en esta barbería.",
   confirm: "Reservar",
   booking: "Reservando…",
   verifying: "Verificando que no eres un robot…",
   total: "Total",
   booked: "Ya tienes tu cita",
   bookedWith: "con",
-  saveLink: "Guarda este enlace para cancelar o cambiar la hora:",
-  copy: "Copiar enlace",
-  copied: "Copiado",
+  saveLink: "¿Necesitas cambiar o cancelar? Usa el botón de abajo.",
+  addToCalendar: "Añadir a Google Calendar",
   bookAnother: "Reservar otra",
   yourBooking: "Tu cita",
   status: {

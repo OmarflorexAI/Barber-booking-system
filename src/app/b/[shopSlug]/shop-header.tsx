@@ -33,10 +33,10 @@ export function ShopHeader({ shop, locale }: { shop: ShopHeaderShop; locale: Loc
   const cover = !!shop.coverUrl;
 
   return (
-    <div className="flex flex-col pb-6">
+    <div className="flex flex-col pb-6 lg:pb-5">
       {shop.coverUrl ? (
         // Full window width (the shell clips sideways overflow) and up under the glass bar.
-        <div className="c-photo relative mx-[calc(50%-50vw)] -mt-(--cbar-h) h-[clamp(16rem,64vw,28rem)]">
+        <div className="c-photo relative mx-[calc(50%-50vw)] -mt-(--cbar-h) h-[clamp(16rem,64vw,28rem)] lg:h-[clamp(15rem,22vw,20rem)]">
           {/* Above the fold on a phone: fetched first, and the fixed height keeps the layout still. */}
           {/* eslint-disable-next-line @next/next/no-img-element -- Storage URLs, already sized on the phone (≤ 1600 px) */}
           <img
@@ -65,7 +65,7 @@ export function ShopHeader({ shop, locale }: { shop: ShopHeaderShop; locale: Loc
         </>
       ) : (
         // No cover: one compact line, a small monogram (or the logo) beside the name.
-        <div className="c-in flex items-center gap-3.5 pt-6" style={{ "--i": 1 } as React.CSSProperties}>
+        <div className="c-in flex items-center gap-3.5 pt-6 lg:pt-8" style={{ "--i": 1 } as React.CSSProperties}>
           <Logo shop={shop} alt={t.shopLogo(shop.name)} size="size-12 text-[0.9375rem]" />
           <h1 className="min-w-0 text-2xl leading-[1.1] font-semibold tracking-[-0.025em] text-balance">{shop.name}</h1>
         </div>

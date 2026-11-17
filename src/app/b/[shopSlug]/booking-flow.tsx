@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { flushSync } from "react-dom";
 import type { BookingEngine } from "@/server/booking-engine";
 import { SlotPicker, type Slot } from "@/components/slot-picker";
@@ -213,8 +213,8 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
         <EmptyNotice text={t.errors.SHOP_UNAVAILABLE} phone={shop.phone} t={t} />
       ) : (
         <>
-          <div className="flex flex-col gap-2.5 border-t border-line pt-3">
-            <div className="flex min-h-11 items-center gap-2">
+          <div className="flex flex-col gap-2.5 border-t border-line pt-3 lg:flex-row lg:items-center lg:gap-6">
+            <div className="flex min-h-11 items-center gap-2 lg:flex-1">
               {backTo[step] && (
                 <button
                   type="button"
@@ -240,16 +240,32 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                 {t.stepOf(stepNo, STEPS.length, t.stepNames[step])}
               </p>
             </div>
-            <div aria-hidden="true" className="grid grid-cols-5 gap-1.5">
-              {STEPS.map((s, i) => (
-                <span key={s} className="h-1 overflow-hidden rounded-full bg-line">
-                  <span className={`c-progress block h-full rounded-full bg-ink ${i < stepNo ? "is-on" : ""}`} />
+            {/* Page-control steps: done dots solid, the current step an ink capsule, the rest faint (CSS: .c-pager). */}
+            <div
+              role="progressbar"
+              aria-label={t.stepOf(stepNo, STEPS.length, t.stepNames[step])}
+              aria-valuemin={1}
+              aria-valuemax={STEPS.length}
+              aria-valuenow={stepNo}
+              aria-valuetext={t.stepOf(stepNo, STEPS.length, t.stepNames[step])}
+              className="flex justify-center py-1.5 lg:shrink-0"
+            >
+              <span className="c-pager" style={{ "--i": stepNo - 1 } as React.CSSProperties}>
+                {STEPS.map((s, i) => (
+                  <span
+                    key={s}
+                    className={`c-pager-dot ${i < stepNo - 1 ? "is-done" : ""} ${i === stepNo - 1 ? "is-now" : ""}`}
+                    style={{ "--j": i, "--after": i > stepNo - 1 ? 1 : 0 } as React.CSSProperties}
+                  />
+                ))}
+                <span className="c-pager-cap">
+                  <span key={step} className="c-pager-cap-in" />
                 </span>
-              ))}
+              </span>
             </div>
           </div>
 
-          <div key={step} className="c-step flex flex-1 flex-col gap-6 pt-6 pb-6" style={{ "--dir": dir } as React.CSSProperties}>
+          <div key={step} className="c-step flex flex-1 flex-col gap-6 pt-6 pb-6 lg:gap-5 lg:pt-7" style={{ "--dir": dir } as React.CSSProperties}>
             {step !== "done" && (
               <h2 ref={headingRef} tabIndex={-1} className="c-h2 outline-none">
                 {stepTitle[step]}
@@ -268,7 +284,7 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                         setSlot(null);
                         go("barber");
                       }}
-                      className={`${rowClass} min-h-[4.5rem]!`}
+                      className={`${rowClass} min-h-[4.5rem]! lg:min-h-16!`}
                     >
                       <span className="flex min-w-0 flex-col gap-1">
                         <span className="block leading-snug font-semibold">{serviceName(s)}</span>
@@ -312,7 +328,7 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                   </div>
                 ) : (
                   // Separators start at the names, past the faces (iOS inset rows).
-                  <ul className="c-card divide-y divide-line overflow-hidden [--sep:5.375rem]">
+                  <ul className="c-card divide-y divide-line overflow-hidden [--sep:5.375rem] lg:[--sep:4.875rem]">
                     <li>
                       <button
                         type="button"
@@ -321,10 +337,10 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                           setSlot(null);
                           go("time");
                         }}
-                        className={`${rowClass} min-h-[4.75rem]!`}
+                        className={`${rowClass} min-h-[4.75rem]! lg:min-h-[4.25rem]! lg:py-2.5!`}
                       >
                         <span className="flex min-w-0 items-center gap-3.5">
-                          <span className="grid size-14 shrink-0 place-items-center rounded-full border border-line bg-raised text-ink">
+                          <span className="grid size-14 lg:size-12 shrink-0 place-items-center rounded-full border border-line bg-raised text-ink">
                             <svg
                               aria-hidden="true"
                               viewBox="0 0 24 24"
@@ -360,10 +376,10 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                               setSlot(null);
                               go("time");
                             }}
-                            className={`${rowClass} min-h-[4.75rem]! min-w-0 flex-1 ${hasProfile ? "pr-2!" : ""}`}
+                            className={`${rowClass} min-h-[4.75rem]! lg:min-h-[4.25rem]! lg:py-2.5! min-w-0 flex-1 ${hasProfile ? "pr-2!" : ""}`}
                           >
                             <span className="flex min-w-0 items-center gap-3.5">
-                              <Avatar barber={b} size="size-14" />
+                              <Avatar barber={b} size="size-14 lg:size-12" />
                               <span className="flex min-w-0 flex-col gap-0.5">
                                 <span className="block truncate font-semibold">{b.displayName}</span>
                                 {b.specialties.length > 0 && <span className="block truncate text-sm text-muted">{b.specialties.join(" · ")}</span>}
@@ -557,6 +573,8 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                   ],
                 ]}
                 manageToken={result.manageToken}
+                startsAt={result.startsAt}
+                durationMin={service.durationMin}
                 onAgain={() => {
                   setResult(null);
                   setSlot(null);
@@ -603,7 +621,7 @@ function Dock({ ref, ...props }: DockProps) {
       aria-label={t.yourBooking}
       inert={props.concealed || undefined}
       aria-hidden={props.concealed || undefined}
-      className={`c-dock sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 mt-auto flex flex-col gap-3 ${reveal} ${props.compact ? "c-dock-bare rounded-[2rem] p-1.5" : "rounded-[1.75rem] p-2.5"}`}
+      className={`c-dock sticky bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 mt-auto flex flex-col gap-3 ${reveal} ${props.compact ? "c-dock-bare rounded-[2rem] p-1.5" : "rounded-[1.75rem] p-2.5 md:static"}`}
     >
       {!props.compact && (
         <div className="flex min-h-11 items-center gap-3 pr-2.5 pl-1.5">
@@ -629,8 +647,8 @@ function Dock({ ref, ...props }: DockProps) {
  * The details step's dock (the Book now button), shown only once the Client has reached the
  * end of the page: it stays in the DOM and holds its place, but sits 1rem low at opacity 0,
  * inert and aria-hidden, until an IntersectionObserver sees the sentinel at the form's end;
- * then it slides up (.c-dock-reveal, transform/opacity; reduced motion: it just appears) and
- * stays. A page that doesn't scroll sees the sentinel at once. Keyboard: the sentinel is the
+ * then it slides up (.c-dock-reveal, transform/opacity; reduced motion: it just appears). It
+ * slides back down when the Client scrolls away from the end again. A page that doesn't scroll sees the sentinel at once. Keyboard: the sentinel is the
  * next tab stop while the dock is hidden, so tabbing on from the last field scrolls to the end,
  * reveals the dock and moves focus to its button. An error or a booking in flight shows it too.
  */
@@ -640,15 +658,48 @@ function RevealDock({ force = false, ...dock }: DockProps & { force?: boolean })
   const dockRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLSpanElement>(null);
 
+  // Conceals again when the end of the form is more than 160px below the screen, unless focus
+  // is inside the dock or something forces it open. Called on focus leaving and when force ends.
+  const forceRef = useRef(force);
+  const recheck = useCallback(() => {
+    const end = endRef.current;
+    if (!end || forceRef.current) return;
+    if (dockRef.current?.contains(document.activeElement)) return;
+    if (end.getBoundingClientRect().top > window.innerHeight + 160) setSeen(false);
+  }, []);
+
   useEffect(() => {
     const end = endRef.current;
-    if (shown || !end) return;
-    const io = new IntersectionObserver((entries) => {
+    const dockEl = dockRef.current;
+    if (!end) return;
+    // Two observers give hysteresis: it shows when the end of the form is in view, and hides
+    // only once the end is more than 160px below the screen, so the edge never flickers.
+    const show = new IntersectionObserver((entries) => {
       if (entries.some((e) => e.isIntersecting)) setSeen(true);
     });
-    io.observe(end);
-    return () => io.disconnect();
-  }, [shown]);
+    const hide = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) recheck();
+      },
+      { rootMargin: "0px 0px 160px 0px" },
+    );
+    show.observe(end);
+    hide.observe(end);
+    const onFocusOut = (e: FocusEvent) => {
+      if (!dockEl?.contains(e.relatedTarget as Node | null)) setTimeout(recheck); // after focus settles
+    };
+    dockEl?.addEventListener("focusout", onFocusOut);
+    return () => {
+      show.disconnect();
+      hide.disconnect();
+      dockEl?.removeEventListener("focusout", onFocusOut);
+    };
+  }, [recheck]);
+
+  useEffect(() => {
+    forceRef.current = force;
+    if (!force) recheck();
+  }, [force, recheck]);
 
   function revealFromKeyboard() {
     flushSync(() => setSeen(true)); // drops inert now, so the button can take focus
@@ -944,6 +995,19 @@ function BarberSheet(props: {
   );
 }
 
+/** The public origin for links that leave the page: NEXT_PUBLIC_SITE_URL when set, else this page's own origin. */
+const siteOrigin = () => (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace(/\/+$/, "");
+
+/** A Google Calendar "new event" link, prefilled. Dates are UTC as YYYYMMDDTHHMMSSZ. */
+function googleCalendarHref(e: { title: string; startsAt: string; durationMin: number; location: string; details: string }) {
+  const start = new Date(e.startsAt);
+  const end = new Date(start.getTime() + e.durationMin * 60_000);
+  const utc = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const q = new URLSearchParams({ action: "TEMPLATE", text: e.title, dates: `${utc(start)}/${utc(end)}`, details: e.details });
+  if (e.location) q.set("location", e.location);
+  return `https://calendar.google.com/calendar/render?${q}`;
+}
+
 function Confirmation(props: {
   t: Dictionary;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
@@ -952,19 +1016,26 @@ function Confirmation(props: {
   serviceName: string;
   rows: [string, React.ReactNode][];
   manageToken: string;
+  startsAt: string;
+  durationMin: number;
   onAgain: () => void;
 }) {
   const { t, shop, headingRef, rows, manageToken, onAgain, barber } = props;
-  const [copied, setCopied] = useState(false);
   const path = `/m/${manageToken}`;
-  const url = typeof window === "undefined" ? path : `${window.location.origin}${path}`;
+  const calendarHref = googleCalendarHref({
+    title: `${props.serviceName} · ${shop.name}`,
+    startsAt: props.startsAt,
+    durationMin: props.durationMin,
+    location: shop.address ?? "",
+    details: [barber ? `${t.bookedWith} ${barber.displayName}` : "", `${t.manageBooking}: ${siteOrigin()}${path}`].filter(Boolean).join("\n\n"),
+  });
 
   return (
     <section className="flex flex-col gap-6" aria-live="polite">
-      <div className="flex flex-col items-start gap-4">
-        {/* The booked check: the one red mark on this page (the Live Signal rule). */}
+      <div className="flex flex-col items-center gap-4 text-center">
+        {/* The booked check: the success green, the only colored mark on this page. */}
         {/* Disc springs in, the tick draws itself, one soft ring ripples out (CSS: .c-check). */}
-        <svg aria-hidden="true" viewBox="0 0 48 48" fill="none" strokeLinecap="round" strokeLinejoin="round" overflow="visible" className="c-check h-14 w-14 text-red">
+        <svg aria-hidden="true" viewBox="0 0 48 48" fill="none" strokeLinecap="round" strokeLinejoin="round" overflow="visible" className="c-check h-14 w-14">
           <circle className="c-check-ring" cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="1.5" />
           <circle className="c-check-disc" cx="24" cy="24" r="22" fill="currentColor" />
           <path className="c-check-tick" d="M14.5 24.5l6.5 6.5 12.5-13" stroke="white" strokeWidth="3" pathLength={1} strokeDasharray="1" />
@@ -1019,18 +1090,23 @@ function Confirmation(props: {
         <a href={path} className={`c-btn c-btn-primary press w-full ${focusRing}`}>
           {t.manageBooking}
         </a>
-        <div className="c-card flex items-center gap-2 rounded-full! py-1 pr-1 pl-4">
-          <span className="min-w-0 flex-1 truncate font-mono text-sm text-muted">{url}</span>
-          <button
-            type="button"
-            className={`press inline-flex min-h-11 shrink-0 items-center rounded-full bg-raised px-4 text-sm font-medium hover:bg-line ${focusRing}`}
-            onClick={() => {
-              navigator.clipboard?.writeText(url).then(() => setCopied(true));
-            }}
+        <a href={calendarHref} target="_blank" rel="noopener noreferrer" className={`c-btn c-btn-secondary press w-full ${focusRing}`}>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-5 w-5 shrink-0"
           >
-            <span aria-live="polite">{copied ? t.copied : t.copy}</span>
-          </button>
-        </div>
+            <rect x="3.5" y="5" width="17" height="15.5" rx="3.5" />
+            <path d="M3.5 10h17M8 3v4M16 3v4" />
+          </svg>
+          {t.addToCalendar}
+          <span className="sr-only"> {t.opensNewTab}</span>
+        </a>
       </div>
 
       <button
