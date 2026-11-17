@@ -39,7 +39,11 @@ const STRIP_DAYS = 6;
 function newYorkToday() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
 }
-const subscribeNever = () => () => {};
+/** Re-reads the date every minute, so a page left open past midnight moves on to the new day. */
+const subscribeMinute = (onChange: () => void) => {
+  const id = setInterval(onChange, 60_000);
+  return () => clearInterval(id);
+};
 
 type StripDay = { weekday: string; num: string; label: string };
 
@@ -77,7 +81,7 @@ export function HeroPhone({ p }: { p: Phone }) {
   const [touched, setTouched] = useState(false); // after the first day change the times stop staggering in
   const fade = useRef(0);
   // Null on the server and while hydrating, so the static HTML never carries a date.
-  const today = useSyncExternalStore(subscribeNever, newYorkToday, () => null);
+  const today = useSyncExternalStore(subscribeMinute, newYorkToday, () => null);
   const days = useMemo(() => (today ? stripDays(today, p.dateLocale) : null), [today, p.dateLocale]);
   const [picked, setPicked] = useState<number | null>(null); // the time chip raised just before "booked"
   const [booked, setBooked] = useState(0); // counts bookings, so the check mark replays each time
@@ -251,7 +255,7 @@ export function HeroPhone({ p }: { p: Phone }) {
               >
                 <span className={`text-[8.5px] font-medium ${on ? "" : c.muted}`}>{w}</span>
                 {/* The ink is the one .hp-glide tile behind the strip; the digit just turns paper. */}
-                <span className={`hp-day grid h-[30px] w-[30px] place-items-center text-[12px] font-semibold ${c.mono} ${on ? "is-on" : ""}`}>
+                <span className={`hp-day grid h-[30px] w-[30px] place-items-center text-[12px] font-semibold ${c.mono} ${on ? "is-on" : ""} ${d === 0 ? "is-today" : ""}`}>
                   {days?.[d].num}
                   <span className={`absolute bottom-[3px] h-[3px] w-[3px] rounded-full ${!open ? "bg-transparent" : on ? "bg-white" : "bg-current"}`} />
                 </span>

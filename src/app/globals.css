@@ -521,6 +521,18 @@ body:has(.landing) {
 .hp-day.is-on {
   color: #fff;
 }
+/* Today (the first day) keeps a hairline ring once another day is chosen, as on /b (.c-day.is-today). */
+.hp-day.is-today::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1.25px oklch(20% 0.005 260 / 0.34);
+  pointer-events: none;
+}
+.hp-day.is-today.is-on::after {
+  opacity: 0;
+}
 .hp-daybar {
   container-type: inline-size;
 }
@@ -815,6 +827,9 @@ body:has(.landing) {
   }
   .hp-day {
     transition: color 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .hp-day.is-today::after {
+    transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
   }
   .hp-times {
     transition: opacity 140ms ease-out;
@@ -3294,10 +3309,22 @@ body:has(.landing) {
   border-color: transparent;
   box-shadow: none;
 }
-/* Only the chosen day is marked (user, 2026-11-17): today gets no tile of its own; screen
-   readers still hear it (aria-current="date" and "today" in the label). */
 .c-slots .c-day {
   isolation: isolate;
+}
+/* Today: the calendar opens with it chosen (the ink tile). Once another day is chosen, today
+   keeps only a hairline ring (no fill), like iOS Calendar keeping today marked; the ring
+   fades out while today is the chosen day. Screen readers hear it via aria-current="date". */
+.c-slots .c-day.is-today::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1.5px color-mix(in oklch, var(--ink) 34%, transparent);
+  pointer-events: none;
+}
+.c-slots .c-day.is-today[aria-selected="true"]::after {
+  opacity: 0;
 }
 /* The chosen day is a whole second tile (.c-day-ink: ink fill, paper number and dot, its
    shadow) over the plain one. Choosing a day only fades and gently scales that layer, on the
@@ -3383,6 +3410,9 @@ body:has(.landing) {
     transition:
       opacity 160ms var(--ease-out),
       scale 220ms var(--ease-out);
+  }
+  .c-slots .c-day.is-today::after {
+    transition: opacity 220ms var(--ease-out);
   }
   .c-slots .c-day[aria-selected="true"] .c-day-ink {
     transition:

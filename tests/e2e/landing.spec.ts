@@ -125,6 +125,9 @@ test("the hero phone books a pretend cut", async ({ page }) => {
   const phone = page.getByRole("group", { name: p.label });
   await phone.getByRole("button", { name: p.services[3].name }).click();
   await phone.getByRole("button", { name: p.barbers[2] }).click();
+  // The day strip opens on today's date in New York, chosen.
+  const today = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric" }).format(new Date());
+  await expect(phone.getByRole("button", { name: today, exact: true })).toHaveAttribute("aria-pressed", "true");
   // Like the real picker, taken times aren't shown.
   await expect(phone.getByRole("button", { name: p.times[p.taken[0]], exact: true })).toHaveCount(0);
   await phone.getByRole("button", { name: p.times[6] }).click();
