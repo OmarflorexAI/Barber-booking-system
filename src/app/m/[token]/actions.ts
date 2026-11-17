@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { isBookingError } from "@/server/booking-engine";
+import { drainSoon } from "@/server/drain-soon";
 import { bookingEngine } from "@/server/engine";
 import { payments } from "@/server/senders";
 
@@ -14,6 +15,7 @@ export async function cancelByTokenAction(token: string): Promise<ManageResult> 
   if (!Token.safeParse(token).success) return { ok: false, code: "NOT_FOUND" };
   try {
     await bookingEngine().cancelBooking({ actor: { kind: "client", token }, now: new Date() });
+    drainSoon();
     return { ok: true };
   } catch (e) {
     if (isBookingError(e)) return { ok: false, code: e.code };
@@ -42,6 +44,7 @@ export async function rescheduleByTokenAction(token: string, startsAt: string): 
   if (!Token.safeParse(token).success || !z.iso.datetime().safeParse(startsAt).success) return { ok: false, code: "INVALID_INPUT" };
   try {
     await bookingEngine().rescheduleBooking({ actor: { kind: "client", token }, newStartsAt: new Date(startsAt), now: new Date() });
+    drainSoon();
     return { ok: true };
   } catch (e) {
     if (isBookingError(e)) return { ok: false, code: e.code };

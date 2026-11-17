@@ -9,7 +9,8 @@ const BUDGET_MS = 50_000;
 /**
  * Scheduled job: free unpaid online holds, queue due reminders and drain the outbox
  * (texts, Barber alerts, refunds).
- * Called every minute by the scheduler with `Authorization: Bearer $CRON_SECRET`.
+ * Called once a day as a backstop (Vercel Hobby), with `Authorization: Bearer $CRON_SECRET`;
+ * booking changes already drain the outbox right away through drainSoon().
  * Safe to run twice at once: rows are claimed with SKIP LOCKED.
  */
 export async function GET(request: NextRequest) {

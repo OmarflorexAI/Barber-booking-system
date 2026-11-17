@@ -1,4 +1,5 @@
 import { connection, type NextRequest } from "next/server";
+import { drainSoon } from "@/server/drain-soon";
 import { InvalidWebhook } from "@/server/payments";
 import { payments } from "@/server/senders";
 
@@ -14,6 +15,7 @@ export async function POST(request: NextRequest) {
   const raw = await request.text();
   try {
     const result = await p.handleWebhook(raw, request.headers.get("stripe-signature"));
+    drainSoon();
     return Response.json({ received: true, result });
   } catch (e) {
     if (e instanceof InvalidWebhook) return new Response("Bad signature", { status: 400 });

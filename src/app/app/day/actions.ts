@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isBookingError } from "@/server/booking-engine";
+import { drainSoon } from "@/server/drain-soon";
 import { bookingEngine } from "@/server/engine";
 import { alerts } from "@/server/senders";
 
@@ -20,6 +21,7 @@ async function run(fn: (userId: string) => Promise<unknown>): Promise<StaffResul
   if (!userId) return { ok: false, code: "FORBIDDEN" };
   try {
     await fn(userId);
+    drainSoon();
     return { ok: true };
   } catch (e) {
     if (isBookingError(e)) return { ok: false, code: e.code };

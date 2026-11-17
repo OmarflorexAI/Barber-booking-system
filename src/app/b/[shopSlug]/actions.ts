@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { z } from "zod";
 import { isBookingError } from "@/server/booking-engine";
+import { drainSoon } from "@/server/drain-soon";
 import { bookingEngine } from "@/server/engine";
 import { payments } from "@/server/senders";
 import { verifyTurnstile } from "@/server/turnstile";
@@ -49,6 +50,7 @@ export async function createBookingAction(raw: z.input<typeof Input>): Promise<C
       locale: input.locale,
       now: new Date(),
     });
+    drainSoon({ shopIds: [input.shopId] });
     // An online Booking is only held: send the Client to pay. If that fails, the manage
     // link still has a "Pay now" button for the rest of the hold.
     let checkoutUrl: string | undefined;
