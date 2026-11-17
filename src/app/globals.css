@@ -1974,22 +1974,37 @@ body:has(.landing) {
   /* Controls inside a card (time buttons, chips, tags): a fainter rim on their --raised fill. */
   --c-rim-in: oklch(0% 0 0 / 0.07);
   --c-glint: oklch(100% 0 0 / 0.9);
-  /* Cards: a tight contact shadow, a medium key and a wide soft ambient one. */
-  --c-depth: 0 1px 2px oklch(0% 0 0 / 0.1), 0 4px 10px -3px oklch(0% 0 0 / 0.1), 0 18px 40px -16px oklch(0% 0 0 / 0.24);
-  --c-depth-hi: 0 1px 2px oklch(0% 0 0 / 0.12), 0 8px 18px -6px oklch(0% 0 0 / 0.14), 0 28px 56px -20px oklch(0% 0 0 / 0.3);
+  /* Cards, Apple-style: a hairline contact, a tight key, a medium fill and a wide soft
+     ambient, each layer fainter and wider than the last, so the card floats off the grey. */
+  --c-depth:
+    0 0.5px 1px oklch(0% 0 0 / 0.1), 0 2px 4px -1px oklch(0% 0 0 / 0.08), 0 8px 18px -6px oklch(0% 0 0 / 0.14),
+    0 24px 48px -16px oklch(0% 0 0 / 0.26);
+  --c-depth-hi:
+    0 1px 2px oklch(0% 0 0 / 0.12), 0 4px 8px -2px oklch(0% 0 0 / 0.1), 0 14px 28px -8px oklch(0% 0 0 / 0.18),
+    0 36px 64px -20px oklch(0% 0 0 / 0.32);
   /* The primary capsule: ink, lighter at the top, standing on a crisp contact + a wide key. */
   --c-btn-top: oklch(34% 0.003 286);
   --c-btn-bot: oklch(15% 0.002 286);
   --c-btn-hi: oklch(100% 0 0 / 0.2);
-  --c-btn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 6px 14px -6px oklch(0% 0 0 / 0.35), 0 18px 34px -14px oklch(0% 0 0 / 0.45);
-  --c-btn-shadow-hi: 0 2px 3px oklch(0% 0 0 / 0.35), 0 10px 20px -8px oklch(0% 0 0 / 0.4), 0 26px 44px -16px oklch(0% 0 0 / 0.55);
+  --c-btn-shadow:
+    0 1px 2px oklch(0% 0 0 / 0.4), 0 4px 8px -2px oklch(0% 0 0 / 0.3), 0 12px 22px -8px oklch(0% 0 0 / 0.4),
+    0 26px 44px -18px oklch(0% 0 0 / 0.5);
+  --c-btn-shadow-hi:
+    0 2px 3px oklch(0% 0 0 / 0.4), 0 6px 12px -3px oklch(0% 0 0 / 0.34), 0 18px 30px -10px oklch(0% 0 0 / 0.46),
+    0 36px 60px -20px oklch(0% 0 0 / 0.58);
   --c-sheen: oklch(100% 0 0 / 0.24);
   /* Wells (the empty day, the ticket's bites): pressed into the surface. */
   --c-well: inset 0 1px 3px oklch(0% 0 0 / 0.09), inset 0 0 0 1px oklch(0% 0 0 / 0.06);
   /* The one raised surface per screen (the time card, the dock). */
-  --c-lift: 0 1px 2px oklch(0% 0 0 / 0.1), 0 10px 24px -8px oklch(0% 0 0 / 0.16), 0 36px 72px -28px oklch(0% 0 0 / 0.3);
+  --c-lift:
+    0 0.5px 1px oklch(0% 0 0 / 0.1), 0 4px 10px -3px oklch(0% 0 0 / 0.1), 0 16px 32px -10px oklch(0% 0 0 / 0.18),
+    0 48px 88px -28px oklch(0% 0 0 / 0.36);
   /* Small controls (chips, fields, time buttons on hover). */
-  --c-press: 0 1px 2px oklch(0% 0 0 / 0.1), 0 3px 8px -3px oklch(0% 0 0 / 0.14);
+  --c-press: 0 1px 2px oklch(0% 0 0 / 0.12), 0 4px 10px -3px oklch(0% 0 0 / 0.18);
+  /* The calendar's tiles: a free time stands a hair off the card; the chosen day and time
+     sit on a dark ink tile with a deep, tight shadow under it. */
+  --c-tile-rest: 0 0.5px 1px oklch(0% 0 0 / 0.08);
+  --c-sel: 0 1px 2px oklch(0% 0 0 / 0.2), 0 4px 8px -2px oklch(0% 0 0 / 0.2), 0 12px 22px -8px oklch(0% 0 0 / 0.6);
   --c-focus: 0 0 0 4px color-mix(in oklch, var(--ink) 12%, transparent);
   --c-glass: color-mix(in oklch, var(--paper) 72%, transparent);
   background: var(--paper);
@@ -2017,6 +2032,8 @@ body:has(.landing) {
     --c-well: inset 0 1px 3px oklch(0% 0 0 / 0.55), inset 0 0 0 1px oklch(100% 0 0 / 0.04);
     --c-lift: 0 1px 2px oklch(0% 0 0 / 0.7), 0 28px 56px -20px oklch(0% 0 0 / 1);
     --c-press: 0 1px 2px oklch(0% 0 0 / 0.5);
+    --c-tile-rest: 0 0 #0000;
+    --c-sel: 0 2px 4px oklch(0% 0 0 / 0.12), 0 8px 18px -8px oklch(0% 0 0 / 0.55);
     --c-focus: 0 0 0 4px color-mix(in oklch, var(--ink) 22%, transparent);
     --c-glass: color-mix(in oklch, var(--paper) 68%, transparent);
   }
@@ -2042,6 +2059,8 @@ body:has(.landing) {
   --c-well: inset 0 1px 3px oklch(0% 0 0 / 0.55), inset 0 0 0 1px oklch(100% 0 0 / 0.04);
   --c-lift: 0 1px 2px oklch(0% 0 0 / 0.7), 0 28px 56px -20px oklch(0% 0 0 / 1);
   --c-press: 0 1px 2px oklch(0% 0 0 / 0.5);
+  --c-tile-rest: 0 0 #0000;
+  --c-sel: 0 2px 4px oklch(0% 0 0 / 0.12), 0 8px 18px -8px oklch(0% 0 0 / 0.55);
   --c-focus: 0 0 0 4px color-mix(in oklch, var(--ink) 22%, transparent);
   --c-glass: color-mix(in oklch, var(--paper) 68%, transparent);
 }
@@ -2676,8 +2695,7 @@ body:has(.landing) {
   background: var(--ink);
   box-shadow:
     inset 0 1px 0 oklch(100% 0 0 / 0.16),
-    0 2px 4px oklch(0% 0 0 / 0.12),
-    0 8px 18px -8px oklch(0% 0 0 / 0.55);
+    var(--c-sel, 0 2px 4px oklch(0% 0 0 / 0.12), 0 8px 18px -8px oklch(0% 0 0 / 0.55));
   opacity: 0;
   scale: 0.86;
   pointer-events: none;
@@ -2703,12 +2721,14 @@ body:has(.landing) {
   border-radius: 0.875rem;
   border: 1px solid transparent;
   background: var(--raised);
-  box-shadow: inset 0 0 0 1px var(--c-rim-in, transparent);
+  box-shadow:
+    inset 0 0 0 1px var(--c-rim-in, transparent),
+    var(--c-tile-rest, 0 0 #0000);
 }
 .c-time[aria-pressed="true"] {
   box-shadow:
     inset 0 1px 0 oklch(100% 0 0 / 0.16),
-    0 8px 18px -8px oklch(0% 0 0 / 0.55);
+    var(--c-sel, 0 8px 18px -8px oklch(0% 0 0 / 0.55));
 }
 @media (hover: hover) and (pointer: fine) {
   .c-slots .c-day[role="tab"]:hover:not([aria-selected="true"]) {
@@ -2718,9 +2738,7 @@ body:has(.landing) {
   .c-time[aria-pressed="false"]:hover {
     background: var(--surface);
     border-color: var(--c-rim);
-    box-shadow:
-      0 1px 1px oklch(0% 0 0 / 0.04),
-      0 6px 14px -6px oklch(0% 0 0 / 0.2);
+    box-shadow: var(--c-press);
     translate: 0 -1px;
   }
 }
