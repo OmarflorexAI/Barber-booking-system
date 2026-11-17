@@ -4,14 +4,25 @@ Last updated: 2026-11-17, end of the third session (six /b milestones, booked ch
 
 ## Where we are
 
-### START HERE next session (written 2026-11-17, end of the third session)
+### START HERE next session (written 2026-11-17, end of the fourth session)
 
-Everything below is committed and pushed to `origin/main`. Nothing is running. Open items, in order:
-1. **Show the user and get feedback** on the redesigned /b (light theme, step indicator, desktop sizes). The user has twice said the light theme looked plain; this round (QA PASS, card vs ground contrast 1.5–2.1) is the boldest yet but the user has not seen it live. The "Book now" gloss fix (`--c-btn-gloss` soft fade, `--c-btn-ink` white label) was made after QA and only checked by computed colour, not by eye.
+Everything below is committed and pushed to `origin/main` (code `33e5513`). Open items, in order:
+1. **Get the user's reaction** to the round-five changes below (dark theme, calendar motion, barber step, pager, landing phone). They saw screenshots only. The light theme, pager and desktop sizes from round four were shown by screenshot and led to this round's asks; "Book now" was checked by eye and looks right.
 2. **Leftover test data in demo-shop:** an open Booking Nov 17 12:30 PM with Carlos, "Visual Check" (718) 555-0101 (past the online cutoff: cancel in `/app/day`, or a DB cancel only with the user's OK), plus several cancelled "Visual Check" Bookings and Client rows.
 3. **/m not restyled for desktop by eye:** Job C checked `/m/invalid-token` only; a real manage page at ≥1024px wasn't seen. The shared `client-shell.tsx` column change applies there too.
-4. **Production:** set `NEXT_PUBLIC_SITE_URL` (calendar events fall back to the page origin anyway). `DESIGN.md` still says red is the one live-signal colour; the booked check is now green (`--c-success`) by user request — update `DESIGN.md` with `impeccable-documenter` when convenient.
-5. Older open items from the second session (dashed fields, booked-step choices, day-change height jump, unused dictionary string, demo photos, "text 2 hours before" claim, book-pay-online e2e) are listed under the second session's START HERE below.
+4. **Production:** set `NEXT_PUBLIC_SITE_URL` (calendar events fall back to the page origin anyway). `DESIGN.md` was updated by `impeccable-documenter` for the green check, both grounds, pager, calendar motion and hero phone.
+5. **Known trade-offs from round five:** on phones the times list can grow downward once when a longer day loads (never jumps up); the landing phone's `.hp-screen` copies the `/b` light token values by hand, so token changes need a matching phone update. Drift found by the documenter: `.client-page .c-btn` and `.c-pay` still use a 350ms overshoot spring (and the recipe comment says press springs to 0.97), against the new no-overshoot rule; DESIGN.md's "Tone Not Shadow" rule and the landing "expo-out" line predate the layered Client shadows.
+6. Older open items from the second session (dashed fields, booked-step choices, day-change height jump, unused dictionary string, demo photos, "text 2 hours before" claim, book-pay-online e2e) are listed under the second session's START HERE below.
+
+### Fifth round 2026-11-17: dark theme, calendar, barber step, pager, hero phone (all QA PASS; committed `33e5513`, pushed)
+
+User asks (after seeing round-four screenshots): premium Apple-style dark theme; smooth day-click animation in "Elige la hora" plus deeper hour tiles; nicer "Elige tu barbero" and bottom price; visible pager in dark; landing phone matching the real UI, less bouncy hour pick, no blur on hover. Five `bm-worker` jobs (A, E first; then B, C, D) + one `bm-qa` each.
+- **A (dark):** `--paper` oklch(12.5% 0.005 262) charcoal, cool top light (`--c-ground`) + three dim blobs (`--c-aura`, slate blue/umber/white, transform-only drift); lighter elevated surfaces (`--surface` 30.5%, `--raised` 36.5%), top-lit rims, four-layer soft shadows. Card vs ground 1.73, muted 6.2:1 on surface. Both dark blocks identical.
+- **B (calendar, `src/components/slot-picker.tsx` + CSS):** glitch was a spring pop on the new day with an instant vanish on the old, a dim-then-rebuild-and-replay of the times list, and a phone height jump. Now each day has a `.c-day-ink` layer that crossfades (old 160ms out, new 200–280ms in, scale ≤1); the calendar times list stays mounted (`key="times"`) and dims to 0.5 once; phones keep the tallest list height per Barber+Service. Staff strip unchanged. Hour tiles: five-layer `--c-tile-rest` (light), rim + contact shadow (dark); press sinks 1px, no scale on `.c-day`/`.c-time` (orchestrator fix after QA). Also fixed a chosen time showing white text on a light tile.
+- **C (barber step + dock):** `.c-avatar*` monogram discs (inverted disc for "Any available barber"), `.c-price*` tabular sans prices, quieter Profile pill (`.c-chip-quiet`); `.c-dock` glass with a 40px disc, service/barber line and larger price. No new strings.
+- **D (pager):** glass track with local `--pg-*` tokens, upcoming 30–38% ink < done < capsule; ease-out, no overshoot. Dark upcoming dot vs track 2.95.
+- **E (hero phone):** `.hp-*` rewritten to mirror `/b` light (cards, pager dots, raised times, gloss button, green check); calm pick motion (cubic-bezier(.22,1,.36,1), scale 0.9→1); the 3D tilt (cause of hover blur) replaced by `.hero-phone-glint` rim light + halo. Unused `landing-pop` removed.
+- Checks: lint + typecheck clean; e2e book-now, manage, barber-profile, landing pass.
 
 ### Fourth round 2026-11-17: six /b milestones (all QA PASS; committed `74e725b`, pushed)
 
