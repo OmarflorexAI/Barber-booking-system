@@ -6,7 +6,7 @@ import { requireProShop } from "@/server/booking-engine/plans";
 import { hashToken as hash } from "@/server/booking-engine";
 import { addDays, toLocal, type LocalDate } from "@/server/booking-engine/time";
 import type { BarberAlert, RefundFailure } from "@/server/dispatch";
-import { formatMoney } from "@/lib/i18n/dictionaries";
+import { formatMoney, type Locale } from "@/lib/i18n/dictionaries";
 import { createReporting } from "@/server/reporting";
 
 /**
@@ -27,7 +27,13 @@ export type AlertsConfig = {
 };
 
 /** The part of a Telegram update we read. */
-export type TelegramUpdate = { message?: { chat?: { id?: number }; text?: string } };
+export type TelegramUpdate = {
+  message?: { chat?: { id?: number }; text?: string; from?: { language_code?: string } };
+};
+
+/** Language of a Telegram chat: Spanish when the user's Telegram app is in Spanish, else English. */
+export const telegramLocale = (languageCode: string | undefined): Locale =>
+  languageCode?.toLowerCase().startsWith("es") ? "es" : "en";
 
 const LINK_VALID_MS = 24 * 60 * 60_000;
 /** The Owner's daily email goes out from this local hour on. */
@@ -35,9 +41,9 @@ const DAILY_EMAIL_HOUR = 7;
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
-function shortWhen(d: Date, timezone: string) {
+function shortWhen(d: Date, timezone: string, locale: Locale = "en") {
   return d
-    .toLocaleString("en-US", { timeZone: timezone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+    .toLocaleString(locale === "es" ? "es-US" : "en-US", { timeZone: timezone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
     .replace(/[\u00a0\u202f]/g, " ");
 }
 
@@ -65,15 +71,21 @@ export function createAlerts({ sql, chat, email, config, clock = () => new Date(
       {
         starts_at: Date;
         timezone: string;
-        service: string;
+        service_en: string;
+        service_es: string;
         client: string | null;
         barber_name: string;
         chat_id: string | null;
+        shared_chat: boolean;
+        locale: Locale;
         barber_email: string | null;
       }[]
     >`
-      select k.starts_at, s.timezone, sv.name_en as service, c.name as client, br.display_name as barber_name,
+      select k.starts_at, s.timezone, sv.name_en as service_en, sv.name_es as service_es, c.name as client,
+             br.display_name as barber_name,
              case when s.plan = 'pro' then t.chat_id::text end as chat_id,
+             coalesce((select count(*) > 1 from public.barber_telegram o where o.chat_id = t.chat_id), false) as shared_chat,
+             coalesce(t.locale, 'en') as locale,
              coalesce(br.email, u.email) as barber_email
       from public.bookings k
       join public.shops s on s.id = k.shop_id
@@ -86,22 +98,35 @@ export function createAlerts({ sql, chat, email, config, clock = () => new Date(
     `;
     if (!b) throw new Error(`booking ${a.bookingId} not found for alert`);
 
-    const who = b.client ?? "Walk-in";
-    const when = shortWhen(b.starts_at, b.timezone);
+    // The Barber's language is the one their Telegram app had when they linked it (English if never linked).
+    const es = b.locale === "es";
+    const who = b.client ?? (es ? "Sin cita" : "Walk-in");
+    const service = es ? b.service_es : b.service_en;
+    const when = shortWhen(b.starts_at, b.timezone, b.locale);
     const link = `${config.siteUrl}/app/day?date=${toLocal(b.starts_at, b.timezone).date}&barber=${a.barberId}`;
-    const from = typeof a.details.from === "string" ? shortWhen(new Date(a.details.from), b.timezone) : null;
+    const from = typeof a.details.from === "string" ? shortWhen(new Date(a.details.from), b.timezone, b.locale) : null;
     const byShop = a.details.by && a.details.by !== "client";
-    const headline = {
-      created: `New booking: ${who}, ${b.service}, ${when}`,
-      cancelled: `Cancelled${byShop ? " by the shop" : ""}: ${who}, ${b.service}, ${when}`,
-      rescheduled: `Moved: ${who}, ${b.service}, ${from ? `${from} -> ` : ""}${when}`,
-      paid: `Paid online: ${who}, ${b.service}, ${when}`,
-    }[a.event];
+    const what = `${who}, ${service}, ${a.event === "rescheduled" && from ? `${from} -> ` : ""}${when}`;
+    const headline = es
+      ? {
+          created: `Nueva cita: ${what}`,
+          cancelled: `Cancelada${byShop ? " por la barbería" : ""}: ${what}`,
+          rescheduled: `Cambio de hora: ${what}`,
+          paid: `Pagada en línea: ${what}`,
+        }[a.event]
+      : {
+          created: `New booking: ${what}`,
+          cancelled: `Cancelled${byShop ? " by the shop" : ""}: ${what}`,
+          rescheduled: `Moved: ${what}`,
+          paid: `Paid online: ${what}`,
+        }[a.event];
+    // One chat can hold several Barbers' alerts (an Owner who linked every Barber): then say whose it is.
+    const whose = b.shared_chat ? `\n${es ? "Barbero" : "Barber"}: ${b.barber_name}` : "";
     const text = `${headline}\n${link}`;
 
     if (b.chat_id) {
       try {
-        await chat.send({ chatId: Number(b.chat_id), text });
+        await chat.send({ chatId: Number(b.chat_id), text: `${headline}${whose}\n${link}` });
         return;
       } catch (e) {
         console.warn("[alerts] Telegram failed, falling back to email", { barberId: a.barberId, error: String(e) });
@@ -146,10 +171,11 @@ export function createAlerts({ sql, chat, email, config, clock = () => new Date(
     if (typeof chatId !== "number" || !match) return "ignored";
 
     const now = clock();
+    const locale = telegramLocale(update.message?.from?.language_code);
     const [linked] = await sql<{ barber_name: string; shop_name: string }[]>`
       with done as (
         update public.barber_telegram
-        set chat_id = ${chatId}, linked_at = ${now}, link_token_hash = null, link_expires_at = null
+        set chat_id = ${chatId}, linked_at = ${now}, link_token_hash = null, link_expires_at = null, locale = ${locale}
         where link_token_hash = ${hash(match[1])} and link_expires_at > ${now}
           and exists (select 1 from public.shops p where p.id = barber_telegram.shop_id and p.plan = 'pro')
         returning barber_id, shop_id
@@ -158,10 +184,22 @@ export function createAlerts({ sql, chat, email, config, clock = () => new Date(
       from done join public.barbers br on br.id = done.barber_id join public.shops s on s.id = done.shop_id
     `;
     if (!linked) {
-      await chat.send({ chatId, text: "This link has expired or was already used. Open Barber Master and get a new one." });
+      await chat.send({
+        chatId,
+        text:
+          locale === "es"
+            ? "Este enlace venció o ya se usó. Abre Barber Master y pide uno nuevo."
+            : "This link has expired or was already used. Open Barber Master and get a new one.",
+      });
       return "invalid";
     }
-    await chat.send({ chatId, text: `Connected! Booking alerts for ${linked.barber_name} at ${linked.shop_name} will arrive here.` });
+    await chat.send({
+      chatId,
+      text:
+        locale === "es"
+          ? `¡Listo! Los avisos de citas de ${linked.barber_name} en ${linked.shop_name} llegarán aquí.`
+          : `Connected! Booking alerts for ${linked.barber_name} at ${linked.shop_name} will arrive here.`,
+    });
     return "linked";
   }
 

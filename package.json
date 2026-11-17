@@ -19,7 +19,8 @@
     "landing:shots": "node scripts/landing-shots.mjs",
     "dadtest:setup": "node --env-file=.env.local scripts/dadtest-setup.mjs",
     "dadtest:owner": "node --env-file=.env.local scripts/dadtest-owner.mjs",
-    "dadtest:reset": "node --env-file=.env.local scripts/dadtest-reset.mjs"
+    "dadtest:reset": "node --env-file=.env.local scripts/dadtest-reset.mjs",
+    "dadtest:telegram": "node --env-file=.env.local scripts/dadtest-telegram.mjs"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
