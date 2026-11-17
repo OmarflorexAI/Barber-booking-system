@@ -412,7 +412,7 @@ export function SlotPicker(props: {
                   onClick={() => pickDay(d)}
                   className={`c-day relative grid aspect-square max-h-12 w-full place-items-center text-[0.9375rem] font-medium tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                     hasTimes === false ? "text-muted" : "text-ink"
-                  } ${today && !on ? "is-today" : ""}`}
+                  }`}
                 >
                   {n}
                   {hasTimes && <span aria-hidden="true" className="c-dot absolute bottom-[16%] left-1/2 size-1 -translate-x-1/2 rounded-full bg-ink" />}

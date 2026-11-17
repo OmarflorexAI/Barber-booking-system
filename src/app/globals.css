@@ -3259,11 +3259,8 @@ body:has(.landing) {
   border-color: transparent;
   box-shadow: none;
 }
-.c-slots .c-day.is-today {
-  background: var(--raised);
-  box-shadow: inset 0 0 0 1px var(--c-rim-in, transparent);
-  font-weight: 700;
-}
+/* Only the chosen day is marked (user, 2026-11-17): today gets no tile of its own; screen
+   readers still hear it (aria-current="date" and "today" in the label). */
 .c-slots .c-day {
   isolation: isolate;
 }
