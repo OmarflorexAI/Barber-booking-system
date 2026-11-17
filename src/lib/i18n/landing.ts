@@ -41,9 +41,7 @@ const en = {
     anyBarberHint: "First free chair",
     barbers: ["Carlos", "Dre", "Maya", "Luis"],
     pickTime: "Pick a time",
-    day: "Thu, Nov 12",
-    dayShort: "Thu",
-    week: ["Thu", "Fri", "Sat", "Sun", "Mon", "Tue"], // the day strip, from the day above
+    dateLocale: "en-US", // the day strip's weekday and date names (the dates themselves come from the clock)
     times: ["10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM"],
     taken: [1, 4, 5, 9],
     noTimes: "No free times this day",
@@ -262,9 +260,7 @@ const es: LandingDictionary = {
     anyBarberHint: "La primera silla libre",
     barbers: ["Carlos", "Dre", "Maya", "Luis"],
     pickTime: "Elige una hora",
-    day: "jue, 12 nov",
-    dayShort: "jue",
-    week: ["jue", "vie", "sáb", "dom", "lun", "mar"],
+    dateLocale: "es-US",
     times: ["10:00 a.m.", "10:30 a.m.", "11:00 a.m.", "11:30 a.m.", "1:00 p.m.", "1:30 p.m.", "2:00 p.m.", "2:30 p.m.", "3:00 p.m.", "3:30 p.m.", "4:00 p.m.", "4:30 p.m."],
     taken: [1, 4, 5, 9],
     noTimes: "No hay horas libres este día",

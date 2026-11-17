@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ViewTransition, addTransitionType, startTransition, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { ViewTransition, addTransitionType, startTransition, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import type { LandingDictionary } from "@/lib/i18n/landing";
 import { LiveDot } from "./live-dot";
 
@@ -32,6 +32,29 @@ const TAKEN_LATER: number[][] = [
   [1, 2, 4, 7, 8, 10],
 ];
 
+/** How many days the strip shows: today and the five after it. */
+const STRIP_DAYS = 6;
+
+/** The date in New York today, "2026-11-17". Read on the client only (the page is static). */
+function newYorkToday() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+}
+const subscribeNever = () => () => {};
+
+type StripDay = { weekday: string; num: string; label: string };
+
+/** Today (YYYY-MM-DD) and the next days, written in the page's language. */
+function stripDays(today: string, locale: string): StripDay[] {
+  const [y, m, d] = today.split("-").map(Number);
+  const wd = new Intl.DateTimeFormat(locale, { timeZone: "UTC", weekday: "short" });
+  const nm = new Intl.DateTimeFormat(locale, { timeZone: "UTC", day: "numeric" });
+  const full = new Intl.DateTimeFormat(locale, { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" });
+  return Array.from({ length: STRIP_DAYS }, (_, i) => {
+    const at = new Date(Date.UTC(y, m - 1, d + i, 12));
+    return { weekday: wd.format(at), num: nm.format(at), label: full.format(at) };
+  });
+}
+
 /** An item that rises in when its screen appears; `i` sets its place in the stagger. */
 function rise(i: number): CSSProperties {
   return { "--i": i } as CSSProperties;
@@ -48,7 +71,14 @@ export function HeroPhone({ p }: { p: Phone }) {
   const [service, setService] = useState(1);
   const [barber, setBarber] = useState<number | null>(1);
   const [time, setTime] = useState(10);
-  const [day, setDay] = useState(0); // index into the day strip
+  const [day, setDay] = useState(0); // index into the day strip (0 = today)
+  const [shownDay, setShownDay] = useState(0); // the day whose times are on screen (lags `day` by the fade)
+  const [fading, setFading] = useState(false);
+  const [touched, setTouched] = useState(false); // after the first day change the times stop staggering in
+  const fade = useRef(0);
+  // Null on the server and while hydrating, so the static HTML never carries a date.
+  const today = useSyncExternalStore(subscribeNever, newYorkToday, () => null);
+  const days = useMemo(() => (today ? stripDays(today, p.dateLocale) : null), [today, p.dateLocale]);
   const [picked, setPicked] = useState<number | null>(null); // the time chip raised just before "booked"
   const [booked, setBooked] = useState(0); // counts bookings, so the check mark replays each time
   const pending = useRef(0);
@@ -70,26 +100,40 @@ export function HeroPhone({ p }: { p: Phone }) {
       setStep(next);
     });
     moved.current = true;
+    setTouched(false);
   }
 
   const barberName = barber === null ? p.barbers[1] : p.barbers[barber];
   const svc = p.services[service];
 
   // No hover effect on the device: a 3D lean re-samples the screen and its text goes soft.
-  useEffect(() => () => clearTimeout(pending.current), []);
+  useEffect(() => () => (clearTimeout(pending.current), clearTimeout(fade.current)), []);
 
   // Like the real picker, taken times are not shown; the free ones split by part of the day.
   const takenOn = (d: number) => (d === 0 ? p.taken : TAKEN_LATER[d - 1] ?? []);
   const freeOn = (d: number) => p.times.map((t, i) => ({ t, i })).filter(({ i }) => !takenOn(d).includes(i));
   const isAm = (t: string) => /a\.?\s?m\.?$/i.test(t);
-  const free = freeOn(day);
+  const free = freeOn(shownDay);
   const groups = [free.filter(({ t }) => isAm(t)), free.filter(({ t }) => !isAm(t))].filter((g) => g.length > 0);
 
   /** A new day: the ink tile springs over and the chosen time is dropped. */
   function pickDay(d: number) {
     if (pending.current) return;
+    if (d === day) return;
     setDay(d);
     setPicked(null);
+    setTouched(true);
+    // The ink glides at once; the times fade out, swap, and fade back in.
+    clearTimeout(fade.current);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setShownDay(d);
+      return;
+    }
+    setFading(true);
+    fade.current = window.setTimeout(() => {
+      setShownDay(d);
+      setFading(false);
+    }, 90);
   }
   /** A time: the chip lifts for a beat, then the booked screen. */
   function pickTime(i: number) {
@@ -186,42 +230,44 @@ export function HeroPhone({ p }: { p: Phone }) {
     //    then that day's free times by part of day.
     <Screen key="t" title={p.pickTime} p={p} at={2} onBack={() => go(1)} dock={<Dock name={svc.name} sub={barberName} price={svc.price} />}>
       <p className="sr-only" aria-live="polite">
-        {dayLabel(p, day)}
+        {days?.[day].label}
       </p>
       <div className="hp-timecard px-2.5 pt-2 pb-2.5">
-        <div className="grid grid-cols-6 gap-1">
-          {p.week.map((w, d) => {
+        <div className="hp-daybar grid grid-cols-6 gap-1">
+          <span aria-hidden className="hp-glide" style={{ "--d": day } as CSSProperties} />
+          {Array.from({ length: STRIP_DAYS }, (_, d) => {
+            const w = days?.[d].weekday ?? "";
             const on = d === day;
-            const open = freeOn(d).length > 0;
+            const open = days !== null && freeOn(d).length > 0;
             return (
               <button
                 key={d}
                 type="button"
                 aria-pressed={on}
-                aria-label={dayLabel(p, d)}
+                aria-label={days?.[d].label}
                 onClick={() => pickDay(d)}
-                style={{ WebkitTapHighlightColor: "transparent" } as CSSProperties}
+                style={{ WebkitTapHighlightColor: "transparent", gridColumn: d + 1, gridRow: 1 } as CSSProperties}
                 className="group relative flex flex-col items-center gap-0.5 rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f]"
               >
                 <span className={`text-[8.5px] font-medium ${on ? "" : c.muted}`}>{w}</span>
-                {/* The chosen day's ink is this tile's ::before (fades in, settles from 0.9). */}
+                {/* The ink is the one .hp-glide tile behind the strip; the digit just turns paper. */}
                 <span className={`hp-day grid h-[30px] w-[30px] place-items-center text-[12px] font-semibold ${c.mono} ${on ? "is-on" : ""}`}>
-                  {dayNumber(p.day) + d}
+                  {days?.[d].num}
                   <span className={`absolute bottom-[3px] h-[3px] w-[3px] rounded-full ${!open ? "bg-transparent" : on ? "bg-white" : "bg-current"}`} />
                 </span>
               </button>
             );
           })}
         </div>
-        <div key={day} className="mt-2 min-h-[124px] border-t border-[oklch(87%_0.005_260)] pt-1.5">
+        <div className={`hp-times mt-2 min-h-[124px] border-t ${fading ? "is-fading" : ""} border-[oklch(87%_0.005_260)] pt-1.5`}>
           {groups.length === 0 && (
-            <p className={`hp-rise pt-9 text-center text-[11px] font-medium ${c.muted}`} style={rise(0)}>
+            <p className={`${touched ? "" : "hp-rise"} pt-9 text-center text-[11px] font-medium ${c.muted}`} style={rise(0)}>
               {p.noTimes}
             </p>
           )}
           {groups.map((group, g) => (
             <div key={g} className={g ? "mt-1.5" : ""}>
-              <p aria-hidden className={`hp-rise mb-1 flex items-center gap-2 text-[9.5px] font-medium ${c.muted}`} style={rise(g * 3)}>
+              <p aria-hidden className={`${touched ? "" : "hp-rise"} mb-1 flex items-center gap-2 text-[9.5px] font-medium ${c.muted}`} style={rise(g * 3)}>
                 {group[0].t.match(/[ap]\.?\s?m\.?$/i)?.[0]}
                 <span className="hp-rule h-px flex-1" />
               </p>
@@ -233,7 +279,7 @@ export function HeroPhone({ p }: { p: Phone }) {
                     aria-pressed={picked === i}
                     onClick={() => pickTime(i)}
                     style={rise(g * 3 + 1 + k)}
-                    className={`hp-rise hp-time min-h-[32px] px-1 text-[11px] font-medium ${c.mono} focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f]`}
+                    className={`${touched ? "" : "hp-rise"} hp-time min-h-[32px] px-1 text-[11px] font-medium ${c.mono} focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f0f0f]`}
                   >
                     {t}
                   </button>
@@ -261,7 +307,7 @@ export function HeroPhone({ p }: { p: Phone }) {
         <div className="hp-rise hp-ticket-shadow mt-3 w-full" style={rise(2)}>
           <div className="hp-ticket text-left">
             <div className="flex h-[60px] flex-col justify-center px-3">
-              <p className={`text-[10px] font-medium ${c.muted}`}>{dayLabel(p, day)}</p>
+              <p className={`text-[10px] font-medium ${c.muted}`}>{days?.[day].label}</p>
               <p className={`text-[20px] leading-6 font-semibold tracking-[-0.02em] ${c.mono}`}>{p.times[time]}</p>
             </div>
             <div aria-hidden className="mx-3 border-t border-dashed border-[oklch(85%_0.005_260)]" />
@@ -284,6 +330,8 @@ export function HeroPhone({ p }: { p: Phone }) {
             type="button"
             onClick={() => {
               setPicked(null);
+              setDay(0);
+              setShownDay(0);
               go(0);
             }}
             className="hp-btn min-h-12 w-full rounded-full text-[13px] font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f0f0f]"
@@ -365,17 +413,6 @@ function StatusBar() {
       </span>
     </div>
   );
-}
-
-/** "Thu, Nov 12" or "jue, 12 nov" → 12, for the day strip's numbers. */
-function dayNumber(day: string) {
-  return Number(day.match(/\d+/)?.[0] ?? 1);
-}
-
-/** The strip's day `d` as the page writes it: "Thu, Nov 12" → "Fri, Nov 13", "jue, 12 nov" → "vie, 13 nov". */
-function dayLabel(p: Phone, d: number) {
-  if (d === 0) return p.day;
-  return p.day.replace(p.dayShort, p.week[d]).replace(/\d+/, String(dayNumber(p.day) + d));
 }
 
 /** "Fresh Cuts Barbershop" → "FC", the Shop's monogram when it has no logo. */

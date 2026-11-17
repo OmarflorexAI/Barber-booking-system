@@ -512,17 +512,42 @@ body:has(.landing) {
     0 1px 2px oklch(0% 0 0 / 0.25),
     0 2px 6px -1px oklch(17% 0 0 / 0.35);
 }
-/* The week (.c-day): the chosen day's ink lives on ::before, so choosing a day changes one
-   layer's opacity and scale (never a background or a shadow). */
+/* The week (.c-day): ONE ink tile (.hp-glide) glides between the days: a whole-pixel
+   translate along the strip, no scale, never past the ends. The digits swap ink and paper. */
 .hp-day {
   position: relative;
-  isolation: isolate;
   border-radius: 9px;
 }
 .hp-day.is-on {
   color: #fff;
 }
-.hp-day::before,
+.hp-daybar {
+  container-type: inline-size;
+}
+.hp-glide {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
+  justify-self: start;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--hp-ink);
+  box-shadow:
+    inset 0 1px 0 oklch(100% 0 0 / 0.16),
+    var(--hp-sel);
+  pointer-events: none;
+  /* column width = (strip - 5 gaps) / 6; the tile sits centred in column --d */
+  translate: calc(var(--d) * ((100cqw - 20px) / 6 + 4px) + ((100cqw - 20px) / 6 - 30px) / 2) 0;
+  translate: round(nearest, calc(var(--d) * ((100cqw - 20px) / 6 + 4px) + ((100cqw - 20px) / 6 - 30px) / 2), 1px) 0;
+}
+/* The times swap with a short opacity fade (the box keeps its height). */
+.hp-times {
+  opacity: 1;
+}
+.hp-times.is-fading {
+  opacity: 0;
+}
 .hp-time::before {
   content: "";
   position: absolute;
@@ -537,7 +562,6 @@ body:has(.landing) {
   scale: 0.9;
   pointer-events: none;
 }
-.hp-day.is-on::before,
 .hp-time[aria-pressed="true"]::before {
   opacity: 1;
   scale: 1;
@@ -783,9 +807,20 @@ body:has(.landing) {
     animation-delay: calc(40ms + var(--i, 0) * 35ms);
   }
   /* Calm picks: an ease-out whose curve never passes 1 (no overshoot). */
-  .hp-day.is-on::before,
   .hp-time[aria-pressed="true"]::before {
     transition: scale 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .hp-glide {
+    transition: translate 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .hp-day {
+    transition: color 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .hp-times {
+    transition: opacity 140ms ease-out;
+  }
+  .hp-times.is-fading {
+    transition-duration: 90ms;
   }
   .hp-time::after {
     transition: opacity 150ms ease-out;
