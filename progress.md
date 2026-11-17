@@ -4,7 +4,18 @@ Last updated: 2026-11-17, end of the third session (six /b milestones, booked ch
 
 ## Where we are
 
-### START HERE next session (written 2026-11-17, end of the fourth session)
+### START HERE next session (written 2026-11-17, dad-demo build session)
+
+Goal: the user's dad tests the app alone on his phone, in Spanish, on a separate Shop `dad-test` ("Barbería de Prueba", plan pro, online payment and texts off), as Client and Owner. Built and committed locally (`487bb3f`..`ee7896a`, not pushed); QA passed (typecheck, lint, 28 unit + 182 engine tests).
+- **Client emails** (`src/server/client-email/`, migration `20261117090000_client_email.sql`): optional email on `/b`, confirmation/cancelled/rescheduled outbox rows in the same transaction, EN/ES by `bookings.locale`. Not gated by plan; also sent as a receipt when the Client changes it. Until a domain is verified in Resend, only the Resend account's own address receives them.
+- **Drain right away** (`src/server/drain-soon.ts`, `after()`): every outbox-writing action drains its rows; `vercel.json` daily backstop crons (`/api/cron/daily` 11:00 UTC, `/api/cron/dispatch` 12:00 UTC; Hobby = once a day, so the Owners' 7:00 email can be an hour late in winter). 30 s tolerance for app/DB clock skew (about 26 s seen on this machine).
+- **Scripts:** `npm run dadtest:setup` (idempotent), `dadtest:owner -- <email> [name] --site <url>` (prints a `/auth/confirm` link: a button page so WhatsApp previews don't spend the one-time token; about 1 hour), `dadtest:reset` (only dad-test Bookings/Clients/outbox), `dadtest:telegram [-- barber]` (one t.me link per Barber; open all in dad's Telegram so one chat gets every alert).
+- **Telegram alerts in Spanish** when the linking Telegram app is in Spanish (migration `20261117100000_telegram_locale.sql`). Email fallback subject suffix, daily and refund emails are still English only.
+- **Gap found:** no UI calls `createTelegramLink` (Settings only shows a Pro row). Build the real linking screen before real users.
+- **Checklist for dad:** `docs/prueba-papa.md` (fill `<URL>` and `<CORREO>`).
+Next: user creates the Telegram bot and Vercel project and sets env vars (names in `.env.example`; skip Twilio/Stripe; `CRON_SECRET` needed for crons; `NEXT_PUBLIC_SITE_URL` before build), adds `https://<name>.vercel.app/**` to Supabase redirect URLs; then push, register the Telegram webhook on the live URL, run the dadtest scripts with `--site`, smoke-test on the user's phone, then dad tests. Before real users: production Supabase, verified Resend domain, Twilio/A2P, legal name, Telegram linking UI.
+
+### Earlier: START HERE (written 2026-11-17, end of the fourth session)
 
 Everything below is committed and pushed to `origin/main`. Open items, in order:
 1. **Get the user's reaction** to the round-five changes and follow-ups below (dark theme, calendar motion, barber step, pager, landing phone, clearer phone hovers, no "today" tile). They saw screenshots only. Lesson from this round: the user rejects effects they didn't ask for (a phone hover glow, a drifting background); tell workers not to add extras and flag any new effect before shipping.
