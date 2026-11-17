@@ -129,7 +129,7 @@ The world is the Cocoon template's grayscale grammar (MIT, rebuilt in React and 
 This document records the shipped landing (`/`, `/es`), the legal pages (`/privacy`, `/terms` and their `/es` pairs) and the 404. **The app (`/b`, `/m`, `/login`, `/app/*`, `/admin`)** carries the same brand in a calmer, denser "Operate" mode. Its rules were decided in the G System UI grill (2026-11-13) and live in **[App (Operate mode)](#app-operate-mode)** at the end of this file; most of that section is decided but not yet built (it lands in missions U1 to U4). The old warm-paper `:root` tokens in `globals.css` are being replaced by the achromatic app ramp described there.
 
 **Key Characteristics:**
-- Near-black grayscale ground, near-white ink, one barber red reserved for live and status signals.
+- Near-black grayscale ground, near-white ink, one barber red reserved for live signals (status is green, in the Client pages only).
 - Hanken Grotesk for everything; JetBrains Mono only for times, prices and numbers.
 - Depth by tone steps and hairlines, not shadows.
 - White pill = the action; outlined pill = the quieter action.
@@ -138,10 +138,10 @@ This document records the shipped landing (`/`, `/es`), the legal pages (`/priva
 
 ## Colors
 
-A strictly achromatic dark ramp with a single warm red that only ever means "live" or "done".
+A strictly achromatic dark ramp with a single warm red that only ever means "live". The one "done" colour is the Client pages' green check, never a landing token.
 
 ### Primary
-- **Barber Red** (`barber-red`): the pivot of the scissors mark, the pulsing "Today" dot on the first-month timeline, the "new" dot in the Barber alert card, and the booked check on the hero phone and booking card. 5.2:1 on the ground, so it would hold as text, but it is used as a signal fill, never as a button, link or heading color.
+- **Barber Red** (`barber-red`): the pivot of the scissors mark, the pulsing "Today" dot on the first-month timeline, the "new" dot in the Barber alert card, and nothing else (the booked check is green, not red). 5.2:1 on the ground, so it would hold as text, but it is used as a signal fill, never as a button, link or heading color.
 
 ### Neutral
 - **Closing-Time Black** (`ground`): the page ground everywhere inside `.landing`, also painted onto `html`/`body` so overscroll never flashes paper. Also the fill of mini cards and form fields.
@@ -158,7 +158,7 @@ On photos and over cards, white is used at fixed alphas rather than new tokens: 
 Product depictions (the hero phone's screens) show the real Client booking page in its own current light palette. They are pictures of the product, not landing tokens.
 
 ### Named Rules
-**The Live Signal Rule.** Barber red marks only something alive or confirmed: the pivot, a pulsing live dot, a "new" dot, a booked check. Never a button, link, heading, border, error or decoration. If it isn't a status, it is grayscale.
+**The Live Signal Rule.** Barber red marks only something alive: the pivot, a pulsing live dot, a "new" dot, the now line. A confirmed state (the booked check) is green (`--c-success`), never red. Never a button, link, heading, border, error or decoration. If it isn't a status, it is grayscale.
 
 **The No Tint Rule.** The ramp is achromatic (chroma 0). Do not warm or cool the grays; the photos bring the only other color.
 
@@ -213,7 +213,7 @@ The system is flat and tonal, lifted off pure black but kept dark (user, 2026-11
 
 ### Shadow Vocabulary
 - **Top glow** (`box-shadow: 0 -20px 50px -15px rgba(255,255,255,0.05)`): the contact card only, a faint light from above, paired with a radial top highlight (`radial-gradient(80% 50% at 50% 0%, rgb(26,26,26) 0%, transparent 70%)`); the pricing cards have none (removed 2026-11-16).
-- **Device frame** (`.hero-phone-*` in globals.css): the hero phone is drawn as a real device after the user's reference (2026-11-15): a 2px graphite rim lit from the top left over a 5px black bezel, side buttons as pseudo-elements, a status bar and home indicator inside the screen, a faint white outer edge so black on black still separates, and a gentle pointer tilt (≤ 5°, fine pointers only, none with reduced motion).
+- **Device frame** (`.hero-phone-*` in globals.css): the hero phone is drawn as a real device after the user's reference (2026-11-15): a 2px graphite rim lit from the top left over a 5px black bezel, side buttons as pseudo-elements, a status bar and home indicator inside the screen, a faint white outer edge so black on black still separates, and no 3D tilt (it blurred the text); a rim glint follows the pointer on hover instead (fine pointers only, none with reduced motion). `.hp-screen` mirrors the `/b` light UI by hand and copies its token values (`.hp-timecard` = `.c-timecard`, `.hp-day`/`.hp-time` = `.c-day`/`.c-time`, `.hp-pager` = `.c-pager`, `.hp-dock` = `.c-dock`, `.hp-btn` = `.c-btn-primary`, `.hp-check` = `.c-check`); change one, change both.
 
 ### Named Rules
 **The Tone Not Shadow Rule.** Separate surfaces by stepping the ramp and drawing a hairline. Drop shadows are not part of the vocabulary, with exceptions (user, 2026-11-15): the hero phone's wide soft shadow, the contracted nav and its menu, the lead form's focus glow, open select list and the Send pill's hover glow.
@@ -268,7 +268,7 @@ Easing is a quick-out curve (`cubic-bezier(0.2, 0.8, 0.2, 1)`) for reveals and a
 
 ### Do:
 - **Do** keep every surface on the achromatic ramp (ground, panel, raised, hairline) and step it to separate layers.
-- **Do** use barber red only for live and status signals: pivot, live dot, "new" dot, booked check.
+- **Do** use barber red only for live signals: pivot, live dot, "new" dot, now line. The booked check is green.
 - **Do** make the liquid metal button the primary action in the nav and the form; the pricing cards use the arrow button.
 - **Do** set every heading in Hanken Grotesk with negative tracking (-0.025em to -0.035em) and keep body text in muted ink at 48 to 65ch.
 - **Do** show the real product (booking, alert, reminder screens) as the proof, on dimmed photos under small dark cards.
@@ -289,7 +289,7 @@ Easing is a quick-out curve (`cubic-bezier(0.2, 0.8, 0.2, 1)`) for reveals and a
 
 Decided in the G System UI grill (2026-11-13, all answers confirmed by the user; the record is in `progress.md` → "G grill answers"). This covers every screen that is not the landing: the Client pages `/b/<shopSlug>` and `/m/<token>`, `/login`, the staff app `/app/*` and the Platform admin panel `/admin`. Per-area direction contracts live in `.impeccable/surfaces/` (`src-app-b-shopslug.md`, `src-app-m-token.md`, `src-app-app-day.md`, `src-app-app-owner.md`, `src-app-app-me.md`, `src-app-admin.md`).
 
-**Build status.** Everything in this section is **decided, not yet built**, unless marked otherwise. It lands in mission order: U1 (theme tokens, the theme switch, the product-wide fonts, `/b`, `/m`, `/login`), U3a (the `/app` shell and Day/Today), U2 (Owner Dashboard and Settings), U3b (Barber Me), U4 (`/admin`). Restyle vs rebuild: `/b`, `/m` and `/login` are **restyled** (their logic and e2e tests are kept); `/app/day` is **rebuilt** inside the new shell (its server actions are kept).
+**Build status.** The Client pages (`/b`, `/m`) and the landing hero phone have shipped (commits 74e725b, 33e5513); their recorded rules are in [Client pages](#client-pages-b-and-m) below. Everything else in this section is **decided, not yet built**, unless marked otherwise. It lands in mission order: U1 (theme tokens, the theme switch, the product-wide fonts, `/b`, `/m`, `/login`), U3a (the `/app` shell and Day/Today), U2 (Owner Dashboard and Settings), U3b (Barber Me), U4 (`/admin`). Restyle vs rebuild: `/b`, `/m` and `/login` are **restyled** (their logic and e2e tests are kept); `/app/day` is **rebuilt** inside the new shell (its server actions are kept).
 
 **Scene.** A Barber glances at a phone between cuts, under bright shop lights, clippers in one hand. A Client books on a small phone on the train or at the counter. An Owner checks the week on a phone at the chair or on a laptop at home at night. That is why the app is light by default, follows the phone, and keeps the landing's dark as the night option.
 
@@ -309,6 +309,20 @@ Six tokens, defined on `:root` in `src/app/globals.css` for light and redefined 
 - **Light** is the same six roles on a light, strictly achromatic ramp (chroma 0: no warm paper, no cool blue-gray). The exact light values live in `globals.css`; this file does not repeat them so the two can't drift. The pre-G warm tokens (`#f6f3ee` paper and friends, `--accent`) are retired.
 - **Dark is the landing's ramp, not a second dark palette.** If a screen needs a third surface step (a pressed row, a sheet over a surface), the landing's raised step `oklch(14% 0 0)` is the dark value: add it as a token in both themes in `globals.css` first, never hard-code it.
 - The No Tint Rule and the Tone Not Shadow Rule apply unchanged: separate layers by a tone step and a `--line` hairline. Two exceptions, both soft and both light mode only (dark separates by the raised tone step): a bottom sheet may carry one soft shadow if a tone step alone doesn't separate it, and **cards** (Dashboard and Settings cards) may carry one very soft, low shadow for depth (user, 2026-11-13). Nothing else gets a shadow.
+
+### Client pages (`/b` and `/m`)
+
+Shipped. Source: the `.client-page` blocks and `.c-*` classes in `globals.css`, `src/app/b/[shopSlug]/booking-flow.tsx`, `src/components/slot-picker.tsx`. `.client-page` redefines `--paper`, `--surface`, `--raised`, `--line`, `--muted` for the Client pages only (the six-token table above still holds elsewhere); both themes follow the theme switch.
+
+- **Status colour.** The booked check (and `/m`'s confirmed check) is green: `--c-success`, light `oklch(64% 0.17 150)`, dark `oklch(72% 0.19 150)`. Red stays only on live signals (the now line, the new-Booking dot). Errors stay a neutral notice.
+- **Light ground.** A cool grey, lighter at the top, with three slow, low-chroma blobs (white, cool blue-grey, a faint warm sand; never violet). Cards are white, 20px radius, on five-layer shadows (rim, inner glint, contact, key, ambient: `--c-depth`, `--c-depth-hi` on hover).
+- **Dark ground.** Charcoal, not pure black: `--paper` `oklch(12.5% 0.005 262)`, a cool light from the top, three dim blobs. Elevation is a lighter surface (`--surface` 30.5%, `--raised` 36.5%) plus top-lit hairline rims and soft contact shadows, not heavier black shadow.
+- **Step indicator.** An iOS page control on a glass track (`.c-pager`): upcoming dots dimmest, done dots stronger, the current step an ink capsule. Ease-out, no overshoot.
+- **Calendar and times.** The chosen day crossfades its ink in (no spring pop). The times list stays mounted and dims while the day changes. Days and hour tiles have no press scale: only a whole-pixel lift or sink, so text stays crisp. The time card (`.c-timecard`) is one card with the week and the times side by side from 768px.
+- **Barber rows.** One card of rows, not a card per row. Each row has a monogram avatar disc (`.c-avatar`; a photo where the Barber has one), "any barber" is an inverted disc (`.c-avatar-any`), and prices are tabular sans (`.c-price`), not mono. The summary sits in a glass dock (`.c-dock`: 86% surface, blur 28px, lit top rim, lifted shadow); the details step's dock holds only the button (`.c-dock-bare`).
+- **Desktop (>= 1024px).** A 38rem column, h2 22px (`.c-h2`), 48px buttons. From 768px the dock is static in flow on steps 1 to 3 instead of fixed.
+- **Landing hero phone.** It pictures the `/b` light UI and mirrors it by hand: `.hp-screen` copies the token values, so keep it in sync with `.client-page` (see Elevation).
+- **Motion.** Animate only `transform` and `opacity`. Respect reduced motion (final state, no sheen, no spinner). No overshoot curves on app screens.
 
 ### Theme switching
 
@@ -336,11 +350,10 @@ Hanken Grotesk for every word, JetBrains Mono (tabular) for times, prices and nu
 
 ### The Live Signal Rule in the app
 
-Barber red still means only "alive" or "confirmed":
+Barber red means only "alive". A confirmed state is green (Client pages, below):
 
 - **The now line** across Day/Today at the current time (a red line with a small red dot at its start), only on today's date.
 - **The new-Booking dot** on a row that arrived since the Barber last looked.
-- **The booked check** on the Client's "You're booked" screen and in `/m`'s confirmed state.
 
 Everything else is grayscale. In particular the **"Paid online" tag is gray**, with a small card icon (a gray pill with `--line` border, `--muted` or `--ink` text), never red. Errors are not red. Cancel and remove are not red. Selected states, links and active tabs are not red.
 
@@ -384,7 +397,7 @@ The landing's shapes carry over: 16px for cards and sheets' top corners, full pi
 
 #### Do:
 - **Do** build every app color from the six tokens, in both themes, and check each screen in light and dark at 360px and 1440px, EN and ES.
-- **Do** keep red to the now line, the new-Booking dot and the booked check.
+- **Do** keep red to the now line and the new-Booking dot. The booked check is green (`--c-success`).
 - **Do** make the black (light) / white (dark) pill the one primary action per view, at least 48px tall.
 - **Do** set times, prices and counts in JetBrains Mono with tabular figures, and everything else in Hanken Grotesk.
 - **Do** put row actions in a bottom sheet and destructive actions behind a confirm that says what happens to the Client and their money.
