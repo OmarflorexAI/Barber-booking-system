@@ -537,7 +537,8 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
                 <ul className="c-in flex flex-col gap-2.5 text-sm leading-relaxed text-muted" style={{ "--i": 3 } as React.CSSProperties}>
                   <FinePrint icon="refund">{t.refundRule(formatCutoff(shop.cancelCutoffMinutes, locale))}</FinePrint>
                   <FinePrint icon="tip">{t.tipsInPerson}</FinePrint>
-                  <FinePrint icon="text">{t.smsConsent}</FinePrint>
+                  {/* Only promise texts when this Shop actually sends them. */}
+                  {shop.smsEnabled && <FinePrint icon="text">{t.smsConsent}</FinePrint>}
                 </ul>
 
                 <Turnstile key={turnstileKey} onToken={setTurnstileToken} lang={locale} />
