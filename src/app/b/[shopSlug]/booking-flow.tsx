@@ -963,9 +963,11 @@ function Confirmation(props: {
     <section className="flex flex-col gap-6" aria-live="polite">
       <div className="flex flex-col items-start gap-4">
         {/* The booked check: the one red mark on this page (the Live Signal rule). */}
-        <svg aria-hidden="true" viewBox="0 0 48 48" fill="none" strokeLinecap="round" strokeLinejoin="round" className="c-check h-14 w-14 text-red">
-          <circle cx="24" cy="24" r="22" fill="currentColor" />
-          <path d="M14.5 24.5l6.5 6.5 12.5-13" stroke="white" strokeWidth="3" />
+        {/* Disc springs in, the tick draws itself, one soft ring ripples out (CSS: .c-check). */}
+        <svg aria-hidden="true" viewBox="0 0 48 48" fill="none" strokeLinecap="round" strokeLinejoin="round" overflow="visible" className="c-check h-14 w-14 text-red">
+          <circle className="c-check-ring" cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="1.5" />
+          <circle className="c-check-disc" cx="24" cy="24" r="22" fill="currentColor" />
+          <path className="c-check-tick" d="M14.5 24.5l6.5 6.5 12.5-13" stroke="white" strokeWidth="3" pathLength={1} strokeDasharray="1" />
         </svg>
         <h2 ref={headingRef} tabIndex={-1} className="c-h2 outline-none">
           {t.booked}

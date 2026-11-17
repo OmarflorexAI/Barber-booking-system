@@ -2849,10 +2849,51 @@ body:has(.landing) {
     translate: calc(var(--dir, 1) * 24px) 0;
   }
 }
-@keyframes c-check {
-  from {
+/* The booked check. At rest (and under reduced motion) it is simply drawn: the tick's dash
+   offset is 0 and the ring is invisible. The disc wears a soft red glow under it. */
+.c-check {
+  filter: drop-shadow(0 6px 14px color-mix(in oklch, currentColor 34%, transparent));
+}
+.c-check-disc,
+.c-check-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.c-check-ring {
+  opacity: 0;
+}
+/* Disc: grows from small with one gentle overshoot and settles (no bounce back and forth). */
+@keyframes c-check-disc {
+  0% {
     opacity: 0;
-    scale: 0.5;
+    scale: 0.3;
+  }
+  55% {
+    opacity: 1;
+    scale: 1.06;
+  }
+  100% {
+    scale: 1;
+  }
+}
+/* Tick: drawn left to right, as if by hand, after the disc has nearly landed. */
+@keyframes c-check-tick {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+/* Ring: one quiet ripple outward as the tick finishes. */
+@keyframes c-check-ring {
+  0% {
+    opacity: 0.45;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.7;
   }
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -2870,8 +2911,14 @@ body:has(.landing) {
       border-color var(--dur-fast) var(--ease-out),
       box-shadow var(--dur-fast) var(--ease-out);
   }
-  .c-check {
-    animation: c-check var(--dur-slow) var(--ease-spring) 60ms backwards;
+  .c-check-disc {
+    animation: c-check-disc 560ms cubic-bezier(0.2, 0.9, 0.3, 1) 80ms backwards;
+  }
+  .c-check-tick {
+    animation: c-check-tick 380ms cubic-bezier(0.65, 0, 0.35, 1) 380ms backwards;
+  }
+  .c-check-ring {
+    animation: c-check-ring 900ms cubic-bezier(0.2, 0.7, 0.3, 1) 640ms;
   }
   .c-chevron {
     transition: translate var(--dur-fast) var(--ease-out);
