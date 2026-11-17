@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ViewTransition, addTransitionType, startTransition, useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
+import { ViewTransition, addTransitionType, startTransition, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { LandingDictionary } from "@/lib/i18n/landing";
 import { LiveDot } from "./live-dot";
 
@@ -32,9 +32,6 @@ const TAKEN_LATER: number[][] = [
   [1, 2, 4, 7, 8, 10],
 ];
 
-/** How far the halo behind the phone reaches past its edges (px; .hero-phone-halo's inset). */
-const HALO = 56;
-
 /** An item that rises in when its screen appears; `i` sets its place in the stagger. */
 function rise(i: number): CSSProperties {
   return { "--i": i } as CSSProperties;
@@ -44,7 +41,7 @@ function rise(i: number): CSSProperties {
  * The hero phone, live: a pretend booking at the demo shop. Service, then barber,
  * then a time, then "You're booked". Each step is a view transition: the next screen
  * slides in from the right, Back slides the previous one in from the left.
- * Nothing is saved. With a mouse, a light catches the phone's rim under the pointer.
+ * Nothing is saved. The device never moves or lights up on hover, so its text stays sharp.
  */
 export function HeroPhone({ p }: { p: Phone }) {
   const [step, setStep] = useState(0);
@@ -55,12 +52,6 @@ export function HeroPhone({ p }: { p: Phone }) {
   const [picked, setPicked] = useState<number | null>(null); // the time chip raised just before "booked"
   const [booked, setBooked] = useState(0); // counts bookings, so the check mark replays each time
   const pending = useRef(0);
-  const glint = useRef<HTMLSpanElement>(null);
-  const spot = useRef<HTMLSpanElement>(null);
-  const halo = useRef<HTMLSpanElement>(null);
-  const haloSpot = useRef<HTMLSpanElement>(null);
-  const aim = useRef<{ x: number; y: number } | null>(null);
-  const frame = useRef(0);
   const screen = useRef<HTMLDivElement>(null);
   const moved = useRef(false);
 
@@ -84,34 +75,8 @@ export function HeroPhone({ p }: { p: Phone }) {
   const barberName = barber === null ? p.barbers[1] : p.barbers[barber];
   const svc = p.services[service];
 
-  // The rim glint: a soft light on the graphite rim under the pointer, written straight to
-  // the style once per frame (no re-render). The screen never tilts: a 3D lean re-samples it
-  // and its text goes soft. Mouse only, never under reduced motion.
-  useEffect(
-    () => () => {
-      cancelAnimationFrame(frame.current);
-      clearTimeout(pending.current);
-    },
-    [],
-  );
-  function paint() {
-    frame.current = 0;
-    const a = aim.current;
-    // Only the glint moves (whole pixels); the screen never transforms, so its text stays sharp.
-    if (a && spot.current) spot.current.style.transform = `translate(${Math.round(a.x)}px, ${Math.round(a.y)}px)`;
-    if (a && haloSpot.current) haloSpot.current.style.transform = `translate(${Math.round(a.x) + HALO}px, ${Math.round(a.y) + HALO}px)`;
-    glint.current?.toggleAttribute("data-on", a !== null);
-    halo.current?.toggleAttribute("data-on", a !== null);
-  }
-  function aimAt(a: { x: number; y: number } | null) {
-    aim.current = a;
-    if (!frame.current) frame.current = requestAnimationFrame(paint);
-  }
-  function lean(e: PointerEvent) {
-    if (e.pointerType !== "mouse" || !matchMedia("(pointer: fine)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const r = glint.current!.getBoundingClientRect();
-    aimAt({ x: e.clientX - r.left, y: e.clientY - r.top });
-  }
+  // No hover effect on the device: a 3D lean re-samples the screen and its text goes soft.
+  useEffect(() => () => clearTimeout(pending.current), []);
 
   // Like the real picker, taken times are not shown; the free ones split by part of the day.
   const takenOn = (d: number) => (d === 0 ? p.taken : TAKEN_LATER[d - 1] ?? []);
@@ -332,23 +297,10 @@ export function HeroPhone({ p }: { p: Phone }) {
   ];
 
   return (
-    <div
-      onPointerMove={lean}
-      onPointerLeave={() => aimAt(null)}
-      className="relative mx-auto w-full max-w-[288px]"
-    >
+    <div className="relative mx-auto w-full max-w-[288px]">
       <div className="relative">
-        {/* A soft light spilling round the device where the pointer is (behind it, so it
-            only shows past the edges; always mounted, see .hero-phone-glint). */}
-        <span ref={halo} aria-hidden className="hero-phone-halo">
-          <span ref={haloSpot} />
-        </span>
         {/* The device: a graphite rim lit from the top left, side buttons, a black bezel. */}
         <div className="hero-phone-frame">
-          {/* The light on the rim that follows the pointer (always mounted; see .hero-phone-glint). */}
-          <span ref={glint} aria-hidden className="hero-phone-glint">
-            <span ref={spot} />
-          </span>
           <div className="hero-phone-bezel">
             <div
               role="group"
