@@ -6,13 +6,20 @@ Last updated: 2026-11-17, end of the third session (six /b milestones, booked ch
 
 ### START HERE next session (written 2026-11-17, end of the fourth session)
 
-Everything below is committed and pushed to `origin/main` (code `33e5513`). Open items, in order:
-1. **Get the user's reaction** to the round-five changes below (dark theme, calendar motion, barber step, pager, landing phone). They saw screenshots only. The light theme, pager and desktop sizes from round four were shown by screenshot and led to this round's asks; "Book now" was checked by eye and looks right.
-2. **Leftover test data in demo-shop:** an open Booking Nov 17 12:30 PM with Carlos, "Visual Check" (718) 555-0101 (past the online cutoff: cancel in `/app/day`, or a DB cancel only with the user's OK), plus several cancelled "Visual Check" Bookings and Client rows.
-3. **/m not restyled for desktop by eye:** Job C checked `/m/invalid-token` only; a real manage page at ≥1024px wasn't seen. The shared `client-shell.tsx` column change applies there too.
-4. **Production:** set `NEXT_PUBLIC_SITE_URL` (calendar events fall back to the page origin anyway). `DESIGN.md` was updated by `impeccable-documenter` for the green check, both grounds, pager, calendar motion and hero phone.
-5. **Known trade-offs from round five:** on phones the times list can grow downward once when a longer day loads (never jumps up); the landing phone's `.hp-screen` copies the `/b` light token values by hand, so token changes need a matching phone update. Drift found by the documenter: `.client-page .c-btn` and `.c-pay` still use a 350ms overshoot spring (and the recipe comment says press springs to 0.97), against the new no-overshoot rule; DESIGN.md's "Tone Not Shadow" rule and the landing "expo-out" line predate the layered Client shadows.
-6. Older open items from the second session (dashed fields, booked-step choices, day-change height jump, unused dictionary string, demo photos, "text 2 hours before" claim, book-pay-online e2e) are listed under the second session's START HERE below.
+Everything below is committed and pushed to `origin/main`. Open items, in order:
+1. **Get the user's reaction** to the round-five changes and follow-ups below (dark theme, calendar motion, barber step, pager, landing phone, clearer phone hovers, no "today" tile). They saw screenshots only. Lesson from this round: the user rejects effects they didn't ask for (a phone hover glow, a drifting background); tell workers not to add extras and flag any new effect before shipping.
+2. **Possibly faint `/b` row hover in light mode:** `.c-row:hover` is about 96.9% on white (read from CSS, not measured); the landing phone's equivalent was made clearer on request. Ask the user before changing `/b`.
+3. **Leftover test data in demo-shop:** an open Booking Nov 17 12:30 PM with Carlos, "Visual Check" (718) 555-0101 (past the online cutoff: cancel in `/app/day`, or a DB cancel only with the user's OK), plus several cancelled "Visual Check" Bookings and Client rows.
+4. **/m not restyled for desktop by eye:** Job C checked `/m/invalid-token` only; a real manage page at ≥1024px wasn't seen. The shared `client-shell.tsx` column change applies there too.
+5. **Production:** set `NEXT_PUBLIC_SITE_URL` (calendar events fall back to the page origin anyway). `DESIGN.md` was updated by `impeccable-documenter` for the green check, both grounds, pager, calendar motion and hero phone.
+6. **Known trade-offs from round five:** on phones the times list can grow downward once when a longer day loads (never jumps up); the landing phone's `.hp-screen` copies the `/b` light token values by hand, so token changes need a matching phone update. (The documenter's drift items, the button/pay-card overshoot and the Tone Not Shadow wording, are fixed in `d4d3464`/`d167171`.)
+7. Older open items from the second session (dashed fields, booked-step choices, day-change height jump, unused dictionary string, demo photos, "text 2 hours before" claim, book-pay-online e2e) are listed under the second session's START HERE below.
+
+### Fifth round follow-ups 2026-11-17 (all pushed)
+
+- `d4d3464`: "Book now" and payment cards settle without overshoot (300ms cubic-bezier(.22,1,.36,1)); the `/b`/`/m` ground blobs are static (drift removed, user didn't ask for it); the landing phone's hover glow and rim light removed (user didn't ask for them). Docs `d167171` (DESIGN.md: Client pages are the exception to Tone Not Shadow; no phone hover; static ground).
+- `0c78597` (Job F, QA PASS): hovers inside the landing phone made clearly visible in light (rows tint the whole line ~1.24 luminance ratio, chevron nudges 2px; days darken with a ring; times lift 1px on a deeper shadow; Back pill; button lifts 1px). The phone's day strip no longer marks "today".
+- This commit: the real calendar (`src/components/slot-picker.tsx`, `.c-day.is-today` removed) no longer gives today a grey tile; only the chosen day is marked (user: "the only day that needs to be highlighted is our current day", read as the day currently chosen). Today is still announced to screen readers (`aria-current="date"`, "today" in the label). Checked light and dark at 1440.
 
 ### Fifth round 2026-11-17: dark theme, calendar, barber step, pager, hero phone (all QA PASS; committed `33e5513`, pushed)
 
