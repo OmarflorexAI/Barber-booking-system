@@ -4,6 +4,11 @@ Last updated: 2026-11-17, second session (depth, buttons, contrast and motion on
 
 ## Where we are
 
+### Third session 2026-11-17: booked check animation + deeper light-mode depth (committed `adce419`, `ca85193`; not pushed)
+
+- **Booked check (`/b` final step):** the red disc springs in (scale 0.3 → 1.06 → 1, 560ms), the white tick draws itself (`stroke-dashoffset`, `pathLength=1`, from 380ms), then one soft ring ripples out and fades (from 640ms); a red drop-shadow glow under the disc. CSS `.c-check*` in `globals.css`, markup in `booking-flow.tsx`. Reduced motion: no animation, the resting state is the finished check. Checked frame by frame in the browser by pausing the animations (a real booking was not made, to avoid DB rows and texts).
+- **Light-mode depth, Apple-style:** `--c-depth`, `--c-depth-hi`, `--c-lift`, `--c-btn-shadow(-hi)`, `--c-press` now four layers (hairline contact, tight key, medium, wide ambient), stronger. New tokens `--c-sel` (chosen day/time ink tile) and `--c-tile-rest` (free time tiles stand a hair off the card); the dark blocks set both to the old values, so dark mode is unchanged. Time-tile hover uses `--c-press`.
+
 ### START HERE next session (written 2026-11-17, end of the second session)
 
 **What this session did (all QA PASS, committed and pushed: `f0f0feb` hero phone, `feaf62a` footer removed, `5d77b6b` Client depth/buttons/calendar/reveal):** two rounds of user asks, each split into two parallel `bm-worker` jobs with their own files, then a `bm-qa` pass per job, small fixes by the orchestrator. Details of both rounds below. Checks at the end: typecheck, lint, landing e2e 12/12, book-now + manage + race 8/8, day.spec 14/14 (the walk-in test passed this time). Not re-run: `book-pay-online` (needs `npm run stripe:listen`; its click step was changed to scroll to the bottom first).
