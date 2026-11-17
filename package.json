@@ -16,7 +16,10 @@
     "telegram:webhook": "node --env-file=.env.local scripts/telegram-webhook.mjs",
     "stripe": "node scripts/stripe.mjs",
     "stripe:listen": "node scripts/stripe.mjs listen --events checkout.session.completed,checkout.session.async_payment_succeeded,account.updated --forward-to localhost:3000/api/payments/webhook --forward-connect-to localhost:3000/api/payments/webhook",
-    "landing:shots": "node scripts/landing-shots.mjs"
+    "landing:shots": "node scripts/landing-shots.mjs",
+    "dadtest:setup": "node --env-file=.env.local scripts/dadtest-setup.mjs",
+    "dadtest:owner": "node --env-file=.env.local scripts/dadtest-owner.mjs",
+    "dadtest:reset": "node --env-file=.env.local scripts/dadtest-reset.mjs"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
