@@ -7,13 +7,13 @@ import { HtmlLang } from "@/app/_landing/html-lang";
 import { getDictionary } from "@/lib/i18n/server";
 import { LoginForm } from "./login-form";
 
-export const metadata: Metadata = { title: "Sign in" };
+export const metadata: Metadata = { title: "Log in" };
 
 /*
- * Staff sign-in: always dark, in the landing's look (.landing scope and its --l-* tokens),
+ * Log in / Sign up (Google or an email link): always dark, in the landing's look (.landing scope and its --l-* tokens),
  * the bridge between the marketing page and the app. No theme toggle here.
  */
-export default function LoginPage() {
+export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     <div className="landing flex min-h-dvh flex-col">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-5">
@@ -27,9 +27,9 @@ export default function LoginPage() {
           <Toggle />
         </Suspense>
       </header>
-      <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-6 pb-[12vh]">
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-[10vh] sm:px-6">
         <Suspense fallback={null}>
-          <Login />
+          <Login searchParams={searchParams} />
         </Suspense>
       </main>
     </div>
@@ -46,15 +46,9 @@ async function Toggle() {
   );
 }
 
-async function Login() {
-  const { locale, t } = await getDictionary();
-  return (
-    <>
-      <div className="flex flex-col gap-3">
-        <h1 className="text-balance text-3xl font-semibold leading-[1.1] tracking-[-0.03em]">{t.login}</h1>
-        <p className="text-base leading-relaxed text-muted-foreground">{t.loginHint}</p>
-      </div>
-      <LoginForm locale={locale} />
-    </>
-  );
+async function Login({ searchParams }: Pick<PageProps<"/login">, "searchParams">) {
+  const [{ locale }, params] = await Promise.all([getDictionary(), searchParams]);
+  const mode = params.mode === "signup" ? "signup" : "login";
+  const error = typeof params.error === "string" ? params.error : undefined;
+  return <LoginForm locale={locale} initialMode={mode} error={error} />;
 }
