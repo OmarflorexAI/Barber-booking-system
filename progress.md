@@ -4,7 +4,22 @@ Last updated: 2026-11-17, end of the dad-demo session (live on Vercel; everythin
 
 ## Where we are
 
-### START HERE next session (written 2026-11-18, security audit session)
+### START HERE next session (written 2026-11-18, sign-up session)
+
+**Self sign-up and Google sign-in built (not committed or deployed yet).** Design in `docs/superpowers/specs/2026-11-18-signup-google-design.md`.
+- **Landing nav:** "Log in" and "Sign up" ("Crear cuenta" in Spanish) open `/login`, a card with two tabs, Continue with Google and an email link.
+- **Setup:** a login with no Shop is sent to `/setup` (name, your name, phone, haircut price, address). That creates a bookable Shop on Free / free month, and the team is emailed as a lead.
+- **Engine:** `src/server/signup/`, shared `insertShop` with `createShop`.
+- **No duplicates:** a per-login advisory lock plus a membership check in one transaction. A taken link gets `-2`. Tested in `tests/engine/signup.test.ts`, including 5 sends at once.
+- **Checked in the browser:** routing, setup errors, the Spanish card and the phone menu.
+
+**Needs the user:**
+1. Google returns "provider is not enabled": switch Google on and Save in Supabase → Auth → Providers.
+2. Check the redirect allow list in Supabase (`http://localhost:3000/auth/callback`, `https://citrus-system.vercel.app/auth/callback`).
+3. Turn off email/password sign-up if it's on.
+4. Email-link sign-up for outsiders needs a mail sender that can reach any address.
+
+### Earlier: START HERE (written 2026-11-18, security audit session)
 
 **Security audit done: report in `docs/security-audit-2026-11-18.md`.** Fixed: baseline security headers in `next.config.ts` (frame-ancestors/X-Frame-Options, nosniff, Referrer-Policy; verified locally, not deployed yet). Open, in order:
 1. **High, needs the user:** production uses Turnstile's always-pass test keys, so bot protection is off. Create a real widget in Cloudflare, set both keys on Vercel, redeploy.
