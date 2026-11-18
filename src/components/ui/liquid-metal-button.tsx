@@ -72,7 +72,7 @@ const loadShaders = () => (shaderModule ??= import("@paper-design/shaders"));
  * while the control is near the screen, and freed (its WebGL context released) when it moves
  * away or is hidden, so a page holds only a few live contexts at once. Until it draws, and
  * wherever WebGL is missing, a still metallic gradient draws the ring. Under reduced motion
- * the shader stands still and there is no ripple.
+ * the shader is never mounted (the still gradient stays) and there is no ripple.
  */
 export function LiquidMetalButton(props: Props) {
   const { size = "md", tone = "metal", className = "", children, onClick, onKeyDown, onKeyUp, onBlur, onPointerEnter, onPointerLeave, ...rest } = props;
@@ -101,13 +101,14 @@ export function LiquidMetalButton(props: Props) {
     };
 
     const start = async () => {
-      if (mount.current || loading) return;
+      // Reduced motion: the CSS ring is already still, so skip the WebGL setup (a long frame mid-scroll).
+      if (mount.current || loading || reducedMotion()) return;
       loading = true;
       try {
         const { ShaderMount, liquidMetalFragmentShader } = await loadShaders();
         // Moved away (or unmounted) while the module loaded: don't take a context.
         if (!live || !near) return;
-        mount.current = new ShaderMount(host, liquidMetalFragmentShader, UNIFORMS, undefined, reducedMotion() ? 0 : SPEED.rest);
+        mount.current = new ShaderMount(host, liquidMetalFragmentShader, UNIFORMS, undefined, SPEED.rest);
       } catch {
         // No WebGL: drop the half-made canvas and keep the CSS ring.
         free();
@@ -117,7 +118,7 @@ export function LiquidMetalButton(props: Props) {
     };
 
     // Fetch the module once the page is idle, so it is ready before any control comes near.
-    const cancelWarm = whenIdle(() => void loadShaders().catch(() => {}), 4000);
+    const cancelWarm = whenIdle(() => void (reducedMotion() || loadShaders().catch(() => {})), 4000);
     // Mount a screen or so ahead of the control, in idle time, so the WebGL setup does not land
     // in the middle of a scroll; free it when it leaves (a hidden control never intersects).
     // The shaders' base style is already in the page (root layout), so mounting restyles nothing.
@@ -134,7 +135,11 @@ export function LiquidMetalButton(props: Props) {
     io.observe(el);
 
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onMotion = () => mount.current?.setSpeed(motion.matches ? 0 : SPEED.rest);
+    // Turning reduced motion on drops the shader for the still CSS ring; turning it off brings it back.
+    const onMotion = () => {
+      if (motion.matches) free();
+      else if (near) void start();
+    };
     motion.addEventListener("change", onMotion);
 
     return () => {
