@@ -4,7 +4,15 @@ Last updated: 2026-11-17, end of the dad-demo session (live on Vercel; everythin
 
 ## Where we are
 
-### START HERE next session (written 2026-11-17, end of the dad-demo session)
+### START HERE next session (written 2026-11-18, security audit session)
+
+**Security audit done: report in `docs/security-audit-2026-11-18.md`.** Fixed: baseline security headers in `next.config.ts` (frame-ancestors/X-Frame-Options, nosniff, Referrer-Policy; verified locally, not deployed yet). Open, in order:
+1. **High, needs the user:** production uses Turnstile's always-pass test keys, so bot protection is off. Create a real widget in Cloudflare, set both keys on Vercel, redeploy.
+2. **Medium, needs a number from the user:** no cap on active Bookings per phone per Shop (a script can fill a Shop's calendar). Then build it in the engine with a test.
+3. **Medium/Low, needs OK to migrate the shared live DB:** extend the guard triggers so Owners can't change `slug`, `sms_from_number`, `cancelled_at` etc. through Supabase's API, Barbers can't change `phone_e164`, and Owners can't clear a Client's `sms_opt_out`. Add tests in `tests/engine/plans.test.ts`.
+4. Before real users: a separate production Supabase project (tests share the live DB today).
+
+### Earlier: START HERE (written 2026-11-17, end of the dad-demo session)
 
 **Next session: security audit** (the user's plan). Live at https://citrus-system.vercel.app (Vercel Hobby, deploys `main` from GitHub). Suggested scope: server actions and route handlers (authz via `access.ts`, input validation), `/auth/confirm` (OTP on POST only, `next` limited to `/app…`), `/m/<token>` manage tokens, cron routes (`CRON_SECRET`), Telegram and payments webhooks (secret/signature checks), RLS on every table, the public `/api/availability*` routes (rate limits, enumeration), Turnstile on public forms (still the always-pass test keys on Vercel?), env/secret handling, headers (CSP/HSTS), and that the `dadtest:*` scripts never ship or run against production.
 
