@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { addTransitionType, startTransition, useEffect, useId, useRef, useState } from "react";
+import { ViewTransition, addTransitionType, startTransition, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Wordmark } from "@/components/brand/logo";
 import { LOCALE_COOKIE, type Locale } from "@/lib/i18n/dictionaries";
 import type { LandingDictionary } from "@/lib/i18n/landing";
@@ -12,6 +12,24 @@ import { CONTACT_ID, focusRing } from "./ui";
 
 /** Only the nav's own strings: this is a client component, so everything it gets is sent to the browser. */
 type NavText = Pick<LandingDictionary, "nav" | "navLabel" | "navMenu" | "navCta" | "otherLang">;
+
+/** The page-level transitions the header takes part in: the language switch, leaving or entering the landing. */
+const HEADER_TYPES = { "lang-switch": "landing-header", page: "landing-header", default: "none" };
+
+/**
+ * The glass, its content row and the menu each get their own transition layer, kept on top and
+ * still (`.landing-header` in globals.css), so the swapping sections never draw over the nav.
+ * Not the header box itself: a name on an ancestor cuts the glass off from the page behind it.
+ * Named only for the page-level types: a hero phone tap names nothing up here, so the browser
+ * does not re-snapshot the blurred glass on every tap.
+ */
+function HeaderLayer({ name, children }: { name: string; children: ReactNode }) {
+  return (
+    <ViewTransition name={name} default="none" share={HEADER_TYPES} enter={HEADER_TYPES} exit={HEADER_TYPES}>
+      {children}
+    </ViewTransition>
+  );
+}
 
 /**
  * A floating glass bar (rim, glint and glass layers, see the `.nav-*` rules): wordmark left,
@@ -73,89 +91,101 @@ export function Nav({ locale, t }: { locale: Locale; t: NavText }) {
           </span>
           <span aria-hidden="true" className="nav-rim" />
           <span aria-hidden="true" className="nav-glint" />
-          <span aria-hidden="true" className="nav-glass [view-transition-class:landing-header] [view-transition-name:landing-nav-glass]" />
+          <HeaderLayer name="landing-nav-glass">
+            <span aria-hidden="true" className="nav-glass" />
+          </HeaderLayer>
 
-          <div id="main-nav" className="relative flex [view-transition-class:landing-header] [view-transition-name:landing-nav-row] h-full items-center justify-between gap-2 pl-4 pr-2.5 md:pl-[7px] md:pr-[13px]">
-            <div className="nav-start">
-              <Link href={locale === "es" ? "/es" : "/"} className={`flex min-h-11 items-center rounded-full px-1.5 ${focusRing}`}>
-                <Wordmark />
-              </Link>
+          <HeaderLayer name="landing-nav-row">
+            <div id="main-nav" className="relative flex h-full items-center justify-between gap-2 pl-4 pr-2.5 md:pl-[7px] md:pr-[13px]">
+              <div className="nav-start">
+                <Link href={locale === "es" ? "/es" : "/"} className={`flex min-h-11 items-center rounded-full px-1.5 ${focusRing}`}>
+                  <Wordmark />
+                </Link>
+              </div>
+
+              <nav aria-label={t.navLabel} className="absolute left-1/2 hidden -translate-x-1/2 md:block">
+                <ul className="flex items-center gap-0.5 lg:gap-1">
+                  {links.map((l) => (
+                    <li key={l.href}>
+                      <a href={l.href} className={linkClass}>
+                        <span className="nav-link-label">{l.label}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+
+              <div className="nav-end flex items-center gap-1 md:gap-1.5">
+                {/* The other language is another page (/ or /es). With JS: save the choice, then go to
+                    the clean URL in a "lang-switch" transition (cross-fades the two pages). Without JS the
+                    href's ?lang=en has the proxy save it. No prefetch: a prefetch of / would still carry
+                    the old choice and come back redirected. */}
+                <Link
+                  href={other === "es" ? "/es" : "/?lang=en"}
+                  prefetch={false}
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                    e.preventDefault();
+                    document.cookie = `${LOCALE_COOKIE}=${other}; path=/; max-age=31536000; samesite=lax`;
+                    const to = other === "es" ? "/es" : "/";
+                    // Reduced motion: no "lang-switch" type, so nothing is named or snapshotted.
+                    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                      router.push(to);
+                      return;
+                    }
+                    startTransition(() => {
+                      addTransitionType("lang-switch");
+                      router.push(to);
+                    });
+                  }}
+                  hrefLang={other}
+                  lang={other}
+                  className={`nav-link inline-flex min-h-11 items-center rounded-full px-3 text-sm text-muted-foreground ${focusRing}`}
+                >
+                  <span className="nav-link-label">{t.otherLang}</span>
+                </Link>
+                <span className="hidden md:block">
+                  <LiquidMetalButton href={`#${CONTACT_ID}`} size="sm">
+                    {t.navCta}
+                  </LiquidMetalButton>
+                </span>
+                <button
+                  ref={button}
+                  type="button"
+                  aria-expanded={open}
+                  aria-controls={menuId}
+                  onClick={() => setOpen((o) => !o)}
+                  className={`flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 hover:bg-white/[0.06] hover:text-foreground aria-expanded:bg-white/[0.08] aria-expanded:text-foreground md:hidden ${focusRing}`}
+                >
+                  <span className="sr-only">{t.navMenu}</span>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="h-5 w-5">
+                    {open ? <path d="M6 18 18 6M6 6l12 12" /> : <path d="M3.75 9h16.5m-16.5 6h16.5" />}
+                  </svg>
+                </button>
+              </div>
             </div>
+          </HeaderLayer>
 
-            <nav aria-label={t.navLabel} className="absolute left-1/2 hidden -translate-x-1/2 md:block">
-              <ul className="flex items-center gap-0.5 lg:gap-1">
+          <HeaderLayer name="landing-nav-menu">
+            <nav id={menuId} aria-label={t.navLabel} hidden={!open} className="nav-menu absolute inset-x-0 top-full mt-2 rounded-[22px] p-2 md:hidden">
+              <ul className="flex flex-col">
                 {links.map((l) => (
                   <li key={l.href}>
-                    <a href={l.href} className={linkClass}>
-                      <span className="nav-link-label">{l.label}</span>
+                    <a
+                      href={l.href}
+                      onClick={() => setOpen(false)}
+                      className={`flex min-h-12 w-full items-center rounded-2xl px-4 text-base text-muted-foreground transition-colors duration-200 hover:bg-white/[0.06] hover:text-foreground ${focusRing}`}
+                    >
+                      {l.label}
                     </a>
                   </li>
                 ))}
               </ul>
+              <LiquidMetalButton href={`#${CONTACT_ID}`} onClick={() => setOpen(false)} className="mt-2 w-full">
+                {t.navCta}
+              </LiquidMetalButton>
             </nav>
-
-            <div className="nav-end flex items-center gap-1 md:gap-1.5">
-              {/* The other language is another page (/ or /es). With JS: save the choice, then go to
-                  the clean URL in a "lang-switch" transition (cross-fades the two pages). Without JS the
-                  href's ?lang=en has the proxy save it. No prefetch: a prefetch of / would still carry
-                  the old choice and come back redirected. */}
-              <Link
-                href={other === "es" ? "/es" : "/?lang=en"}
-                prefetch={false}
-                onClick={(e) => {
-                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-                  e.preventDefault();
-                  document.cookie = `${LOCALE_COOKIE}=${other}; path=/; max-age=31536000; samesite=lax`;
-                  startTransition(() => {
-                    addTransitionType("lang-switch");
-                    router.push(other === "es" ? "/es" : "/");
-                  });
-                }}
-                hrefLang={other}
-                lang={other}
-                className={`nav-link inline-flex min-h-11 items-center rounded-full px-3 text-sm text-muted-foreground ${focusRing}`}
-              >
-                <span className="nav-link-label">{t.otherLang}</span>
-              </Link>
-              <span className="hidden md:block">
-                <LiquidMetalButton href={`#${CONTACT_ID}`} size="sm">
-                  {t.navCta}
-                </LiquidMetalButton>
-              </span>
-              <button
-                ref={button}
-                type="button"
-                aria-expanded={open}
-                aria-controls={menuId}
-                onClick={() => setOpen((o) => !o)}
-                className={`flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 hover:bg-white/[0.06] hover:text-foreground aria-expanded:bg-white/[0.08] aria-expanded:text-foreground md:hidden ${focusRing}`}
-              >
-                <span className="sr-only">{t.navMenu}</span>
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="h-5 w-5">
-                  {open ? <path d="M6 18 18 6M6 6l12 12" /> : <path d="M3.75 9h16.5m-16.5 6h16.5" />}
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <nav id={menuId} aria-label={t.navLabel} hidden={!open} className="nav-menu absolute inset-x-0 [view-transition-class:landing-header] [view-transition-name:landing-nav-menu] top-full mt-2 rounded-[22px] p-2 md:hidden">
-            <ul className="flex flex-col">
-              {links.map((l) => (
-                <li key={l.href}>
-                  <a
-                    href={l.href}
-                    onClick={() => setOpen(false)}
-                    className={`flex min-h-12 w-full items-center rounded-2xl px-4 text-base text-muted-foreground transition-colors duration-200 hover:bg-white/[0.06] hover:text-foreground ${focusRing}`}
-                  >
-                    {l.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-            <LiquidMetalButton href={`#${CONTACT_ID}`} onClick={() => setOpen(false)} className="mt-2 w-full">
-              {t.navCta}
-            </LiquidMetalButton>
-          </nav>
+          </HeaderLayer>
         </div>
       </div>
     </header>

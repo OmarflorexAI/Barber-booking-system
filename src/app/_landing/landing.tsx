@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ViewTransition } from "react";
+import { ViewTransition, type ReactNode } from "react";
 import type { Locale } from "@/lib/i18n/dictionaries";
 import { landingDictionaries } from "@/lib/i18n/landing";
 import { SITE_URL } from "@/lib/site";
@@ -75,6 +75,25 @@ function JsonLd({ locale }: { locale: Locale }) {
 }
 
 /**
+ * Page-level transitions, one boundary per section: links tagged "page" fade this page out
+ * (and back in), and the language switch ("lang-switch", / <-> /es) cross-fades old and new.
+ * Per section, not one box around the whole page: React names only the boundaries on screen,
+ * so the browser snapshots the one or two sections in view instead of the full landing.
+ * The nav names its own layers (nav.tsx); the phone's screens are nested and stay put.
+ */
+function Swap({ children }: { children: ReactNode }) {
+  return (
+    <ViewTransition
+      default="none"
+      enter={{ page: "page-in", "lang-switch": "lang-swap", default: "none" }}
+      exit={{ page: "page-out", "lang-switch": "lang-swap", default: "none" }}
+    >
+      {children}
+    </ViewTransition>
+  );
+}
+
+/**
  * The landing page that sells Barber Master to Shop Owners, in one language. Used by
  * / (English) and /es (Spanish); both are fully static. Clients use their Shop's /b/<slug> link instead.
  */
@@ -84,42 +103,53 @@ export function Landing({ locale }: { locale: Locale }) {
   // The nav is a client component: send it only its own strings, not the whole page's text.
   const navText = { nav: t.nav, navLabel: t.navLabel, navMenu: t.navMenu, navCta: t.navCta, otherLang: t.otherLang };
   return (
-    // Page-level transitions: links tagged "page" fade this page out (and back in).
-    // The language switch moves between / and /es, so the old page exits and the new one
-    // enters: "lang-switch" cross-fades them. Nested ones (the phone) handle their own.
-    <ViewTransition
-      default="none"
-      enter={{ page: "page-in", "lang-switch": "lang-swap", default: "none" }}
-      exit={{ page: "page-out", "lang-switch": "lang-swap", default: "none" }}
-      update={{ "lang-switch": "lang-swap", default: "none" }}
-    >
-      <div lang={locale} className="landing min-h-screen overflow-x-clip antialiased">
-        <HtmlLang lang={locale} />
-        <JsonLd locale={locale} />
-        <a
-          href="#main"
-          className={`sr-only rounded-full bg-white px-4 py-2 text-sm font-medium text-black focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 ${focusRing}`}
-        >
-          {t.skipLink}
-        </a>
-        <Nav locale={locale} t={navText} />
-        <main id="main">
+    <div lang={locale} className="landing min-h-screen overflow-x-clip antialiased">
+      <HtmlLang lang={locale} />
+      <JsonLd locale={locale} />
+      <a
+        href="#main"
+        className={`sr-only rounded-full bg-white px-4 py-2 text-sm font-medium text-black focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 ${focusRing}`}
+      >
+        {t.skipLink}
+      </a>
+      <Nav locale={locale} t={navText} />
+      <main id="main">
+        <Swap>
           <Hero {...props} />
+        </Swap>
+        <Swap>
           <Why {...props} />
+        </Swap>
+        <Swap>
           <Facts {...props} />
+        </Swap>
+        <Swap>
           <HowItWorks {...props} />
+        </Swap>
+        <Swap>
           <Setup {...props} />
+        </Swap>
+        <Swap>
           <FirstMonth {...props} />
+        </Swap>
+        <Swap>
           <Pricing {...props} />
-          {/* FAQ and Contact share one slow brand gradient behind them (decorative, no text). */}
-          <div className="relative isolate">
-            <Velaris className="velaris-band" height="100%" speed={1} releaseOffscreen />
+        </Swap>
+        {/* FAQ and Contact share one slow brand gradient behind them (decorative, no text).
+            It is the same in both languages, so it stays live under the swap. */}
+        <div className="relative isolate">
+          <Velaris className="velaris-band" height="100%" speed={1} releaseOffscreen />
+          <Swap>
             <Faq {...props} />
+          </Swap>
+          <Swap>
             <Contact {...props} />
-          </div>
-        </main>
+          </Swap>
+        </div>
+      </main>
+      <Swap>
         <Footer {...props} />
-      </div>
-    </ViewTransition>
+      </Swap>
+    </div>
   );
 }

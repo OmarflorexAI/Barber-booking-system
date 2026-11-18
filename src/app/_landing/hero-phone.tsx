@@ -98,13 +98,26 @@ export function HeroPhone({ p }: { p: Phone }) {
 
   /** Moves to another screen inside a transition, tagged with its direction. */
   function go(next: number) {
+    moved.current = true;
+    setTouched(false);
+    // No transition (an instant swap) under reduced motion, or when the screen sits under the
+    // sticky nav: the nav no longer takes a snapshot on phone taps, so a sliding screen would
+    // draw over it. Both checks run here, before the transition, never inside it.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || underNav()) {
+      setStep(next);
+      return;
+    }
     startTransition(() => {
       // "Book again" (3 → 0) starts over, so it moves forward too.
       addTransitionType(next > step || (next === 0 && step === 3) ? "phone-forward" : "phone-back");
       setStep(next);
     });
-    moved.current = true;
-    setTouched(false);
+  }
+  /** Is the top of the phone screen tucked under the sticky header? */
+  function underNav() {
+    const top = screen.current?.getBoundingClientRect().top;
+    const navBottom = document.getElementById("main-header")?.getBoundingClientRect().bottom;
+    return top !== undefined && navBottom !== undefined && top < navBottom;
   }
 
   const barberName = barber === null ? p.barbers[1] : p.barbers[barber];
