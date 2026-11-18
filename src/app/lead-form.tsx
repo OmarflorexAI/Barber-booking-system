@@ -81,9 +81,24 @@ export function LeadForm({ locale, t }: { locale: Locale; t: LeadFormText }) {
   useEffect(() => {
     const el = formRef.current;
     if (!el || nearForm) return;
-    const io = new IntersectionObserver(([e]) => e.isIntersecting && setNearForm(true), { rootMargin: "600px 0px" });
+    // Scrolling near loads the bot check in idle time, not mid-scroll (it pulls in Turnstile's
+    // script). A focus or a send loads it at once (onFocus, submit).
+    let idle = 0;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting || idle) return;
+        const go = () => setNearForm(true);
+        idle = typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(go, { timeout: 3000 }) : window.setTimeout(go, 1);
+      },
+      { rootMargin: "600px 0px" },
+    );
     io.observe(el);
-    return () => io.disconnect();
+    return () => {
+      io.disconnect();
+      if (!idle) return;
+      if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idle);
+      else window.clearTimeout(idle);
+    };
   }, [nearForm, done]);
 
   if (done) {

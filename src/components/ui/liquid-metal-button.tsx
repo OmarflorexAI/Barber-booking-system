@@ -52,6 +52,20 @@ type Handler<E> = ((e: E) => void) | undefined;
 
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+/** Runs `fn` when the main thread is free (or after `timeout` ms at the latest); returns a cancel. */
+function whenIdle(fn: () => void, timeout: number) {
+  if (typeof window.requestIdleCallback === "function") {
+    const id = window.requestIdleCallback(fn, { timeout });
+    return () => window.cancelIdleCallback(id);
+  }
+  const id = window.setTimeout(fn, 1);
+  return () => window.clearTimeout(id);
+}
+
+/** One shared fetch of the shader module, warmed in idle time after the page loads. */
+let shaderModule: Promise<typeof import("@paper-design/shaders")> | null = null;
+const loadShaders = () => (shaderModule ??= import("@paper-design/shaders"));
+
 /**
  * A black pill inside a moving liquid metal ring (`.lmb-*` in globals.css). With `href` it is
  * a real link (`<a>`), otherwise a `<button>`. The WebGL shader is fetched and mounted only
@@ -90,7 +104,7 @@ export function LiquidMetalButton(props: Props) {
       if (mount.current || loading) return;
       loading = true;
       try {
-        const { ShaderMount, liquidMetalFragmentShader } = await import("@paper-design/shaders");
+        const { ShaderMount, liquidMetalFragmentShader } = await loadShaders();
         // Moved away (or unmounted) while the module loaded: don't take a context.
         if (!live || !near) return;
         mount.current = new ShaderMount(host, liquidMetalFragmentShader, UNIFORMS, undefined, reducedMotion() ? 0 : SPEED.rest);
@@ -102,14 +116,20 @@ export function LiquidMetalButton(props: Props) {
       }
     };
 
-    // Mount near the screen, free when it leaves (a hidden control never intersects).
+    // Fetch the module once the page is idle, so it is ready before any control comes near.
+    const cancelWarm = whenIdle(() => void loadShaders().catch(() => {}), 4000);
+    // Mount a screen or so ahead of the control, in idle time, so the WebGL setup does not land
+    // in the middle of a scroll; free it when it leaves (a hidden control never intersects).
+    // The shaders' base style is already in the page (root layout), so mounting restyles nothing.
+    let cancelStart = () => {};
     const io = new IntersectionObserver(
       ([e]) => {
         near = e.isIntersecting;
-        if (near) void start();
+        cancelStart();
+        if (near) cancelStart = whenIdle(() => void start(), 1000);
         else free();
       },
-      { rootMargin: "200px 0px" },
+      { rootMargin: "600px 0px" },
     );
     io.observe(el);
 
@@ -119,6 +139,8 @@ export function LiquidMetalButton(props: Props) {
 
     return () => {
       live = false;
+      cancelWarm();
+      cancelStart();
       io.disconnect();
       motion.removeEventListener("change", onMotion);
       window.clearTimeout(burstTimer.current);

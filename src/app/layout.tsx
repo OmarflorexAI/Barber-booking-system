@@ -37,12 +37,39 @@ export const viewport: Viewport = {
 // and puts the staff sidebar's saved state (cookie sidebar=collapsed|expanded) on <html data-sidebar>.
 const themeScript = `(function(){try{var d=document.documentElement,s=document.cookie.match(/(?:^|; )sidebar=(collapsed|expanded)(?:;|$)/);if(s)d.setAttribute("data-sidebar",s[1]);var m=document.cookie.match(/(?:^|; )theme=(light|dark)(?:;|$)/);if(!m)return;var t=m[1];document.documentElement.setAttribute("data-theme",t);var c=t==="dark"?"#010101":"#fafafa";var f=function(){document.querySelectorAll('meta[name="theme-color"]').forEach(function(e){e.setAttribute("content",c)})};f();document.addEventListener("DOMContentLoaded",f)}catch(e){}})()`;
 
+/*
+ * The base style @paper-design/shaders (the liquid metal buttons) adds to <head> on its first
+ * mount, copied verbatim from node_modules/@paper-design/shaders/dist/shader-mount.js (v0.0.82).
+ * The library skips its own copy when a style[data-paper-shader] is already there, so shipping it
+ * in the static HTML spares the whole-page restyle a late <head> insert costs (the contact form
+ * froze for ~400 ms on phones). Re-copy it if the package is upgraded.
+ */
+const paperShaderStyle = `@layer paper-shaders {
+  :where([data-paper-shader]) {
+    isolation: isolate;
+    position: relative;
+
+    & canvas {
+      contain: strict;
+      display: block;
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      corner-shape: inherit;
+    }
+  }
+}`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // lang="en" is the static default; the Spanish landing (/es) sets it to "es" before paint (_landing/html-lang.tsx).
     // data-scroll-behavior: the landing scrolls smoothly; this tells Next to turn it off during route changes.
     <html lang="en" data-scroll-behavior="smooth" className={`${sans.variable} ${mono.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
+        <style data-paper-shader="" dangerouslySetInnerHTML={{ __html: paperShaderStyle }} />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       {/* Browser extensions add attributes to <body> (e.g. location="localhost") before React
