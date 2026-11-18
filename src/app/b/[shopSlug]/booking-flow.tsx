@@ -729,9 +729,13 @@ function RevealDock({ force = false, ...dock }: DockProps & { force?: boolean })
     };
   }, [recheck]);
 
+  // Recheck only when a forced reveal ends. On mount the dock already starts hidden, and reading
+  // layout there forced a style/layout pass in the same frame as the step's slide.
+  const mounted = useRef(false);
   useEffect(() => {
     forceRef.current = force;
-    if (!force) recheck();
+    if (mounted.current && !force) recheck();
+    mounted.current = true;
   }, [force, recheck]);
 
   function revealFromKeyboard() {
