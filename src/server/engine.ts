@@ -7,12 +7,14 @@ import { createMedia, MEDIA_BUCKET, type Media } from "./media";
 import { createPlatformAdmin, type PlatformAdmin } from "./platform-admin";
 import { createReporting, type Reporting } from "./reporting";
 import { createShopAdmin, type ShopAdmin } from "./shop-admin";
+import { createSignup, type Signup } from "./signup";
 
 let engine: BookingEngine | undefined;
 let admin: ShopAdmin | undefined;
 let reports: Reporting | undefined;
 let platform: PlatformAdmin | undefined;
 let mediaTools: Media | undefined;
+let signupTools: Signup | undefined;
 
 /** The app-wide booking engine, bound to the server's Postgres pool. */
 export function bookingEngine(): BookingEngine {
@@ -36,6 +38,12 @@ export function reporting(): Reporting {
 export function platformAdmin(): PlatformAdmin {
   platform ??= createPlatformAdmin(getSql());
   return platform;
+}
+
+/** Self sign-up: an Owner sets up their own Shop (one per login). */
+export function signup(): Signup {
+  signupTools ??= createSignup(getSql());
+  return signupTools;
 }
 
 /** Shop pictures (M1): signed uploads into the public `shop-media` bucket, via the service role. */

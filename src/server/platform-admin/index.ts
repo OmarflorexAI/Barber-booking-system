@@ -1,5 +1,5 @@
 import type postgres from "postgres";
-import type { Sql } from "postgres";
+import type { Sql, TransactionSql } from "postgres";
 import { parseCsv } from "@/lib/csv";
 import { normalizePhone } from "@/lib/phone";
 import { requirePlatformAdmin } from "@/server/booking-engine/access";
@@ -120,6 +120,59 @@ export function checkNewShop(args: Omit<NewShop, "userId" | "ownerUserId">) {
   return { slug, name, phone, address: args.address?.trim() || null, ownerCutsHair: !!ownerBarberName, barberNames };
 }
 
+/** A new Shop after checkNewShop, plus who owns it and what it starts with. */
+type CheckedShop = ReturnType<typeof checkNewShop> &
+  Pick<NewShop, "ownerUserId" | "manualBookingMinutes" | "services" | "weeklyHours">;
+
+/**
+ * Write a whole Shop (Owner membership, Barbers, Services, prices, hours) inside the caller's
+ * transaction. Shared by our team's createShop and the Owner's own sign-up, so both build the
+ * same thing.
+ */
+export async function insertShop(tx: TransactionSql, args: CheckedShop): Promise<{ shopId: string; slug: string }> {
+  const [shop] = await tx<{ id: string }[]>`
+    insert into public.shops (slug, name, phone, address, manual_booking_minutes)
+    values (${args.slug}, ${args.name}, ${args.phone}, ${args.address}, ${args.manualBookingMinutes})
+    returning id
+  `;
+  await tx`insert into public.shop_members (shop_id, user_id, role) values (${shop.id}, ${args.ownerUserId}, 'owner')`;
+
+  const barberIds: string[] = [];
+  for (const [i, displayName] of args.barberNames.entries()) {
+    const userId = i === 0 && args.ownerCutsHair ? args.ownerUserId : null;
+    const [b] = await tx<{ id: string }[]>`
+      insert into public.barbers (shop_id, user_id, display_name, sort_order)
+      values (${shop.id}, ${userId}, ${displayName}, ${i})
+      returning id
+    `;
+    barberIds.push(b.id);
+  }
+
+  for (const [i, s] of args.services.entries()) {
+    const [svc] = await tx<{ id: string }[]>`
+      insert into public.services (shop_id, name_en, name_es, duration_min, buffer_min, sort_order)
+      values (${shop.id}, ${s.nameEn.trim()}, ${s.nameEs.trim() || s.nameEn.trim()}, ${s.durationMin}, ${s.bufferMin ?? 0}, ${i})
+      returning id
+    `;
+    for (const barberId of barberIds) {
+      await tx`
+        insert into public.barber_services (shop_id, barber_id, service_id, price_cents)
+        values (${shop.id}, ${barberId}, ${svc.id}, ${s.priceCents})
+      `;
+    }
+  }
+
+  for (const barberId of barberIds) {
+    for (const d of args.weeklyHours) {
+      await tx`
+        insert into public.weekly_hours (shop_id, barber_id, weekday, start_time, end_time, break_start, break_end)
+        values (${shop.id}, ${barberId}, ${d.weekday}, ${d.start}, ${d.end}, ${d.breakStart || null}, ${d.breakEnd || null})
+      `;
+    }
+  }
+  return { shopId: shop.id, slug: args.slug };
+}
+
 export function createPlatformAdmin(sql: Sql) {
   const reporting = createReporting(sql);
 
@@ -129,49 +182,7 @@ export function createPlatformAdmin(sql: Sql) {
     const { slug, name, phone, address, ownerCutsHair, barberNames } = checkNewShop(args);
 
     try {
-      return await sql.begin(async (tx) => {
-        const [shop] = await tx<{ id: string }[]>`
-          insert into public.shops (slug, name, phone, address, manual_booking_minutes)
-          values (${slug}, ${name}, ${phone}, ${address}, ${args.manualBookingMinutes})
-          returning id
-        `;
-        await tx`insert into public.shop_members (shop_id, user_id, role) values (${shop.id}, ${args.ownerUserId}, 'owner')`;
-
-        const barberIds: string[] = [];
-        for (const [i, displayName] of barberNames.entries()) {
-          const userId = i === 0 && ownerCutsHair ? args.ownerUserId : null;
-          const [b] = await tx<{ id: string }[]>`
-            insert into public.barbers (shop_id, user_id, display_name, sort_order)
-            values (${shop.id}, ${userId}, ${displayName}, ${i})
-            returning id
-          `;
-          barberIds.push(b.id);
-        }
-
-        for (const [i, s] of args.services.entries()) {
-          const [svc] = await tx<{ id: string }[]>`
-            insert into public.services (shop_id, name_en, name_es, duration_min, buffer_min, sort_order)
-            values (${shop.id}, ${s.nameEn.trim()}, ${s.nameEs.trim() || s.nameEn.trim()}, ${s.durationMin}, ${s.bufferMin ?? 0}, ${i})
-            returning id
-          `;
-          for (const barberId of barberIds) {
-            await tx`
-              insert into public.barber_services (shop_id, barber_id, service_id, price_cents)
-              values (${shop.id}, ${barberId}, ${svc.id}, ${s.priceCents})
-            `;
-          }
-        }
-
-        for (const barberId of barberIds) {
-          for (const d of args.weeklyHours) {
-            await tx`
-              insert into public.weekly_hours (shop_id, barber_id, weekday, start_time, end_time, break_start, break_end)
-              values (${shop.id}, ${barberId}, ${d.weekday}, ${d.start}, ${d.end}, ${d.breakStart || null}, ${d.breakEnd || null})
-            `;
-          }
-        }
-        return { shopId: shop.id, slug };
-      });
+      return await sql.begin((tx) => insertShop(tx, { ...args, slug, name, phone, address, ownerCutsHair, barberNames }));
     } catch (e) {
       if (pgCode(e) === PG_UNIQUE_VIOLATION && constraintName(e) === "shops_slug_key") throw slugTaken();
       if (pgCode(e) === PG_BARBER_LIMIT) throw barberLimit(MAX_ACTIVE_BARBERS);
