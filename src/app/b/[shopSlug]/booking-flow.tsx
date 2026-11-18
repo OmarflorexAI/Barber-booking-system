@@ -102,8 +102,13 @@ export function BookingFlow({ catalog, locale, header, fromSite = false }: { cat
       firstStep.current = false;
       return;
     }
-    window.scrollTo({ top: 0 });
-    headingRef.current?.focus({ preventScroll: true });
+    // Deferred to the next frame: scrolling and focusing force a style/layout pass, which
+    // would otherwise run inside the tap's own task and delay the start of the slide.
+    const raf = requestAnimationFrame(() => {
+      window.scrollTo({ top: 0 });
+      headingRef.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(raf);
   }, [step]);
 
   // An error must be seen where the Client is looking, even on a small, scrolled screen.
