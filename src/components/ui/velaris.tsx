@@ -5,7 +5,7 @@ import { useEffect, useRef, type CSSProperties } from "react";
 /**
  * Velaris: a slow WebGL simplex-noise gradient used as a decorative background (no text in it).
  * Production notes:
- * - The DPR is capped at 1.5 and the loop runs at ~30fps; the noise is soft, so nothing is lost.
+ * - The DPR is capped at 1.5 (0.5x CSS pixels on phones) and the loop runs at ~30fps; the noise is soft, so nothing is lost.
  * - The loop pauses off-screen (IntersectionObserver) and while the tab is hidden.
  * - Under prefers-reduced-motion it draws one still frame and stops.
  * - Without WebGL (or if a shader fails to compile/link) the static CSS gradient underneath
@@ -207,8 +207,13 @@ function mountGl(root: HTMLDivElement, { colorKey, bg, speed, grain, maxLuminanc
   // 640px step, so a band that grows a little (an FAQ answer unfolding) changes nothing:
   // no backing-store resize, no clear, no flash. The band clips the overhang.
   const STEP = 640;
+  const lite = window.matchMedia("(pointer: coarse), (max-width: 767px)");
+  // Own compositor layer, so painting the canvas never dirties the page layers around it.
+  canvas.style.willChange = "transform";
   const resize = (): boolean => {
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    // Phones / coarse pointers / narrow screens: a soft gradient doesn't need sharp pixels,
+    // so render at ~0.5x CSS pixels and let CSS upscale. Desktop keeps the 1.5x DPR cap.
+    const dpr = lite.matches ? 0.5 : Math.min(window.devicePixelRatio || 1, 1.5);
     const cssH = Math.ceil((root.clientHeight + 1) / STEP) * STEP;
     const w = Math.max(1, Math.round(root.clientWidth * dpr));
     const h = Math.max(1, Math.round(cssH * dpr));
@@ -264,8 +269,13 @@ function mountGl(root: HTMLDivElement, { colorKey, bg, speed, grain, maxLuminanc
   resize();
   draw();
   // Resizing clears the canvas, so redraw in the same callback (before paint).
+  // Debounced: the old size just stays stretched by CSS until the resize settles.
+  let resizeTimer = 0;
   const ro = new ResizeObserver(() => {
-    if (resize()) draw();
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => {
+      if (resize()) draw();
+    }, 120);
   });
   ro.observe(root);
   const io = new IntersectionObserver(([entry]) => {
@@ -278,6 +288,7 @@ function mountGl(root: HTMLDivElement, { colorKey, bg, speed, grain, maxLuminanc
 
   return () => {
     stop();
+    window.clearTimeout(resizeTimer);
     ro.disconnect();
     io.disconnect();
     document.removeEventListener("visibilitychange", sync);
