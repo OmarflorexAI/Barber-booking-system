@@ -6,7 +6,12 @@ Last updated: 2026-11-17, end of the dad-demo session (live on Vercel; everythin
 
 ### START HERE next session (written 2026-11-18, sign-up session)
 
-**Self sign-up and Google sign-in built (not committed or deployed yet).** Design in `docs/superpowers/specs/2026-11-18-signup-google-design.md`.
+**Next task (not started): restyle the Owner dashboard and take demo screenshots.**
+- **Restyle:** bring the staff app (`/app/day`, `/app/dashboard`, `/app/settings`; frame in `src/app/app/_shell/`) up to the landing's premium Apple-like look in `DESIGN.md`, if it falls short. Use the `/impeccable` skill.
+- **Screenshots:** take them before and after, in a folder in the repo, so the user can download them for demos.
+- **Signing in:** a Shop with demo data needs a test Owner login on localhost, e.g. `npm run staff:add -- <test email> demo-shop owner Carlos` for `demo-shop`. Get its sign-in link with Supabase's admin `generateLink` and open it as `/auth/callback?token_hash=…&type=magiclink&next=/app/day`. Delete any test login afterwards.
+
+**Self sign-up and Google sign-in: committed and pushed 2026-11-18 (`e2d47a5..93498b7`). The live deploy hasn't been checked yet.** Design in `docs/superpowers/specs/2026-11-18-signup-google-design.md`.
 - **Landing nav:** "Log in" and "Sign up" ("Crear cuenta" in Spanish) open `/login`, a card with two tabs, Continue with Google and an email link.
 - **Setup:** a login with no Shop is sent to `/setup` (name, your name, phone, haircut price, address). That creates a bookable Shop on Free / free month, and the team is emailed as a lead.
 - **Engine:** `src/server/signup/`, shared `insertShop` with `createShop`.
