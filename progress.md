@@ -1,10 +1,23 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-17, end of the third session (six /b milestones, booked check animation, light depth; all pushed, last commit `badaef8`). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-17, end of the dad-demo session (live on Vercel; everything pushed, last code commit `23eb230`). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-### START HERE next session (written 2026-11-17, dad-demo build session)
+### START HERE next session (written 2026-11-17, end of the dad-demo session)
+
+**Next session: security audit** (the user's plan). Live at https://citrus-system.vercel.app (Vercel Hobby, deploys `main` from GitHub). Suggested scope: server actions and route handlers (authz via `access.ts`, input validation), `/auth/confirm` (OTP on POST only, `next` limited to `/app…`), `/m/<token>` manage tokens, cron routes (`CRON_SECRET`), Telegram and payments webhooks (secret/signature checks), RLS on every table, the public `/api/availability*` routes (rate limits, enumeration), Turnstile on public forms (still the always-pass test keys on Vercel?), env/secret handling, headers (CSP/HSTS), and that the `dadtest:*` scripts never ship or run against production.
+
+State now:
+- **Live and verified on the phone profile:** `/b/dad-test` with the optional email field; a real booking emailed samirflores13@gmail.com (outbox `email_confirmation` done). `dad-test` is reset (no Bookings).
+- **Database connections (important):** Vercel's `DATABASE_URL` uses the Supabase **transaction pooler, port 6543**; the session pooler (5432) ran out of its 15 slots and took the site down once. Local `.env.local` now uses the **direct connection** (`db.<ref>.supabase.co:5432`, user `postgres`): from this machine the 6543 pooler stalls mid-query (backends stuck in `ClientRead`), and 5432 shares its 15 slots with the live site. All 182 engine tests pass on the direct URL.
+- **Text consent:** the "you agree to get texts" line now shows only when the Shop has texts on (`f69bdac`); no Twilio, so nobody gets texts.
+- **Phone smoothness** (Pixel 7 profile, 4x CPU; scripts and numbers in gitignored `.impeccable/review/jank/`): landing scroll 654 → ~210 dropped frames (Velaris at 0.5x on phones), contact-form freeze gone (paper-shader style shipped in `layout.tsx`, shader/Turnstile mount at idle), view transitions scoped per section and skipped under reduced motion, no WebGL metal ring under reduced motion, booking time tap 200 → 133 ms (no layout read when the details step mounts). Remaining: each booking tap still spends 50-130 ms (4x CPU) rendering the next step (would need a booking-flow refactor, e.g. memoizing `SlotPicker`); language switch ~0.3 s; the hero gradient is slightly grainier at 0.5x.
+- **Landing form:** leads are saved and emailed to Platform admins; no self-serve payment. Shops are created by hand (`onboardShop`/`platformAdmin()` have no admin UI yet); billing and plan are set by hand.
+- **Not confirmed yet:** Telegram bot created and webhook registered on the live URL; `npm run dadtest:telegram` run; dad's Owner link (`npm run dadtest:owner -- <email> --site https://citrus-system.vercel.app`); `<URL>`/`<CORREO>` filled in `docs/prueba-papa.md`; dad's test itself.
+- **Vercel MCP** needs the user to approve access to the `omars-projects` team before runtime logs can be read.
+
+### Earlier: START HERE (written 2026-11-17, dad-demo build session)
 
 Goal: the user's dad tests the app alone on his phone, in Spanish, on a separate Shop `dad-test` ("Barbería de Prueba", plan pro, online payment and texts off), as Client and Owner. Built and committed locally (`487bb3f`..`ee7896a`, not pushed); QA passed (typecheck, lint, 28 unit + 182 engine tests).
 - **Client emails** (`src/server/client-email/`, migration `20261117090000_client_email.sql`): optional email on `/b`, confirmation/cancelled/rescheduled outbox rows in the same transaction, EN/ES by `bookings.locale`. Not gated by plan; also sent as a receipt when the Client changes it. Until a domain is verified in Resend, only the Resend account's own address receives them.
