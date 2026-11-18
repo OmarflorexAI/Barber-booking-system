@@ -14,6 +14,8 @@ const en = {
   navLabel: "Sections",
   navMenu: "Menu",
   navCta: "Talk to us",
+  navLogin: "Log in",
+  navSignup: "Sign up",
 
   heroTitle: "Stop answering the phone in the middle of a cut.",
   heroBody:
@@ -234,6 +236,8 @@ const es: LandingDictionary = {
   navLabel: "Secciones",
   navMenu: "Menú",
   navCta: "Hablemos",
+  navLogin: "Log in",
+  navSignup: "Crear cuenta",
 
   heroTitle: "Deja de contestar el teléfono en medio de un corte.",
   heroBody:

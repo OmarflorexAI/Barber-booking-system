@@ -101,7 +101,7 @@ export function Landing({ locale }: { locale: Locale }) {
   const t = landingDictionaries[locale];
   const props = { locale, t };
   // The nav is a client component: send it only its own strings, not the whole page's text.
-  const navText = { nav: t.nav, navLabel: t.navLabel, navMenu: t.navMenu, navCta: t.navCta, otherLang: t.otherLang };
+  const navText = { nav: t.nav, navLabel: t.navLabel, navMenu: t.navMenu, navLogin: t.navLogin, navSignup: t.navSignup, otherLang: t.otherLang };
   return (
     <div lang={locale} className="landing min-h-screen overflow-x-clip antialiased">
       <HtmlLang lang={locale} />

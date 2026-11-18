@@ -90,7 +90,7 @@ export function Footer({ locale, t }: SectionProps) {
                 </Link>
               </li>
               <li>
-                <Link href="/login" transitionTypes={["page"]} className={link}>
+                <Link href={`/login?lang=${locale}`} transitionTypes={["page"]} className={link}>
                   <span className={drawn}>{t.staffSignIn}</span>
                 </Link>
               </li>

@@ -8,10 +8,10 @@ import { LOCALE_COOKIE, type Locale } from "@/lib/i18n/dictionaries";
 import type { LandingDictionary } from "@/lib/i18n/landing";
 import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { useCompactOnScroll } from "./nav-scroll";
-import { CONTACT_ID, focusRing } from "./ui";
+import { focusRing } from "./ui";
 
 /** Only the nav's own strings: this is a client component, so everything it gets is sent to the browser. */
-type NavText = Pick<LandingDictionary, "nav" | "navLabel" | "navMenu" | "navCta" | "otherLang">;
+type NavText = Pick<LandingDictionary, "nav" | "navLabel" | "navMenu" | "navLogin" | "navSignup" | "otherLang">;
 
 /** The page-level transitions the header takes part in: the language switch, leaving or entering the landing. */
 const HEADER_TYPES = { "lang-switch": "landing-header", page: "landing-header", default: "none" };
@@ -34,7 +34,8 @@ function HeaderLayer({ name, children }: { name: string; children: ReactNode }) 
 /**
  * A floating glass bar (rim, glint and glass layers, see the `.nav-*` rules): wordmark left,
  * section links centered (hover: muted to ink and a hairline drawn from the centre), the
- * language switch and a liquid metal "Talk to us" on the right. Scrolling down contracts it (narrower and shorter),
+ * language switch, "Log in" and a liquid metal "Sign up" ("Crear cuenta") on the right.
+ * "Talk to us" lives on in the hero and the contact section. Scrolling down contracts it (narrower and shorter),
  * scrolling up opens it again (`useCompactOnScroll` + `.nav-*` rules in globals.css). The
  * header box itself never changes size; only clip and translate move, so nothing below shifts.
  * Below md the links move into a glass card under the bar: Escape or a link tap closes it,
@@ -48,6 +49,9 @@ export function Nav({ locale, t }: { locale: Locale; t: NavText }) {
     { href: "#pricing", label: t.nav.pricing },
     { href: "#faq", label: t.nav.faq },
   ];
+  // The login page goes by the saved language, so the links carry it (the proxy saves ?lang).
+  const loginHref = `/login?lang=${locale}`;
+  const signupHref = `/login?mode=signup&lang=${locale}`;
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const menuId = useId();
@@ -144,9 +148,12 @@ export function Nav({ locale, t }: { locale: Locale; t: NavText }) {
                 >
                   <span className="nav-link-label">{t.otherLang}</span>
                 </Link>
+                <Link href={loginHref} prefetch={false} className={`nav-link hidden min-h-11 items-center rounded-full px-3 text-sm text-muted-foreground md:inline-flex ${focusRing}`}>
+                  <span className="nav-link-label">{t.navLogin}</span>
+                </Link>
                 <span className="hidden md:block">
-                  <LiquidMetalButton href={`#${CONTACT_ID}`} size="sm">
-                    {t.navCta}
+                  <LiquidMetalButton href={signupHref} size="sm">
+                    {t.navSignup}
                   </LiquidMetalButton>
                 </span>
                 <button
@@ -181,9 +188,19 @@ export function Nav({ locale, t }: { locale: Locale; t: NavText }) {
                   </li>
                 ))}
               </ul>
-              <LiquidMetalButton href={`#${CONTACT_ID}`} onClick={() => setOpen(false)} className="mt-2 w-full">
-                {t.navCta}
-              </LiquidMetalButton>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <Link
+                  href={loginHref}
+                  prefetch={false}
+                  onClick={() => setOpen(false)}
+                  className={`flex min-h-12 items-center justify-center rounded-full border border-white/15 px-4 text-sm font-medium text-foreground transition-colors duration-200 hover:border-white/30 hover:bg-white/[0.06] ${focusRing}`}
+                >
+                  {t.navLogin}
+                </Link>
+                <LiquidMetalButton href={signupHref} onClick={() => setOpen(false)} className="w-full">
+                  {t.navSignup}
+                </LiquidMetalButton>
+              </div>
             </nav>
           </HeaderLayer>
         </div>
