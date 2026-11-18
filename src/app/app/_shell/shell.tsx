@@ -41,6 +41,9 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 
+  // Signed in with no Shop at all: a new Owner, so on to setting one up (self sign-up).
+  if (!staff.membership && !staff.retiredBarber && !staff.isPlatformAdmin) redirect("/setup");
+
   // Signed in, but not a Shop's Owner: one calm sentence and the way out. A login left over
   // from when Barbers could sign in is told to ask their Owner.
   if (!staff.membership) {

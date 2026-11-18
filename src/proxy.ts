@@ -25,6 +25,18 @@ export async function proxy(request: NextRequest) {
     }
     return NextResponse.next();
   }
+  // The landing's "Log in" / "Sign up" links carry the page's language: save it as the cookie
+  // and drop the parameter (keeping ?mode), so the login page opens in the visitor's language.
+  if (request.nextUrl.pathname === "/login") {
+    const asked = request.nextUrl.searchParams.get("lang");
+    if (asked === "en" || asked === "es") {
+      const url = request.nextUrl.clone();
+      url.searchParams.delete("lang");
+      const res = NextResponse.redirect(url, 307);
+      res.cookies.set(LOCALE_COOKIE, asked, { path: "/", maxAge: 31536000, sameSite: "lax" });
+      return res;
+    }
+  }
   return updateSession(request);
 }
 
@@ -32,5 +44,5 @@ export async function proxy(request: NextRequest) {
 // (/b/..., /m/...) skip it so Clients get the fastest possible load. "/" is here only
 // for the language redirect above.
 export const config = {
-  matcher: ["/", "/app/:path*", "/login", "/auth/:path*"],
+  matcher: ["/", "/app/:path*", "/login", "/setup", "/auth/:path*"],
 };
