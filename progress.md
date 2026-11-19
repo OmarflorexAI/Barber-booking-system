@@ -1,15 +1,17 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-17, end of the dad-demo session (live on Vercel; everything pushed, last code commit `23eb230`). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-18, dashboard-restyle session (last commit `80268a9`; restyle uncommitted). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-### START HERE next session (written 2026-11-18, sign-up session)
+### START HERE next session (written 2026-11-18, dashboard-restyle session)
 
-**Next task (not started): restyle the Owner dashboard and take demo screenshots.**
-- **Restyle:** bring the staff app (`/app/day`, `/app/dashboard`, `/app/settings`; frame in `src/app/app/_shell/`) up to the landing's premium Apple-like look in `DESIGN.md`, if it falls short. Use the `/impeccable` skill.
-- **Screenshots:** take them before and after, in a folder in the repo, so the user can download them for demos.
-- **Signing in:** a Shop with demo data needs a test Owner login on localhost, e.g. `npm run staff:add -- <test email> demo-shop owner Carlos` for `demo-shop`. Get its sign-in link with Supabase's admin `generateLink` and open it as `/auth/callback?token_hash=…&type=magiclink&next=/app/day`. Delete any test login afterwards.
+**Staff app restyle + demo screenshots: done 2026-11-18, not committed yet (waiting on the user's OK).**
+- **Shots:** `docs/screenshots/dashboard-2026-11-18/before/` (12: EN, phone + desktop, light + dark) and `after/` (24: EN + ES). Retake with `node --env-file=.env.local scripts/dashboard-shots.mjs <staff email> <out dir> [en,es] [light,dark]` (signs in through an admin magic link; shoots Today `?date=2026-11-12`, Dashboard `?week=2026-11-09`, Settings; grows the viewport to the page height so the sidebar and tab bar sit right).
+- **What changed (user picked all four):** (1) numbers in Hanken tabular, not JetBrains Mono, across `/app` (`.shell` remaps `--font-jetbrains`, as `.client-page` does; DESIGN.md updated); (2) Today's header = the Dashboard's layout: title left, one segmented date pill right, "Back to today" right-aligned; desktop Booking cells get `card-depth` + 16px corners; (3) Dashboard: Highlights tiles padded like the other cards, the "how it's counted" note moved under the Bookings-per-day card; (4) sidebar shows a name (Barber profile, else the sign-in account's `full_name`/`name`, new `Staff.name`), the email only when there's no name.
+- **Checks:** typecheck and lint clean; e2e day/dashboard/sidebar 15 passed, 1 failed: `day.spec.ts` "add a walk-in from the big button" fails **on main too** (it runs on the real clock; after ~8 PM the test Shop is closed). Make it use a fixed clock or open hours.
+- **Test login:** `shots-owner@test.invalid` (Owner of demo-shop, no Barber link, display name "Marco Reyes") was deleted at the end of the session.
+- **Note:** CLAUDE.md and the handoff said the landing uses Geist; it doesn't. The whole site uses Hanken Grotesk (`src/app/layout.tsx`). CLAUDE.md should be corrected.
 
 **Self sign-up and Google sign-in: committed and pushed 2026-11-18 (`e2d47a5..93498b7`). The live deploy hasn't been checked yet.** Design in `docs/superpowers/specs/2026-11-18-signup-google-design.md`.
 - **Landing nav:** "Log in" and "Sign up" ("Crear cuenta" in Spanish) open `/login`, a card with two tabs, Continue with Google and an email link.
