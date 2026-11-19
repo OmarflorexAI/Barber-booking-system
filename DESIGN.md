@@ -334,7 +334,7 @@ Shipped. Source: the `.client-page` blocks and `.c-*` classes in `globals.css`, 
 
 ### App typography
 
-Hanken Grotesk for every word, JetBrains Mono (tabular) for times, prices and numbers: the One Family and Mono Means Time rules above apply in the app too. A Booking row's "10:30", a Service's "$35" and "45 min", and a dashboard count are mono; names, labels and buttons are not.
+Hanken Grotesk for every word **and every number** (2026-11-18): like the Client pages, the staff app (`.shell`) remaps `--font-jetbrains` to Hanken and sets tabular figures, so times, prices, durations and counts read in the landing's face and still line up. `font-mono` stays in the markup as the "this is a time/price/count" marker (it renders Hanken here); nothing in the app renders monospace. Names, labels and buttons were never mono.
 
 - **Body 16px** (1rem), line-height about 1.5. Also every input's text size (no iOS zoom).
 - **Headings ≤ 1.5rem** in the app, semibold, light negative tracking. A fixed rem scale (no fluid type), steps about 1.2 apart: page title 1.5rem, section 1.25rem, row title 1rem semibold, meta 0.875rem.
@@ -399,7 +399,8 @@ The landing's shapes carry over: 16px for cards and sheets' top corners, full pi
 - **Do** build every app color from the six tokens, in both themes, and check each screen in light and dark at 360px and 1440px, EN and ES.
 - **Do** keep red to the now line and the new-Booking dot. The booked check is green (`--c-success`).
 - **Do** make the black (light) / white (dark) pill the one primary action per view, at least 48px tall.
-- **Do** set times, prices and counts in JetBrains Mono with tabular figures, and everything else in Hanken Grotesk.
+- **Do** set times, prices and counts in Hanken Grotesk with tabular figures (`font-mono` in the app renders Hanken), like everything else.
+- **Do** give date and week steppers one segmented pill (‹ | label | ›, hairlines between, `card-depth`), title left and pill right from 640px; Today and Dashboard share it. Desktop Booking cells on Today use the Dashboard card treatment (16px corners, `card-depth`).
 - **Do** put row actions in a bottom sheet and destructive actions behind a confirm that says what happens to the Client and their money.
 - **Do** give every list a skeleton, an empty state (one sentence + one action) and a neutral error that keeps the input.
 - **Do** keep the theme switch next to the language toggle on every app screen, and render the saved theme with no flash.
