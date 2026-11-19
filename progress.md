@@ -1,12 +1,14 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-18, dashboard-restyle session (last commit `80268a9`; restyle uncommitted). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-18, dashboard-restyle session (restyle pushed in `986d0c7..3f6b3c4`; login polish pushed after it). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
 ### START HERE next session (written 2026-11-18, dashboard-restyle session)
 
-**Staff app restyle + demo screenshots: done 2026-11-18, not committed yet (waiting on the user's OK).**
+**Log in / Sign up polish: done 2026-11-18, pushed.** `/login` now has the hero phone's Velaris gradient fixed behind the whole page (`.login-velaris`, same CSS fallback and fade-in as `.hero-velaris`), and switching Log in / Sign up slides the tab thumb (`.auth-thumb`, 420ms) and eases the changing text in from the side of the tab picked (`.auth-swap`: a few px + short blur, staggered; only after the first switch; nothing moves under reduced motion). CSS in `globals.css` under "Login gradient" and "Auth switch". Checked in the browser pane: canvas draws, both directions animate. No e2e covers `/login` yet.
+
+**Staff app restyle + demo screenshots: done 2026-11-18, committed and pushed (`986d0c7..3f6b3c4`).**
 - **Shots:** `docs/screenshots/dashboard-2026-11-18/before/` (12: EN, phone + desktop, light + dark) and `after/` (24: EN + ES). Retake with `node --env-file=.env.local scripts/dashboard-shots.mjs <staff email> <out dir> [en,es] [light,dark]` (signs in through an admin magic link; shoots Today `?date=2026-11-12`, Dashboard `?week=2026-11-09`, Settings; grows the viewport to the page height so the sidebar and tab bar sit right).
 - **What changed (user picked all four):** (1) numbers in Hanken tabular, not JetBrains Mono, across `/app` (`.shell` remaps `--font-jetbrains`, as `.client-page` does; DESIGN.md updated); (2) Today's header = the Dashboard's layout: title left, one segmented date pill right, "Back to today" right-aligned; desktop Booking cells get `card-depth` + 16px corners; (3) Dashboard: Highlights tiles padded like the other cards, the "how it's counted" note moved under the Bookings-per-day card; (4) sidebar shows a name (Barber profile, else the sign-in account's `full_name`/`name`, new `Staff.name`), the email only when there's no name.
 - **Checks:** typecheck and lint clean; e2e day/dashboard/sidebar 15 passed, 1 failed: `day.spec.ts` "add a walk-in from the big button" fails **on main too** (it runs on the real clock; after ~8 PM the test Shop is closed). Make it use a fixed clock or open hours.
