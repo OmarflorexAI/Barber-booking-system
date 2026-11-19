@@ -12,6 +12,8 @@ type MemberRole = "owner" | "barber";
 export type Staff = {
   userId: string;
   email: string | null;
+  /** Their name from the sign-in account (Google gives one; email links don't). */
+  name: string | null;
   /** The Shop they own. Null for anyone who isn't an Owner (a legacy Barber login included). */
   membership: { shopId: string; shopName: string; timezone: string; role: "owner" } | null;
   /**
@@ -54,9 +56,13 @@ export async function loadStaff(supabase: SupabaseClient): Promise<Staff | null>
     if (data) barber = { id: data.id, displayName: data.display_name };
   }
 
+  const meta = user.user_metadata ?? {};
+  const name = [meta.full_name, meta.name].find((v): v is string => typeof v === "string" && v.trim() !== "")?.trim() ?? null;
+
   return {
     userId: user.id,
     email: user.email ?? null,
+    name,
     membership: owner
       ? { shopId: owner.shop_id, shopName: owner.shops.name, timezone: owner.shops.timezone, role: "owner" }
       : null,

@@ -74,7 +74,9 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
   }
 
   const items: NavItem[] = NAV.map((i) => ({ ...i, label: t.shell.nav[i.key] }));
-  const person = staff.barber?.displayName ?? staff.email;
+  // A name when we have one (their Barber profile, else the sign-in account); the email
+  // only when there's no name (and as the hover hint).
+  const person = staff.barber?.displayName ?? staff.name;
 
   return (
     <div className="shell min-h-dvh [--tabbar-h:4rem] [--shell-bottom:calc(var(--tabbar-h)_+_env(safe-area-inset-bottom))] lg:[--shell-bottom:0px] lg:[--tabbar-h:0px]">
@@ -97,7 +99,11 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
         <div className="mt-auto flex flex-col gap-4">
           {staff.isPlatformAdmin && ADMIN_PANEL_READY && <SidebarAdminLink label={t.shell.platformAdmin} initialCollapsed={collapsed} />}
           <div className="flex flex-col gap-3 border-t border-line pt-4">
-            {person && <p className="rail-fade truncate px-3 text-sm text-muted">{person}</p>}
+            {(person ?? staff.email) && (
+              <p className="rail-fade truncate px-3 text-sm font-medium text-ink" title={staff.email ?? undefined}>
+                {person ?? staff.email}
+              </p>
+            )}
             {/* Theme first: in the rail it stands up (System / Light / Dark stacked); the language
                 pill doesn't fit there, so it fades out and a two-letter square takes its place. */}
             <div className="flex flex-wrap items-center gap-2 pl-0.5 in-data-[sidebar=collapsed]:flex-col in-data-[sidebar=collapsed]:flex-nowrap in-data-[sidebar=collapsed]:items-start">
