@@ -2096,6 +2096,10 @@ body:has(.landing) {
  */
 .shell {
   --rail: 16rem;
+  /* Numbers in the landing's face with tabular figures, never monospace (as on the Client
+     pages): font-mono still marks times, prices, durations and counts, but reads in Hanken. */
+  --font-jetbrains: var(--font-hanken);
+  font-variant-numeric: tabular-nums;
 }
 :root[data-sidebar="collapsed"] .shell {
   --rail: 4.5rem;
