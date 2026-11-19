@@ -1834,6 +1834,29 @@ body:has(.landing) {
     opacity: 0;
   }
 }
+/*
+ * Login gradient (login/page.tsx): the hero phone's Velaris gradient behind the whole Log in /
+ * Sign up page, fixed to the screen on the page ground. Same CSS fallback and fade-in as the
+ * hero; the canvas caps its luminance, so the muted text and the card keep their contrast.
+ */
+.landing .login-velaris {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--l-bg);
+  background-image:
+    radial-gradient(60% 55% at 50% 30%, rgb(58 61 68 / 0.5), transparent 75%),
+    radial-gradient(50% 45% at 20% 20%, rgb(46 49 55 / 0.6), transparent 70%),
+    radial-gradient(50% 50% at 82% 65%, rgb(46 49 55 / 0.55), transparent 70%),
+    radial-gradient(70% 45% at 40% 95%, rgb(26 27 31 / 0.8), transparent 70%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .landing .login-velaris {
+    animation: hero-velaris-in 1.2s cubic-bezier(0.33, 0, 0.15, 1) 0.1s both;
+  }
+}
+
 @keyframes month-rail-draw {
   from {
     scale: 1 0;

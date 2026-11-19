@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Wordmark } from "@/components/brand/logo";
+import { Velaris } from "@/components/ui/velaris";
 import { LanguageToggle } from "@/components/language-toggle";
 import { HtmlLang } from "@/app/_landing/html-lang";
 import { getDictionary } from "@/lib/i18n/server";
@@ -11,11 +12,14 @@ export const metadata: Metadata = { title: "Log in" };
 
 /*
  * Log in / Sign up (Google or an email link): always dark, in the landing's look (.landing scope and its --l-* tokens),
- * the bridge between the marketing page and the app. No theme toggle here.
+ * the bridge between the marketing page and the app. No theme toggle here. Behind it, the hero's
+ * Velaris gradient; switching Log in / Sign up slides the tab thumb and eases the text in.
  */
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
-    <div className="landing flex min-h-dvh flex-col">
+    <div className="landing relative isolate flex min-h-dvh flex-col">
+      {/* The hero phone's slow Velaris gradient, behind the whole page (globals.css → "Login gradient"). */}
+      <Velaris className="login-velaris" speed={1} />
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-5">
         <Link
           href="/"
