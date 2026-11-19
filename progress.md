@@ -1,10 +1,21 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-18, dashboard-restyle session (restyle pushed in `986d0c7..3f6b3c4`; login polish pushed after it). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-18, end of the dashboard-restyle session (everything pushed through `bd2f6e7`, live on Vercel). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
 
-### START HERE next session (written 2026-11-18, dashboard-restyle session)
+### START HERE next session (written 2026-11-18): a full security audit
+
+**Next task: a thorough security audit (the user's plan for 2026-11-19).** It builds on the first pass in `docs/security-audit-2026-11-18.md` (read it first: its "Checked and OK" list doesn't need redoing unless that code changed). Write the results to a new `docs/security-audit-2026-11-19.md`.
+- **Status of the first pass's open items (checked 2026-11-18 evening):**
+  - #1 Turnstile test keys in production: **unknown.** A curl of the live page and JS chunks found neither the test key nor a real one (the widget loads lazily). Re-check in the browser (network tab or the widget's `sitekey`).
+  - #2 no per-phone Booking cap and no rate limits: **still open.** It still needs a number from the user.
+  - #3–#5 guard-trigger gaps (`slug`, `sms_from_number`, `cancelled_at`…, Barber `phone_e164`, Client `sms_opt_out`): **still open.** No migration since `20261117100000_telegram_locale.sql`; needs the user's OK to migrate the shared DB.
+  - #6 shared dev/test/prod DB: **still open.**
+  - Security headers: **live** (CSP `frame-ancestors 'none'`, XFO DENY, nosniff, Referrer-Policy; Vercel adds HSTS with preload).
+- **New code since the first pass, never audited:** self sign-up (`src/server/signup/`, `/setup`: anyone with a login can create a Shop: abuse, rate limits, one Shop per login), Google sign-in (`/login` actions, `/auth/callback` with the OAuth code), `src/app/app/_media/actions.ts` photo uploads if changed, and `Staff.name` read from user-controlled `user_metadata` (rendered as React text, so escaped; confirm nothing puts it in emails or HTML unescaped).
+
+### Earlier: START HERE (written 2026-11-18, dashboard-restyle session)
 
 **Log in / Sign up polish: done 2026-11-18, pushed.** `/login` now has the hero phone's Velaris gradient fixed behind the whole page (`.login-velaris`, same CSS fallback and fade-in as `.hero-velaris`), and switching Log in / Sign up slides the tab thumb (`.auth-thumb`, 420ms) and eases the changing text in from the side of the tab picked (`.auth-swap`: a few px + short blur, staggered; only after the first switch; nothing moves under reduced motion). CSS in `globals.css` under "Login gradient" and "Auth switch". Checked in the browser pane: canvas draws, both directions animate. No e2e covers `/login` yet.
 
