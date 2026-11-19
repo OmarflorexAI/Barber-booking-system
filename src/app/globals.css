@@ -1834,6 +1834,7 @@ body:has(.landing) {
     opacity: 0;
   }
 }
+
 /*
  * Login gradient (login/page.tsx): the hero phone's Velaris gradient behind the whole Log in /
  * Sign up page, fixed to the screen on the page ground. Same CSS fallback and fade-in as the
@@ -1857,6 +1858,36 @@ body:has(.landing) {
   }
 }
 
+/*
+ * Auth switch (login/login-form.tsx): picking Log in / Sign up slides the tab thumb under the
+ * chosen tab, and the text that changes (title, hint, button label, the switch line, the terms)
+ * eases in from the side of the tab picked, a few px with a short blur, staggered by --swap-i.
+ * Only after the first switch (the page load doesn't animate). Reduced motion: no movement.
+ */
+.landing .lead-card[data-mode="signup"] .auth-thumb {
+  translate: 100% 0;
+}
+.landing .lead-card[data-mode="login"] {
+  --swap-from: -10px;
+}
+.landing .lead-card[data-mode="signup"] {
+  --swap-from: 10px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .landing .auth-thumb {
+    transition: translate 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .landing .auth-swap {
+    animation: auth-swap-in 380ms cubic-bezier(0.22, 1, 0.36, 1) calc(var(--swap-i, 1) * 35ms) both;
+  }
+}
+@keyframes auth-swap-in {
+  from {
+    opacity: 0;
+    translate: var(--swap-from, 0) 0;
+    filter: blur(4px);
+  }
+}
 @keyframes month-rail-draw {
   from {
     scale: 1 0;

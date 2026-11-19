@@ -77,29 +77,37 @@ export function LoginForm({ locale, initialMode, error }: { locale: Locale; init
   }, [mode, Turnstile]);
 
   const other: AuthMode = mode === "login" ? "signup" : "login";
+  // Set on the first switch only, so the page load itself doesn't animate.
+  const [switched, setSwitched] = useState(false);
+  const swap = switched ? "auth-swap" : "";
   const pick = (m: AuthMode) => {
+    if (m === mode) return;
+    setSwitched(true);
     setMode(m);
     // Keep the address honest (shareable, and the back button returns to the same tab).
     window.history.replaceState(null, "", m === "signup" ? "/login?mode=signup" : "/login");
   };
 
   return (
-    <div className="lead-card relative rounded-2xl p-6 sm:p-8">
-      <div role="group" aria-label={a.tabsLabel} className="grid grid-cols-2 gap-1 rounded-full border border-white/10 bg-background p-1">
+    // data-mode drives the sliding thumb; the content entering from the side of the tab picked
+    // (--swap-from) comes from it too (globals.css → "Auth switch").
+    <div data-mode={mode} className="lead-card relative rounded-2xl p-6 sm:p-8">
+      <div role="group" aria-label={a.tabsLabel} className="relative grid grid-cols-2 rounded-full border border-white/10 bg-background p-1">
+        <span aria-hidden="true" className="auth-thumb absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/2)] rounded-full bg-raised shadow-[inset_0_1px_0_rgb(255_255_255/0.08)]" />
         {(["login", "signup"] as const).map((m) => (
           <button
             key={m}
             type="button"
             aria-pressed={mode === m}
             onClick={() => pick(m)}
-            className={`min-h-10 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground aria-pressed:bg-raised aria-pressed:text-foreground aria-pressed:shadow-[inset_0_1px_0_rgb(255_255_255/0.08)] ${focusRing}`}
+            className={`relative min-h-10 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors duration-300 hover:text-foreground aria-pressed:text-foreground ${focusRing}`}
           >
             {a.tabs[m]}
           </button>
         ))}
       </div>
 
-      <div className="mt-8 flex flex-col gap-2">
+      <div key={`head-${mode}`} className={`mt-8 flex flex-col gap-2 ${swap}`}>
         <h1 className="text-balance text-[1.875rem] font-semibold leading-[1.1] tracking-[-0.03em] sm:text-4xl">{a.title[mode]}</h1>
         <p className="text-base leading-relaxed text-muted-foreground">{a.hint[mode]}</p>
       </div>
@@ -134,20 +142,22 @@ export function LoginForm({ locale, initialMode, error }: { locale: Locale; init
             {mode === "signup" && Turnstile && <Turnstile onToken={setToken} lang={locale} />}
             {state.status === "error" && <Notice role="alert">{t.errors[state.message ?? "UNKNOWN"] ?? t.errors.UNKNOWN}</Notice>}
             <button className={`${pill} border border-white/15 bg-raised text-foreground hover:border-white/30 hover:bg-white/[0.1]`} disabled={pending} aria-busy={pending}>
-              {a.send[mode]}
+              <span key={mode} className={`${swap} [--swap-i:2]`}>
+                {a.send[mode]}
+              </span>
             </button>
           </form>
         )}
       </div>
 
-      <p className="mt-8 text-center text-sm text-muted-foreground">
+      <p key={`switch-${mode}`} className={`mt-8 text-center text-sm text-muted-foreground ${swap} [--swap-i:3]`}>
         {a.switchTo[other]}{" "}
         <button type="button" onClick={() => pick(other)} className={`rounded-sm font-medium text-foreground underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white ${focusRing}`}>
           {a.tabs[other]}
         </button>
       </p>
       {mode === "signup" && (
-        <p className="mt-4 text-center text-[13px] leading-relaxed text-muted-foreground">
+        <p className={`mt-4 text-center text-[13px] leading-relaxed text-muted-foreground ${swap} [--swap-i:4]`}>
           {a.terms}{" "}
           <Link href={locale === "es" ? "/es/terms" : "/terms"} className={`rounded-sm underline decoration-white/30 underline-offset-4 hover:text-foreground ${focusRing}`}>
             {a.termsLink}
