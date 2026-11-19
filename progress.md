@@ -1,8 +1,17 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-18, end of the dashboard-restyle session (everything pushed through `bd2f6e7`, live on Vercel). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-19, Apple-look restyle of the staff app (before the security audit; not committed yet). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
+
+### Done 2026-11-19 (before the audit): the staff app takes the landing's Apple look
+- **Ask (user):** restyle the whole dashboard to match the landing's Apple UI. **Picked:** the whole staff app shell + the Dashboard page (Today's and Settings' inner content left for a follow-up), and keep Light / Dark / System.
+- **How:** no second system. The Client pages' iOS recipe (`.client-page` tokens: lit grey ground + aura, white/graphite cards, `--c-rim`, `--c-depth`, glass, glossy ink capsule) now also applies to `.staff-page`, which sits on the shell root (`shell.tsx`, `_shell/skeleton.tsx`). Staff-only rules are in a new `globals.css` block at the end, "Staff app (premium)": frosted-glass sidebar (`.staff-rail`) and phone tab bar (`.staff-tabbar`); the active rail row is a raised capsule (`.rail-on`); every `.card-depth` card gets the `.c-card` finish; `btn-primary` / `btn-ghost` become the glossy ink and raised white capsules (lift 1px on hover); `.seg` / `.seg-thumb` = the iOS segmented control (the Dashboard's metric switch). Dashboard cards go to 20px corners, the title to 30/36px with -0.03em, the week's big number to 60/96px with -0.045em.
+- **Data color in dark:** the dark cards are lighter now (`--surface` 30.5%), so `.staff-page` steps `--data` to 78% (6.7:1) and `--data-soft` to 60% (3.4:1). Light is unchanged.
+- **Shots:** `docs/screenshots/dashboard-2026-11-19/after/` (EN, phone + desktop, light + dark; Today, Dashboard, Settings).
+- **Checks:** typecheck, lint, `npm run build` clean. e2e (`--workers=1`): 62 passed; `book-pay-online` fails without `npm run stripe:listen` (the webhook never arrives locally), unrelated. With the default workers the suite times out across the board (the shared pooler); run it with `--workers=1`. `dashboard.spec.ts` now scrolls the Walk-ins card into view first (the taller hero pushes it below the phone fold, and CountUp holds off-screen numbers at 0).
+- **Test login:** `shots-owner@test.invalid` was re-created for the shots and deleted again.
+- **Follow-up:** Settings' rows and Today's list still sit straight on the ground; per the iOS recipe they belong in one `.c-card` each (grouped list, inset separators). `DESIGN.md` → "App" still describes the old flat cards; update it with this.
 
 ### START HERE next session (written 2026-11-18): a full security audit
 
