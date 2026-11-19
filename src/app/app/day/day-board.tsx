@@ -237,7 +237,8 @@ function CellRow({ row, now, locale, onOpen }: { row: DayRow; now: number; local
       </span>
     </>
   );
-  const box = "flex min-h-16 w-full min-w-0 flex-col gap-0.5 rounded-xl border border-line bg-surface px-3 py-2.5 text-left";
+  // The Dashboard's card treatment (16px corners, the soft light-mode depth) at cell size.
+  const box = "card-depth flex min-h-16 w-full min-w-0 flex-col gap-0.5 rounded-2xl border border-line bg-surface px-3.5 py-3 text-left";
   if (row.status === "pending_payment") return <div className={box} data-row={row.id}>{body}</div>;
   return (
     <button type="button" data-row={row.id} className={`${box} transition-colors hover:border-ink/40 ${focusRing}`} onClick={(e) => onOpen(row.id, e.currentTarget)}>

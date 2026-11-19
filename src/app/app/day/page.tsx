@@ -159,32 +159,35 @@ async function Day({ searchParams }: { searchParams: Promise<Record<string, stri
       on ? "border-ink bg-ink text-paper" : "border-line bg-surface text-ink hover:border-ink/40"
     }`;
   const arrow =
-    "inline-grid h-12 w-12 shrink-0 place-items-center rounded-full border border-line bg-surface text-ink transition-colors hover:border-ink/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
+    "press inline-grid h-12 w-12 shrink-0 place-items-center rounded-full text-ink transition-colors hover:bg-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-4">
       <div className="flex flex-col gap-3">
-        <h1 className="text-2xl font-semibold tracking-[-0.02em]">{isToday ? d.titleOwner : d.titleBarber}</h1>
+        {/* Same header as the Dashboard: the title left, one segmented date pill right. */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-semibold tracking-[-0.015em]">{isToday ? d.titleOwner : d.titleBarber}</h1>
 
-        {/* Date bar: ‹ · the date · ›, plus a way back to today. */}
-        <nav aria-label={t.dayLabel} className="flex w-full items-center gap-3 lg:max-w-md">
-          <Link href={href(addDays(date, -1))} scroll={false} className={arrow} aria-label={d.prev}>
-            <Chevron dir="left" />
-          </Link>
-          <div className="flex min-w-0 flex-1 flex-col items-center text-center">
-            <p className="text-sm font-medium text-muted" aria-hidden={!isToday}>
-              {isToday ? d.today : " "}
-            </p>
-            <p className="font-semibold" aria-current={isToday ? "date" : undefined}>
-              {formatDay(date, locale)}
-            </p>
-          </div>
-          <Link href={href(addDays(date, 1))} scroll={false} className={arrow} aria-label={d.next}>
-            <Chevron dir="right" />
-          </Link>
-        </nav>
+          {/* ‹ | Today / the date | ›, hairlines between the segments. */}
+          <nav aria-label={t.dayLabel} className="card-depth flex h-14 w-full items-center rounded-full border border-line bg-surface p-1 sm:w-auto sm:min-w-80">
+            <Link href={href(addDays(date, -1))} scroll={false} className={arrow} aria-label={d.prev}>
+              <Chevron dir="left" />
+            </Link>
+            <span aria-hidden="true" className="h-6 w-px shrink-0 bg-line" />
+            <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-3 text-center leading-tight">
+              {isToday && <p className="text-xs font-medium text-muted">{d.today}</p>}
+              <p className="text-sm font-semibold whitespace-nowrap" aria-current={isToday ? "date" : undefined}>
+                {formatDay(date, locale)}
+              </p>
+            </div>
+            <span aria-hidden="true" className="h-6 w-px shrink-0 bg-line" />
+            <Link href={href(addDays(date, 1))} scroll={false} className={arrow} aria-label={d.next}>
+              <Chevron dir="right" />
+            </Link>
+          </nav>
+        </div>
         {!isToday && (
-          <Link href={href(today)} scroll={false} className="btn-ghost self-center text-sm lg:self-start">
+          <Link href={href(today)} scroll={false} className="btn-ghost press self-center text-sm sm:self-end">
             {d.backToToday}
           </Link>
         )}
