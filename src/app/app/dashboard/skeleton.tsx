@@ -4,7 +4,7 @@
  * per-Barber card. Blocks use the --line tone with a pulse that stops under reduced motion.
  */
 const block = "rounded-md bg-line motion-safe:animate-pulse";
-const card = "card-depth rounded-2xl border border-line bg-surface p-5 lg:p-6";
+const card = "card-depth rounded-[1.25rem] border border-line bg-surface p-5 lg:p-6";
 
 export function DashboardSkeleton() {
   return (

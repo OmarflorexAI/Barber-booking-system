@@ -2370,7 +2370,8 @@ body:has(.landing) {
  * - Ticket (/m): .m-ticket adds a deeper key shadow; .m-notch bites are inset-shadowed.
  * - Red: only the booked check (and /m's confirmed check). Errors use <Notice>.
  */
-.client-page {
+.client-page,
+.staff-page {
   --cbar-h: 5rem; /* the glass nav's 80px header (client-nav.tsx) */
   /* iOS grouped surfaces: the page a soft grey, cards white above it, fills a step darker
      inside a card. The color utilities read these (they are @theme inline), so bg-paper,
@@ -2457,7 +2458,7 @@ body:has(.landing) {
   font-variant-numeric: tabular-nums;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .client-page {
+  :root:not([data-theme="light"]) :is(.client-page, .staff-page) {
     /* Dark, Apple-style: elevation is a lighter surface with a top-lit hairline, not a heavier
        black shadow. The ground is a cool near-black lit faintly from the top, the cards a clear
        step up from it (>= 1.4:1), fills inside a card a step further. */
@@ -2509,7 +2510,7 @@ body:has(.landing) {
     --c-success: oklch(72% 0.19 150);
   }
 }
-:root[data-theme="dark"] .client-page {
+:root[data-theme="dark"] :is(.client-page, .staff-page) {
   /* Dark, Apple-style: elevation is a lighter surface with a top-lit hairline, not a heavier
      black shadow. The ground is a cool near-black lit faintly from the top, the cards a clear
      step up from it (>= 1.4:1), fills inside a card a step further. */
@@ -2564,29 +2565,34 @@ body:has(.landing) {
    the viewport, and over it a few huge blurred blobs. Static: the ground never moves (user,
    2026-11-17). Both sit under the content (isolation on .client-page). */
 .client-page::before,
-.client-page::after {
+.staff-page::before,
+.client-page::after,
+.staff-page::after {
   content: "";
   position: fixed;
   z-index: -1;
   pointer-events: none;
 }
-.client-page::before {
+.client-page::before,
+.staff-page::before {
   inset: 0;
   background: var(--c-ground);
 }
-.client-page::after {
+.client-page::after,
+.staff-page::after {
   inset: -12vmax;
   background: var(--c-aura);
 }
 /* Apple-like type finish (sizes untouched; the root is already antialiased): semibold
    headings with tight tracking. In @layer base so any utility on a heading still wins. */
 @layer base {
-  .client-page :is(h1, h2, h3) {
+  :is(.client-page, .staff-page) :is(h1, h2, h3) {
     font-weight: 600;
     letter-spacing: -0.02em;
   }
 }
-.client-page ::selection {
+.client-page ::selection,
+.staff-page ::selection {
   background: var(--ink);
   color: var(--paper);
 }
@@ -3725,4 +3731,131 @@ body:has(.landing) {
         var(--c-depth-hi);
     }
   }
+}
+
+/* ══ Staff app (premium) ═══════════════════════════════════════════════════════════════════
+ * /app/*: the frame is src/app/app/_shell/shell.tsx. The shell root carries .staff-page, which
+ * takes the Client pages' iOS recipe above (the same --paper/--surface/--raised/--line/--muted,
+ * --c-* depth, rims, glass, ground and aura, in both themes) so the staff app reads like the
+ * landing's phone: a soft lit ground, white (graphite in dark) cards with a hairline rim and
+ * layered depth, glossy ink capsules. What is staff-only lives here:
+ * - The sidebar (≥ 1024px) and the phone tab bar are frosted glass over the ground (--c-glass),
+ *   edged with the rim; the active row is a raised capsule (--c-chip-in), like a pressed chip.
+ * - .card-depth (every Dashboard, Today and Settings card) becomes the .c-card finish: rim, lit
+ *   top edge, inner glint, --c-depth. Its radius stays on the element (pills stay pills).
+ * - btn-primary is the glossy ink capsule (.c-btn-primary's fill and shadow); btn-ghost the
+ *   raised white capsule. Both lift 1px on hover; .press still eases them down on tap.
+ * - .seg / .seg-thumb: the iOS segmented control (a faint track, a lighter thumb that slides).
+ * - The one data color steps up in dark (the cards are lighter there) to keep its contrast:
+ *   --data 6.7:1 and --data-soft 3.4:1 on the dark --surface. Light keeps the app's values.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .staff-page {
+    --data: oklch(78% 0.08 255);
+    --data-soft: oklch(60% 0.06 255);
+    --spark-fill: 0.28;
+    --s-seg-track: oklch(100% 0 0 / 0.07);
+    --s-seg-thumb: oklch(46% 0.007 264);
+  }
+}
+:root[data-theme="dark"] .staff-page {
+  --data: oklch(78% 0.08 255);
+  --data-soft: oklch(60% 0.06 255);
+  --spark-fill: 0.28;
+  --s-seg-track: oklch(100% 0 0 / 0.07);
+  --s-seg-thumb: oklch(46% 0.007 264);
+}
+.staff-page {
+  --s-seg-track: oklch(0% 0 0 / 0.055);
+  --s-seg-thumb: var(--surface);
+}
+
+/* Glass panels: the sidebar and the phone tab bar. */
+.staff-rail,
+.staff-tabbar {
+  background-color: var(--c-glass);
+  -webkit-backdrop-filter: var(--c-nav-frost);
+  backdrop-filter: var(--c-nav-frost);
+}
+.staff-rail {
+  border-right: 1px solid var(--c-rim);
+  box-shadow: inset -1px 0 0 var(--c-glint);
+}
+.staff-tabbar {
+  border-top: 1px solid var(--c-rim-top);
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    0 -12px 32px -18px oklch(0% 0 0 / 0.3);
+}
+/* The glass sidebar already draws the edge; the content column needs no hairline of its own. */
+@media (min-width: 1024px) {
+  .staff-page .shell-content {
+    border-left-color: transparent;
+  }
+}
+/* Rail rows: a faint ink tint on hover, the active row a raised capsule with its rim. */
+.staff-page .rail-item:hover {
+  background-color: color-mix(in oklch, var(--ink) 6%, transparent);
+}
+.staff-page .rail-item.rail-on {
+  background-color: var(--c-chip-in);
+  box-shadow: var(--c-chip-in-shadow);
+  --icon-cut: var(--c-chip-in);
+}
+
+/* Cards: the .c-card finish on every staff card. */
+.staff-page .card-depth {
+  border-color: var(--c-rim);
+  border-top-color: var(--c-rim-top);
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    var(--c-depth);
+}
+
+/* Buttons. */
+.staff-page .btn-primary {
+  background-color: var(--c-btn-bot);
+  background-image: var(--c-btn-gloss), linear-gradient(180deg, var(--c-btn-top), var(--c-btn-bot));
+  color: var(--c-btn-ink);
+  box-shadow:
+    inset 0 1px 0 var(--c-btn-hi),
+    var(--c-btn-shadow);
+}
+.staff-page .btn-ghost {
+  border-color: var(--c-rim);
+  border-top-color: var(--c-rim-top);
+  background-color: var(--c-chip-in);
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    var(--c-press);
+}
+@media (hover: hover) and (pointer: fine) {
+  .staff-page :is(.btn-primary, .btn-ghost):hover:not(:disabled, [aria-disabled="true"]) {
+    opacity: 1;
+    translate: 0 -1px;
+  }
+  .staff-page .btn-primary:hover:not(:disabled, [aria-disabled="true"]) {
+    box-shadow:
+      inset 0 1px 0 var(--c-btn-hi),
+      var(--c-btn-shadow-hi);
+  }
+  .staff-page .btn-ghost:hover:not(:disabled, [aria-disabled="true"]) {
+    border-color: var(--c-rim);
+    box-shadow:
+      inset 0 1px 0 var(--c-glint),
+      var(--c-depth);
+  }
+}
+
+/* The iOS segmented control. */
+.seg {
+  background-color: var(--s-seg-track);
+}
+.seg-thumb {
+  background-color: var(--s-seg-thumb);
+  box-shadow:
+    inset 0 1px 0 var(--c-glint),
+    0 0 0 0.5px var(--c-rim),
+    0 1px 2px oklch(0% 0 0 / 0.12),
+    0 3px 8px -2px oklch(0% 0 0 / 0.14);
 }

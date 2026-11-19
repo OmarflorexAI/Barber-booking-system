@@ -22,9 +22,9 @@ export function RowsSkeleton({ rows = 5 }: { rows?: number }) {
 /** The whole shell while the signed-in person loads: header, sidebar, rows and the tab bar. */
 export function ShellSkeleton() {
   return (
-    <div aria-busy="true" className="shell min-h-dvh">
+    <div aria-busy="true" className="shell staff-page min-h-dvh">
       {/* Same panel and clip as the real sidebar, so a collapsed rail stays a rail while loading. */}
-      <div aria-hidden="true" className="shell-aside hidden h-dvh flex-col gap-6 bg-surface px-3 py-5 lg:flex">
+      <div aria-hidden="true" className="shell-aside staff-rail hidden h-dvh flex-col gap-6 px-3 py-5 lg:flex">
         <div className="flex items-center gap-4 pl-0.5">
           <div className={`${block} h-11 w-11 rounded-xl`} />
           <div className="rail-fade">
@@ -54,7 +54,7 @@ export function ShellSkeleton() {
           <RowsSkeleton />
         </div>
       </div>
-      <div aria-hidden="true" className="fixed inset-x-0 bottom-0 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden">
+      <div aria-hidden="true" className="staff-tabbar fixed inset-x-0 bottom-0 pb-[env(safe-area-inset-bottom)] lg:hidden">
         <div className="mx-auto flex h-16 max-w-lg items-center justify-around">
           {[0, 1, 2].map((i) => (
             <div key={i} className="flex flex-col items-center gap-1.5">

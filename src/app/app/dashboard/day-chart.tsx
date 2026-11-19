@@ -38,10 +38,10 @@ export function DayChart({ week, today, locale, className = "" }: { week: Dashbo
           {d.perDayOf[metric]}
         </h2>
         {/* Three equal segments; the pill under the chosen one slides (translate only). */}
-        <div role="group" aria-label={d.metric} className="relative grid h-11 grid-cols-3 rounded-full bg-raised p-1 sm:w-80">
+        <div role="group" aria-label={d.metric} className="seg relative grid h-11 grid-cols-3 rounded-full p-1 sm:w-80">
           <span
             aria-hidden="true"
-            className="card-depth absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-full bg-surface motion-safe:transition-transform motion-safe:duration-(--dur-base) motion-safe:ease-(--ease-spring)"
+            className="seg-thumb absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-full motion-safe:transition-transform motion-safe:duration-(--dur-base) motion-safe:ease-(--ease-spring)"
             style={{ transform: `translateX(${METRICS.indexOf(metric) * 100}%)` }}
           />
           {METRICS.map((m) => (

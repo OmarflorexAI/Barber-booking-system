@@ -37,7 +37,7 @@ export default function DashboardPage(props: PageProps<"/app/dashboard">) {
   );
 }
 
-const card = "card-depth rounded-2xl border border-line bg-surface p-5 lg:p-6";
+const card = "card-depth rounded-[1.25rem] border border-line bg-surface p-5 lg:p-6";
 const arrow = `inline-grid h-12 w-12 shrink-0 place-items-center rounded-full text-ink transition-colors ${focusRing}`;
 
 const intl = (locale: Locale) => (locale === "es" ? "es-US" : "en-US");
@@ -78,7 +78,7 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
     <div className="flex flex-col gap-6">
       <WeekKeys prev={href(addDays(weekStart, -7))} next={isThisWeek ? null : href(addDays(weekStart, 7))} />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold tracking-[-0.015em]">{d.title}</h1>
+        <h1 className="text-3xl leading-tight font-semibold tracking-[-0.03em] lg:text-4xl">{d.title}</h1>
         {/* One segmented pill: ‹ | this week / range | ›. Hairlines split the segments. */}
         <nav aria-label={d.weekNav} className="card-depth flex h-14 items-center rounded-full border border-line bg-surface p-1 sm:min-w-72">
           <Link href={href(addDays(weekStart, -7))} scroll={false} className={`${arrow} press hover:bg-raised`} aria-label={d.prevWeek} aria-keyshortcuts="ArrowLeft">
@@ -122,7 +122,7 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
                   locale={locale}
                   duration={800}
                   data-testid="stat-bookings"
-                  className="self-start text-5xl leading-none font-semibold tracking-[-0.03em] lg:text-7xl"
+                  className="self-start text-6xl leading-none font-semibold tracking-[-0.045em] lg:text-8xl"
                 />
                 <Delta cur={totals.bookings} prev={previous.bookings} d={d} isThisWeek={isThisWeek} />
               </div>

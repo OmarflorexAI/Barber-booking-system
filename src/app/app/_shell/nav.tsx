@@ -28,7 +28,7 @@ export function TabBar({ items, label }: { items: NavItem[]; label: string }) {
   return (
     <nav
       aria-label={label}
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="staff-tabbar fixed inset-x-0 bottom-0 z-30 pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
       <div className="relative mx-auto max-w-lg">
       <span
@@ -83,7 +83,7 @@ export function RailLink({
       // The tooltip only when the label is hidden; the label itself stays readable to screen readers.
       title={collapsed ? label : undefined}
       className={`rail-item press flex min-h-12 items-center gap-3 rounded-xl px-3 ${focusRing} ${
-        active ? "bg-raised font-semibold text-ink [--icon-cut:var(--raised)]" : "font-medium text-muted hover:bg-raised hover:text-ink"
+        active ? "rail-on font-semibold text-ink" : "font-medium text-muted hover:text-ink"
       }`}
     >
       {/* The icon never shrinks: in the 48px rail row the label overflows (faded) instead. */}

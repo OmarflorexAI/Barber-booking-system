@@ -10,7 +10,7 @@ import { Sparkline } from "./sparkline";
 type D = Dictionary["dashboard"];
 
 /** Card shell shared by the hero and the stat cards: tone step, hairline, soft depth (light only). */
-export const statCard = "card-depth rounded-2xl border border-line bg-surface p-5 lg:p-6";
+export const statCard = "card-depth rounded-[1.25rem] border border-line bg-surface p-5 lg:p-6";
 
 /** Gray ↑ / ↓ / — and "+N vs last week". The words carry the meaning; the arrow is decoration. */
 export function Delta({ cur, prev, d, isThisWeek, format = String }: { cur: number; prev: number; d: D; isThisWeek: boolean; format?: (n: number) => string }) {

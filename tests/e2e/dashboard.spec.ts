@@ -108,6 +108,8 @@ test("the Owner sees this week's numbers against last week", async ({ page }) =>
   await expect(page.getByRole("heading", { name: "Bookings this week" })).toBeVisible();
   await expect(page.getByTestId("stat-bookings")).toHaveText("5");
   await expect(page.getByText("+3 vs last week")).toBeVisible();
+  // Off-screen numbers wait at 0 until they're scrolled to (CountUp), so bring each row into view.
+  await page.getByTestId("stat-walkins").scrollIntoViewIfNeeded();
   await expect(page.getByTestId("stat-walkins")).toHaveText("1");
   await expect(page.getByText("Same as last week")).toBeVisible();
   await expect(page.getByTestId("stat-noshows")).toHaveText("1");

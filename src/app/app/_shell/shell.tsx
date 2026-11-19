@@ -49,7 +49,7 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
   if (!staff.membership) {
     const message = staff.retiredBarber ? t.shell.askOwner : staff.isPlatformAdmin && ADMIN_PANEL_READY ? t.shell.adminNoShop : t.shell.noShop;
     return (
-      <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col px-4">
+      <div className="staff-page mx-auto flex min-h-dvh w-full max-w-lg flex-col px-4">
         <HtmlLang lang={locale} />
         <header className="flex items-center justify-between gap-3 py-4">
           <Wordmark />
@@ -79,17 +79,17 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
   const person = staff.barber?.displayName ?? staff.name;
 
   return (
-    <div className="shell min-h-dvh [--tabbar-h:4rem] [--shell-bottom:calc(var(--tabbar-h)_+_env(safe-area-inset-bottom))] lg:[--shell-bottom:0px] lg:[--tabbar-h:0px]">
+    <div className="shell staff-page min-h-dvh [--tabbar-h:4rem] [--shell-bottom:calc(var(--tabbar-h)_+_env(safe-area-inset-bottom))] lg:[--shell-bottom:0px] lg:[--tabbar-h:0px]">
       <HtmlLang lang={locale} />
 
       {/* Desktop sidebar: a fixed 16rem panel, clipped to a 72px icon rail when collapsed.
           Everything that stays visible in the rail sits in its first 72px (icons centered at 36px). */}
-      <aside id="app-sidebar" className="shell-aside hidden h-dvh flex-col gap-6 overflow-y-auto overflow-x-hidden bg-surface px-3 py-5 lg:flex">
+      <aside id="app-sidebar" className="shell-aside hidden h-dvh flex-col gap-6 overflow-y-auto overflow-x-hidden staff-rail px-3 py-5 lg:flex">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-0.5 pl-0.5">
             <SidebarToggle controls="app-sidebar" initialCollapsed={collapsed} hideLabel={t.shell.hideSidebar} showLabel={t.shell.showSidebar} />
-            {/* The mark's red pivot cuts its ring out in --paper; here it sits on --surface. */}
-            <span className="rail-fade text-ink [--paper:var(--surface)]">
+            {/* The mark's red pivot cuts its ring out in --paper; here it sits on the glass's tone. */}
+            <span className="rail-fade text-ink [--paper:var(--c-nav-tint)]">
               <Wordmark />
             </span>
           </div>
@@ -98,7 +98,7 @@ export async function StaffShell({ children }: { children: React.ReactNode }) {
         <SidebarNav items={items} label={t.shell.navLabel} initialCollapsed={collapsed} />
         <div className="mt-auto flex flex-col gap-4">
           {staff.isPlatformAdmin && ADMIN_PANEL_READY && <SidebarAdminLink label={t.shell.platformAdmin} initialCollapsed={collapsed} />}
-          <div className="flex flex-col gap-3 border-t border-line pt-4">
+          <div className="flex flex-col gap-3 border-t border-(--c-rim) pt-4">
             {(person ?? staff.email) && (
               <p className="rail-fade truncate px-3 text-sm font-medium text-ink" title={staff.email ?? undefined}>
                 {person ?? staff.email}
