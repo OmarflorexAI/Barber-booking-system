@@ -15,6 +15,21 @@ Last updated: 2026-11-18, end of the dashboard-restyle session (everything pushe
   - Security headers: **live** (CSP `frame-ancestors 'none'`, XFO DENY, nosniff, Referrer-Policy; Vercel adds HSTS with preload).
 - **New code since the first pass, never audited:** self sign-up (`src/server/signup/`, `/setup`: anyone with a login can create a Shop: abuse, rate limits, one Shop per login), Google sign-in (`/login` actions, `/auth/callback` with the OAuth code), `src/app/app/_media/actions.ts` photo uploads if changed, and `Staff.name` read from user-controlled `user_metadata` (rendered as React text, so escaped; confirm nothing puts it in emails or HTML unescaped).
 
+### Next milestone after the audit: a "Shop" tab to manage the Shop (user, 2026-11-18)
+
+**Why:** the Dashboard only shows data. Owners need one place to *manage* the Shop: see their Barbers with photos, add and remove Barbers, and see the Services and prices, without digging through Settings rows.
+
+**What:**
+- **New nav tab:** "Shop" ("Barbería" in Spanish, to confirm with the user) in the desktop sidebar and the phone tab bar, between Dashboard and Settings. Add it to `NAV` in `src/app/app/_shell/staff.ts` with an icon in `_shell/icons.tsx` and EN/ES labels in `dictionaries.ts`. The phone bar goes to 4 tabs; check the fit at 360px.
+- **New page `/app/shop`, Owner only (`requireOwner`):**
+  - **Barbers:** cards with photo or initials, name, Services and prices, and the gallery thumbnails. "Add Barber" (the existing invite flow) and "Remove" (gray, behind a confirm; refused while the Barber has upcoming Bookings; the 6-Barber limit, DB `BB002`). Tapping a Barber opens their profile, hours and gallery.
+  - **Services:** the list with duration and price (a special price when set), plus "Add Service".
+  - **The Shop itself:** cover photo, logo, name, address, the booking link.
+- **Reuse, don't rebuild:** everything already exists under `/app/settings/` (`barbers/` with `barber-list.tsx` and `[barberId]/` profile, hours, gallery and prices; `services/`; `shop/`) and in the `shopAdmin()` engine (`src/server/shop-admin/`). This milestone is mostly a new page and navigation over those parts.
+- **Decide with the user first:** move Barbers, Services and Shop profile out of Settings, so Settings keeps rules, blocklist, payments, texts, link, export and sign out? Or leave links in both places?
+- **Design:** Operate mode per `DESIGN.md` → "App". Use the Dashboard's card treatment (16px corners, `card-depth`) and the segmented pills. One primary action per view, EN/ES, both themes. Use `/impeccable` and take screenshots with `scripts/dashboard-shots.mjs` (add `/app/shop` to its screens).
+- **Done when:** the tab works on phone and desktop in both languages, an e2e spec covers add and remove Barber from the new page, typecheck, lint and the existing settings e2e tests pass, and `DESIGN.md` and this file are updated.
+
 ### Earlier: START HERE (written 2026-11-18, dashboard-restyle session)
 
 **Log in / Sign up polish: done 2026-11-18, pushed.** `/login` now has the hero phone's Velaris gradient fixed behind the whole page (`.login-velaris`, same CSS fallback and fade-in as `.hero-velaris`), and switching Log in / Sign up slides the tab thumb (`.auth-thumb`, 420ms) and eases the changing text in from the side of the tab picked (`.auth-swap`: a few px + short blur, staggered; only after the first switch; nothing moves under reduced motion). CSS in `globals.css` under "Login gradient" and "Auth switch". Checked in the browser pane: canvas draws, both directions animate. No e2e covers `/login` yet.
