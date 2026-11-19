@@ -177,9 +177,10 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
               className="col-span-2 sm:col-span-1"
             />
           </div>
-          <p className="max-w-prose text-sm leading-relaxed text-muted">{d.howCounted(perBooking ? Math.round(perBooking) : null)}</p>
 
           <DayChart week={week} today={today} locale={locale} className={card} />
+          {/* How the numbers are counted: a footnote under the cards, not a line between them. */}
+          <p className="max-w-prose px-1 text-sm leading-relaxed text-muted">{d.howCounted(perBooking ? Math.round(perBooking) : null)}</p>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">

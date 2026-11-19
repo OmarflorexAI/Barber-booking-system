@@ -39,7 +39,7 @@ export function Highlights({ week, locale, startIndex }: { week: DashboardWeek; 
           <li
             key={t.key}
             data-testid={`highlight-${t.key}`}
-            className="card-depth enter flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-surface p-4"
+            className="card-depth enter flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-surface p-5"
             style={{ "--i": startIndex + i } as React.CSSProperties}
           >
             <span className="relative shrink-0">
