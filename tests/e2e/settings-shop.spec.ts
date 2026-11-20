@@ -122,8 +122,8 @@ async function storedCount(kind: "logo" | "cover") {
 test("the Owner sets the Shop's logo, cover and About, and a Spanish-reading Client sees them on /b", async ({ page, browser }) => {
   test.setTimeout(180_000);
   await signIn(page);
-  await page.goto("/app/settings");
-  await page.getByRole("link", { name: /Shop profile/ }).click();
+  await page.goto("/app/shop");
+  await page.getByRole("link", { name: "Edit Shop profile" }).click();
   await expect(page).toHaveURL(/\/app\/settings\/shop$/);
   await expect(page.getByRole("heading", { name: "Shop profile", level: 1 })).toBeVisible();
   await expect(page.getByTestId("booking-url")).toContainText(`/b/${shop.slug}`);

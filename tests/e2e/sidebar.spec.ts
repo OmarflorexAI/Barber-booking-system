@@ -10,7 +10,7 @@ config({ path: ".env.local", quiet: true });
  * The staff app's collapsible sidebar (≥ 1024px): the button and the `[` shortcut collapse
  * it to an icon rail, the choice survives a reload with no flash (the state is on <html>
  * before the page's scripts run), and the hidden labels still name the links for screen
- * readers. The Owner's three items (Today · Dashboard · Settings) are all there is, even for
+ * readers. The Owner's four items (Today · Dashboard · Shop · Settings) are all there is, even for
  * an Owner who cuts hair, and the retired /app/me lands on Settings. Builds a throwaway Shop
  * with one Owner (who is also its Barber) and deletes both afterwards.
  */
@@ -49,7 +49,7 @@ async function signIn(page: Page) {
   await expect(page).toHaveURL(/\/app\/day/);
 }
 
-const OWNER_TABS = ["Today", "Dashboard", "Settings"];
+const OWNER_TABS = ["Today", "Dashboard", "Shop", "Settings"];
 
 const contentLeft = (page: Page) => page.locator(".shell-content").evaluate((el) => Math.round(el.getBoundingClientRect().left));
 
@@ -128,7 +128,7 @@ test.describe("desktop", () => {
     await expect(page.getByRole("button", { name: "Mostrar menú lateral" })).toBeVisible();
   });
 
-  test("the sidebar holds exactly the Owner's three items", async ({ page }) => {
+  test("the sidebar holds exactly the Owner's four items", async ({ page }) => {
     await signIn(page);
     const links = page.getByRole("navigation", { name: "Main" }).getByRole("link");
     await expect(links).toHaveText(OWNER_TABS);
@@ -155,12 +155,20 @@ test.describe("desktop", () => {
   });
 });
 
-test("the phone tab bar holds exactly the Owner's three tabs, and /app/me lands on Settings", async ({ page, context }) => {
+test("the phone tab bar holds exactly the Owner's four tabs, and /app/me lands on Settings", async ({ page, context }) => {
   await signIn(page);
   const tabs = page.getByRole("navigation", { name: "Main" }).getByRole("link");
   await expect(tabs).toHaveText(OWNER_TABS);
   // The Owner who cuts hair still has a column on Today.
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
+
+  // Four tabs fit a 360px phone: no sideways scroll, every tab at least 44px wide and tall.
+  await page.setViewportSize({ width: 360, height: 740 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  for (const box of await tabs.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON() as DOMRect))) {
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
 
   await page.goto("/app/me");
   await expect(page).toHaveURL(/\/app\/settings$/);
@@ -168,7 +176,7 @@ test("the phone tab bar holds exactly the Owner's three tabs, and /app/me lands 
 
   await context.addCookies([{ name: "lang", value: "es", url: "http://localhost:3000" }]);
   await page.goto("/app/day");
-  await expect(page.getByRole("navigation", { name: "Principal" }).getByRole("link")).toHaveText(["Hoy", "Resumen", "Ajustes"]);
+  await expect(page.getByRole("navigation", { name: "Principal" }).getByRole("link")).toHaveText(["Hoy", "Resumen", "Barbería", "Ajustes"]);
 });
 
 test("review screenshots (phone tab bar)", async ({ page, context }) => {

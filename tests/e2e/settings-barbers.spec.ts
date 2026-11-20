@@ -118,9 +118,9 @@ async function onBookingPage(page: Page, name: string) {
 test("the Owner adds Luis with a photo, he becomes bookable, then deletes him", async ({ page, browser }) => {
   test.setTimeout(120_000);
   await signIn(page);
-  await page.goto("/app/settings");
-  await page.getByRole("link", { name: /Barbers/ }).click();
-  await expect(page.getByRole("heading", { name: "Barbers", level: 1 })).toBeVisible();
+  // The Barber list lives on the Shop tab.
+  await page.goto("/app/shop");
+  await expect(page.getByRole("heading", { name: "Barbers", level: 2 })).toBeVisible();
   await expect(page.getByTestId("barber-count")).toContainText("1 of 6");
 
   // The Owner's own row says "You" and has no Delete.
@@ -199,7 +199,7 @@ test("a Barber with a Booking tomorrow can't be deleted until it's cancelled", a
     values (${shop.id}, ${m.id}, ${shop.cut}, ${c.id}, 'booking', 'confirmed', ${at}, ${ends}, ${ends}, 3000, 'in_person', 'unpaid')`;
 
   await signIn(page);
-  await page.goto("/app/settings/barbers");
+  await page.goto("/app/shop");
   await row(page, "Marco").getByRole("button", { name: "Delete Marco" }).click();
   await page.getByRole("dialog", { name: "Delete Marco?" }).getByRole("button", { name: "Delete", exact: true }).click();
 
@@ -230,7 +230,7 @@ test("at 6 Barbers, Add shows the limit instead of the sheet", async ({ page }) 
     await sql`insert into public.barbers (shop_id, display_name, sort_order) values (${shop.id}, ${name}, 2)`;
   }
   await signIn(page);
-  await page.goto("/app/settings/barbers");
+  await page.goto("/app/shop");
   await expect(page.getByTestId("barber-count")).toContainText("6 of 6");
   await page.getByRole("button", { name: "Add Barber" }).click();
   await expect(page.getByText("A Shop can have up to 6 Barbers. Delete one to add someone new.")).toBeVisible();

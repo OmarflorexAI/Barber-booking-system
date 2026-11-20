@@ -68,8 +68,8 @@ const rowNames = (page: Page) =>
 
 test("the Owner adds, edits, reorders and archives a Service", async ({ page }) => {
   await signIn(page, ownerEmail);
-  await page.goto("/app/settings");
-  await page.getByRole("link", { name: /Services & prices/ }).click();
+  await page.goto("/app/shop");
+  await page.getByRole("link", { name: /^(Edit Services|Add Service)$/ }).click();
   await expect(page.getByRole("heading", { name: "Services & prices" })).toBeVisible();
   await expect(page.getByText("Prices are set per Barber, on each Barber's profile.")).toBeVisible();
 

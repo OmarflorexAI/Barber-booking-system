@@ -97,7 +97,7 @@ function daysToNextMonday() {
 test("the Owner fills in Luis's profile and a Spanish-reading Client sees it on /b", async ({ page, browser }) => {
   test.setTimeout(180_000);
   await signIn(page);
-  await page.goto("/app/settings/barbers");
+  await page.goto("/app/shop");
   await page.getByRole("link", { name: /Luis/ }).click();
   await expect(page).toHaveURL(new RegExp(`/app/settings/barbers/${shop.luis}$`));
   await expect(page.getByRole("heading", { name: "Luis", level: 1 })).toBeVisible();
