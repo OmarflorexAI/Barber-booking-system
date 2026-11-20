@@ -113,19 +113,37 @@ test.describe("desktop", () => {
     await expect(page.locator("#e2e-typing")).toHaveValue("[");
     await expect(page.locator("html")).toHaveAttribute("data-sidebar", "expanded");
 
-    // Collapsed, the language pill gives way to a two-letter square that still switches.
-    await page.getByRole("button", { name: "Hide sidebar" }).click();
+    // The language is picked on Settings now: no language button in the sidebar.
     const aside = page.locator("#app-sidebar");
-    const compact = aside.getByRole("button", { name: "ES · Español", exact: true });
-    await expect(compact).toHaveCount(1);
-    await expect(compact).toBeVisible();
-    await expect(compact).toHaveText("ES");
-    expect(await compact.evaluate((el) => el.getBoundingClientRect().right)).toBeLessThanOrEqual(72);
-    // Keyboard, not a click: in dev the Next indicator covers the bottom-left corner.
-    await compact.focus();
-    await page.keyboard.press("Enter");
-    await expect(aside.getByRole("button", { name: "EN · English", exact: true })).toHaveText("EN");
-    await expect(page.getByRole("button", { name: "Mostrar menú lateral" })).toBeVisible();
+    await expect(aside.getByRole("button", { name: /Español|English/ })).toHaveCount(0);
+
+    // The theme switch never cuts diagonally while the panel moves: in every frame the thumb
+    // sits on one axis of the pill (a row while it lies down, a column once it stands up).
+    // A script click: in dev the Next indicator covers the bottom-left corner.
+    await aside.getByRole("radio", { name: "Dark" }).evaluate((el) => (el as HTMLElement).click());
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await page.waitForTimeout(600);
+    const sample = () =>
+      page.evaluate(async () => {
+        const pill = document.querySelector<HTMLElement>("#app-sidebar .theme-switch")!;
+        const thumb = pill.querySelector<HTMLElement>(".theme-switch-thumb")!;
+        document.querySelector<HTMLElement>('#app-sidebar button[aria-controls="app-sidebar"]')!.click();
+        const frames: { x: number; y: number }[] = [];
+        const t0 = performance.now();
+        while (performance.now() - t0 < 800) {
+          const r = thumb.getBoundingClientRect(), p = pill.getBoundingClientRect();
+          frames.push({ x: Math.round(r.left - p.left), y: Math.round(r.top - p.top) });
+          await new Promise(requestAnimationFrame);
+        }
+        return frames;
+      });
+    const onOneAxis = (f: { x: number; y: number }) => Math.min(Math.abs(f.x - 4), Math.abs(f.y - 4)) <= 1;
+    const collapsing = await sample();
+    expect(collapsing.filter((f) => !onOneAxis(f))).toEqual([]);
+    expect(collapsing.at(-1)).toEqual({ x: 4, y: 92 }); // standing up, Dark at the bottom
+    const opening = await sample();
+    expect(opening.filter((f) => !onOneAxis(f))).toEqual([]);
+    expect(opening.at(-1)).toEqual({ x: 92, y: 4 }); // lying down, Dark on the right
   });
 
   test("the sidebar holds exactly the Owner's four items", async ({ page }) => {
@@ -138,6 +156,26 @@ test.describe("desktop", () => {
     await context.addCookies([{ name: "lang", value: "es", url: "http://localhost:3000" }]);
     await signIn(page);
     await expect(page.getByRole("button", { name: "Ocultar menú lateral" })).toBeVisible();
+  });
+
+  test("Settings picks the app's language, and it sticks", async ({ page, context }) => {
+    await signIn(page);
+    await page.goto("/app/settings");
+    const picker = page.getByRole("radiogroup", { name: "Language" });
+    await expect(picker.getByRole("radio", { name: "English" })).toHaveAttribute("aria-checked", "true");
+    await picker.getByRole("radio", { name: "Español" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Ajustes" })).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("lang", "es");
+    await expect(page.getByRole("radiogroup", { name: "Idioma" }).getByRole("radio", { name: "Español" })).toHaveAttribute("aria-checked", "true");
+    expect((await context.cookies()).find((c) => c.name === "lang")?.value).toBe("es");
+    // Other pages follow it; arrow keys move the choice back.
+    await page.goto("/app/day");
+    await expect(page.getByRole("button", { name: "Ocultar menú lateral" })).toBeVisible();
+    await page.goto("/app/settings");
+    await page.getByRole("radiogroup", { name: "Idioma" }).getByRole("radio", { name: "Español" }).focus();
+    await page.keyboard.press("ArrowLeft");
+    await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+    await expect(page.getByRole("radiogroup", { name: "Language" }).getByRole("radio", { name: "English" })).toBeFocused();
   });
 
   /** Review screenshots, only on request: SIDEBAR_SHOTS=1 npx playwright test tests/e2e/sidebar.spec.ts */

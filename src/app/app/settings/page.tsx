@@ -9,6 +9,7 @@ import { shopPlan } from "@/server/booking-engine/plans";
 import { getSql } from "@/server/db";
 import { SettingsIcon, type SettingsKey } from "./_icons";
 import { focusRing, ownerContext } from "./_owner";
+import { LanguagePicker } from "./language-picker";
 import { ProRow } from "./upgrade";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -18,7 +19,8 @@ export const metadata: Metadata = { title: "Settings" };
  * is built link to it; the others stay plain, muted and marked "Soon" (no dead links).
  * Under the title, the Shop's plan (M7). On Free, the Pro rows (online payments, Client texts,
  * Telegram alerts) carry a gray "Pro" tag and open the "Ask us to upgrade" sheet instead.
- * At the bottom: the Shop's name, the Platform admin link when it applies, and Sign out.
+ * At the bottom: the Shop's name, the app's language (English / Español, saved on this device),
+ * the Platform admin link when it applies, and Sign out.
  */
 export default function SettingsPage() {
   return (
@@ -124,6 +126,12 @@ async function Settings() {
         <li className="flex min-h-14 items-center justify-between gap-4 border-b border-line">
           <span className="font-medium">{t.shell.settings.shop}</span>
           <span className="min-w-0 truncate text-muted">{membership.shopName}</span>
+        </li>
+        <li className="flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line py-2">
+          <span id="settings-language" className="font-medium">
+            {t.shell.settings.language}
+          </span>
+          <LanguagePicker locale={locale} labelledBy="settings-language" />
         </li>
         {staff.isPlatformAdmin && ADMIN_PANEL_READY && (
           <li className="border-b border-line">

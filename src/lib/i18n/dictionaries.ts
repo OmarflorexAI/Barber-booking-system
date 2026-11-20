@@ -388,6 +388,8 @@ const en = {
         "Export clients",
       ],
       shop: "Shop",
+      /** The Settings row that picks the app's language (saved on this device). */
+      language: "Language",
     },
   },
   // The Shop tab (/app/shop): the Owner's Barbers, Services and Shop profile in one place.
@@ -1189,6 +1191,7 @@ const es: Dictionary = {
         "Exportar clientes",
       ],
       shop: "Barbería",
+      language: "Idioma",
     },
   },
   shopTab: {
