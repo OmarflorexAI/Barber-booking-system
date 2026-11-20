@@ -126,7 +126,7 @@ A calm, near-black page lit like a barbershop after closing: grayscale ground, n
 
 The world is the Cocoon template's grayscale grammar (MIT, rebuilt in React and Tailwind v4, never copied in), pinned by the user, plus one accent. It is a one-column, generous, Persuade-mode system: a 1024px reading column, wide 1152px panels that open to the full window on scroll, white pill actions, rounded-2xl black cards. All motion is paint-only (opacity, translate, clip) so layout never moves, and every effect has a resting final state for reduced motion, no scroll-timeline support, or no JS.
 
-This document records the shipped landing (`/`, `/es`), the legal pages (`/privacy`, `/terms` and their `/es` pairs) and the 404. **The app (`/b`, `/m`, `/login`, `/app/*`, `/admin`)** carries the same brand in a calmer, denser "Operate" mode. Its rules were decided in the G System UI grill (2026-11-13) and live in **[App (Operate mode)](#app-operate-mode)** at the end of this file; most of that section is decided but not yet built (it lands in missions U1 to U4). The old warm-paper `:root` tokens in `globals.css` are being replaced by the achromatic app ramp described there.
+This document records the shipped landing (`/`), the legal pages (`/privacy`, `/terms`) and the 404. Since 2026-11-20 the landing and legal pages are English only, with no language switch: browsers offer Spanish speakers a translation, and the old `/es` addresses forward to the English pages. **The app (`/b`, `/m`, `/login`, `/app/*`, `/admin`)** carries the same brand in a calmer, denser "Operate" mode. Its rules were decided in the G System UI grill (2026-11-13) and live in **[App (Operate mode)](#app-operate-mode)** at the end of this file; most of that section is decided but not yet built (it lands in missions U1 to U4). The old warm-paper `:root` tokens in `globals.css` are being replaced by the achromatic app ramp described there.
 
 **Key Characteristics:**
 - Near-black grayscale ground, near-white ink, one barber red reserved for live signals (status is green, in the Client pages only).
@@ -262,7 +262,7 @@ An 11px (or 8px) barber-red dot with a red ring that scales to 2.6x and fades ov
 "Open scissors": two finger rings and tapered blades in currentColor crossing at a barber-red pivot with a knockout ring in the ground color. The wordmark pairs it (28px) with "Barber Master" in Hanken Grotesk semibold (Geist until the U1 swap), 17px, -0.02em. Source of truth: `public/brand/mark.svg`.
 
 ### Motion
-Easing is a quick-out curve (`cubic-bezier(0.2, 0.8, 0.2, 1)`) for reveals and arrivals, an expo-out (`cubic-bezier(0.16, 1, 0.3, 1)`) for the FAQ and live ring. Blocks fade up 24px over their first 180px in view; How-it-works photos fade in from 5%. View transitions exist in three places only: the hero phone's screens (10px slide plus fade), the language switch (cross-fade) and moving between pages (12px rise plus fade); the header holds still on its own layer above them. Reduced motion sets every view transition to 0s.
+Easing is a quick-out curve (`cubic-bezier(0.2, 0.8, 0.2, 1)`) for reveals and arrivals, an expo-out (`cubic-bezier(0.16, 1, 0.3, 1)`) for the FAQ and live ring. Blocks fade up 24px over their first 180px in view; How-it-works photos fade in from 5%. View transitions exist in two places only: the hero phone's screens (10px slide plus fade) and moving between pages (12px rise plus fade); the header holds still on its own layer above them. Reduced motion sets every view transition to 0s.
 
 ## Do's and Don'ts
 
@@ -327,7 +327,7 @@ Shipped. Source: the `.client-page` blocks and `.c-*` classes in `globals.css`, 
 ### Theme switching
 
 - **Default:** follow the phone (`prefers-color-scheme`). With no saved choice, a phone in light mode gets light and a phone in dark mode gets dark.
-- **Switch:** a sun/moon icon button in the header of every app screen, **right next to the language toggle**, at least 44px. It shows the theme you would switch to (moon in light, sun in dark), is a toggle button with one fixed EN/ES name ("Dark mode" / "Modo oscuro") and `aria-pressed` = dark (a toggle's name must not change with its state), and tapping it flips the theme and saves the choice.
+- **Switch:** a sun/moon icon button in the header of every app screen, at least 44px. It shows the theme you would switch to (moon in light, sun in dark), is a toggle button with one fixed EN/ES name ("Dark mode" / "Modo oscuro") and `aria-pressed` = dark (a toggle's name must not change with its state), and tapping it flips the theme and saves the choice.
 - **Saved** in a cookie, the same way `lang` is, so the server renders the right theme.
 - **No flash.** The first paint is already in the right theme: the saved choice is rendered on `<html>` by the server, and with no cookie the CSS media query decides, so no script has to run first. The browser `theme-color` follows the theme.
 - **Always dark, no switch:** `/login` (the bridge from the landing, in the landing's look), the landing, the legal pages and the 404.
@@ -378,7 +378,8 @@ Everything else is grayscale. In particular the **"Paid online" tag is gray**, w
 - A Platform admin who is also Shop staff gets a switch between `/admin` and `/app` in the top nav (and in Settings on the `/app` side).
 - **After sign-in:** Owner → Today, Platform admin → `/admin` (or `/app` when also Shop staff).
 - Tabs: icon (24px line) plus a label in both languages, the active tab in `--ink` with a filled icon, the others `--muted`. The tab bar sits on `--surface` with a `--line` top edge and respects the phone's safe area.
-- Every app header holds: the page or Shop name on the left; the language toggle and the theme switch on the right.
+- Every app header holds: the page or Shop name on the left; the theme switch on the right. The Owner app picks its language on the Settings page (a Language row: English / Español), not in the header or sidebar; login, `/setup` and the Client pages keep their EN/ES button.
+- In the desktop sidebar the theme switch lies down when the panel is open and stands up in the collapsed rail. It changes shape only out of sight (under the panel's clip, see `.sidebar-moving` in `globals.css`); its thumb never slides between the two shapes.
 
 ### Bottom sheets for row actions
 
@@ -405,7 +406,7 @@ The landing's shapes carry over: 16px for cards and sheets' top corners, full pi
 - **Do** give date and week steppers one segmented pill (‹ | label | ›, hairlines between, `card-depth`), title left and pill right from 640px; Today and Dashboard share it. Desktop Booking cells on Today use the Dashboard card treatment (16px corners, `card-depth`).
 - **Do** put row actions in a bottom sheet and destructive actions behind a confirm that says what happens to the Client and their money.
 - **Do** give every list a skeleton, an empty state (one sentence + one action) and a neutral error that keeps the input.
-- **Do** keep the theme switch next to the language toggle on every app screen, and render the saved theme with no flash.
+- **Do** keep the theme switch on every app screen, and render the saved theme with no flash.
 - **Do** use the PRD's terms in the copy: Shop, Owner, Barber, Client, Booking, Walk-in, Service, Platform admin.
 
 #### Don't:
