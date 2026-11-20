@@ -1,4 +1,4 @@
-// Screenshots of the staff app (Today, Dashboard, Settings) for demos.
+// Screenshots of the staff app (Today, Dashboard, Shop, Settings) for demos.
 // Needs `npm run dev` running and a staff login on demo-shop (npm run staff:add).
 //
 //   node --env-file=.env.local scripts/dashboard-shots.mjs <email> <out dir> [locales] [themes]
@@ -26,6 +26,7 @@ const WEEK = process.env.SHOTS_WEEK ?? "2026-11-09";
 const screens = [
   { name: "today", path: `/app/day?date=${DAY}` },
   { name: "dashboard", path: `/app/dashboard?week=${WEEK}` },
+  { name: "shop", path: "/app/shop" },
   { name: "settings", path: "/app/settings" },
 ];
 const devices = [

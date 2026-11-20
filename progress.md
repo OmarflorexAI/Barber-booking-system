@@ -1,8 +1,16 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-20, Dashboard charts restyled after the staff app's Apple-look restyle (restyle pushed through `918ab08`; the chart work is described below). Next: the security audit, in a new session. Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-20, the Shop tab (`/app/shop`) is built (below). Before it: the Dashboard charts restyle (pushed through `f82a75a`). Next: the security audit, in its own session (handoff in `%TEMP%\handoff-security-audit-2026-11-19.md`). Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
+
+### Done 2026-11-20: the Shop tab (`/app/shop`)
+- **Ask (user):** build the "Shop" tab before the audit (spec: "Next milestone after the audit" below). The user decided: Barbers, Services and the Shop profile **move out of Settings** into the tab; the Spanish label is **"Barbería"**.
+- **Nav:** `NAV` in `_shell/staff.ts` is Today · Dashboard · Shop · Settings (ES Hoy · Resumen · Barbería · Ajustes), with a storefront icon (outline + filled) in `_shell/icons.tsx`. A tab's `also` list marks the pages it owns that still live under `/app/settings` (`/barbers/...`, `/services`, `/shop`), so the Shop tab stays marked on a Barber profile and Settings doesn't. Four tabs fit at 360px (no sideways scroll, every tab ≥ 44px; checked in `sidebar.spec.ts`).
+- **Page `src/app/app/shop/page.tsx`** (Owner only via `ownerContext`): the Shop card (cover, logo disc or initials, name, address, booking link + Copy, "Edit Shop profile" → `/app/settings/shop`); Barbers (count "n of 6", the reused `BarberList`, now one grouped `.c-card` list with `.c-avatar` discs, each Barber's Services and prices or "Not bookable yet", gallery thumbnails 3 + "+n"; Add Barber is the one primary; Delete stays the gray confirm, refused with upcoming Bookings, 6-Barber limit, codes mapped EN/ES as before); Services (one grouped list: name, minutes, one price or the range across Barbers, a live special as a tag; "Edit Services"/"Add Service" ghost → `/app/settings/services`).
+- **Moved out of Settings:** the Shop profile, Services and Barbers rows are gone from `/app/settings`; `/app/settings/barbers` redirects to `/app/shop`; Shop profile, Services and Barber profile pages go back to "Shop". `siteOrigin()` moved to `settings/shop/origin.ts` (shared). Staff pages now get the inset list separators (`:is(.client-page, .staff-page) .c-card.divide-y`). Unused `barberProfile.back` strings removed.
+- **Tests:** new `tests/e2e/shop.spec.ts` (tab → page, Shop card, Services and prices, add Luis, open his profile with the tab still marked, delete behind the gray confirm, Settings no longer lists the moved pages, ES "Barbería" on desktop). `sidebar.spec.ts` expects four items; `settings-barbers`, `settings-services`, `settings-shop` and `barber-profile` specs now start from the Shop tab.
+- **Screenshots:** `scripts/dashboard-shots.mjs` shoots `/app/shop` too; EN/ES × light/dark × phone/desktop in `docs/screenshots/shop-2026-11-20/`.
 
 ### Done 2026-11-20: the Dashboard's charts in the new style
 - **Ask (user):** make the graphs and graph bars look more modern and match the new style.
@@ -34,6 +42,8 @@ Last updated: 2026-11-20, Dashboard charts restyled after the staff app's Apple-
 - **New code since the first pass, never audited:** self sign-up (`src/server/signup/`, `/setup`: anyone with a login can create a Shop: abuse, rate limits, one Shop per login), Google sign-in (`/login` actions, `/auth/callback` with the OAuth code), `src/app/app/_media/actions.ts` photo uploads if changed, and `Staff.name` read from user-controlled `user_metadata` (rendered as React text, so escaped; confirm nothing puts it in emails or HTML unescaped).
 
 ### Next milestone after the audit: a "Shop" tab to manage the Shop (user, 2026-11-18)
+
+**Status: done 2026-11-20** (built before the audit at the user's request; see "Done 2026-11-20: the Shop tab" above).
 
 **Why:** the Dashboard only shows data. Owners need one place to *manage* the Shop: see their Barbers with photos, add and remove Barbers, and see the Services and prices, without digging through Settings rows.
 

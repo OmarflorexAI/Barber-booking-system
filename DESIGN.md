@@ -369,10 +369,12 @@ Everything else is grayscale. In particular the **"Paid online" tag is gray**, w
 
 | Role | Phone | Desktop (≥ 1024px) | Sign out |
 | --- | --- | --- | --- |
-| Owner | Bottom tabs **Today · Dashboard · Settings** | A **left sidebar** with the same items | Bottom of **Settings** |
+| Owner | Bottom tabs **Today · Dashboard · Shop · Settings** (ES **Hoy · Resumen · Barbería · Ajustes**) | A **left sidebar** with the same items | Bottom of **Settings** |
 | Platform admin | `/admin` top nav **Shops · Failures · Access log** (wraps or scrolls on a phone) | Same top nav | In the top nav |
 
-- Barbers don't sign in (retired in PLAN.md M6). The Owner manages each Barber's profile, hours and photos from Settings. `/app/me` redirects to Settings, and a leftover Barber-only login sees an "ask your Owner" screen.
+- Barbers don't sign in (retired in PLAN.md M6). The Owner manages each Barber's profile, hours and photos from the **Shop** tab. `/app/me` redirects to Settings, and a leftover Barber-only login sees an "ask your Owner" screen.
+- **The Shop tab (`/app/shop`)** is where the Owner manages the Shop: the Shop card (cover, logo disc, name, address, booking link + Copy, an "Edit Shop profile" row), the Barbers (one grouped `.c-card` list: `.c-avatar` photo or initials, name, their Services and prices or "Not bookable yet", up to three gallery thumbnails then "+n", a chevron to the profile and a gray Delete), **Add Barber** as the view's one primary, and the Services (one grouped list: name, minutes, price or the range across Barbers, a live special as a quiet tag) with "Edit Services" as a ghost button. Shop profile, Services & prices and the Barber profiles still live at `/app/settings/...` but belong to this tab: the tab stays marked there and their back link says "Shop". Settings keeps hours, rules, blocklist, payments, texts, Telegram, link, export and sign out.
+- Four tabs fit a 360px phone with no sideways scroll; each tab is a full quarter of the bar (≥ 44px).
 - A Platform admin who is also Shop staff gets a switch between `/admin` and `/app` in the top nav (and in Settings on the `/app` side).
 - **After sign-in:** Owner → Today, Platform admin → `/admin` (or `/app` when also Shop staff).
 - Tabs: icon (24px line) plus a label in both languages, the active tab in `--ink` with a filled icon, the others `--muted`. The tab bar sits on `--surface` with a `--line` top edge and respects the phone's safe area.
