@@ -205,4 +205,40 @@ describe("an Owner can't change what we sell them (RLS + guard trigger)", () => 
     // The server (DB owner) still can.
     await sql`update public.shops set plan = 'pro' where id = ${id}`;
   });
+
+  it("refuses the booking link, the text sender and our bookkeeping fields (audit #3)", async () => {
+    const shop = await shopOn("free");
+    const owner = await makeUser(shop.shopId, "owner");
+    const id = shop.shopId;
+    const tries = [
+      (tx: typeof sql) => tx`update public.shops set slug = ${`${shop.slug}-x`} where id = ${id}`,
+      (tx: typeof sql) => tx`update public.shops set sms_from_number = '+12125550199' where id = ${id}`,
+      (tx: typeof sql) => tx`update public.shops set cancelled_at = now() where id = ${id}`,
+      (tx: typeof sql) => tx`update public.shops set daily_email_last_date = current_date where id = ${id}`,
+      (tx: typeof sql) => tx`update public.shops set created_at = now() - interval '1 year' where id = ${id}`,
+    ];
+    for (const t of tries) expect(await asUser(owner, t)).toBe("42501");
+    expect(await asUser(owner, (tx) => tx`update public.shops set address = '1 Main St' where id = ${id}`)).toBe("OK");
+  });
+
+  it("a Barber can't change their own Owner-only phone (audit #4)", async () => {
+    const shop = await shopOn("free");
+    const barber = await makeUser(shop.shopId, "barber", shop.blake);
+    const owner = await makeUser(shop.shopId, "owner");
+    const b = shop.blake;
+    expect(await asUser(barber, (tx) => tx`update public.barbers set phone_e164 = '+12125550198' where id = ${b}`)).toBe("42501");
+    expect(await asUser(barber, (tx) => tx`update public.barbers set bio = 'Fades' where id = ${b}`)).toBe("OK");
+    expect(await asUser(owner, (tx) => tx`update public.barbers set phone_e164 = '+12125550198' where id = ${b}`)).toBe("OK");
+  });
+
+  it("nobody signed in turns texts back on for a Client who replied STOP (audit #5)", async () => {
+    const shop = await shopOn("free");
+    const owner = await makeUser(shop.shopId, "owner");
+    const [c] = await sql<{ id: string }[]>`
+      insert into public.clients (shop_id, name, phone_e164, sms_opt_out) values (${shop.shopId}, 'Stop', '+12125550197', true) returning id`;
+    expect(await asUser(owner, (tx) => tx`update public.clients set sms_opt_out = false where id = ${c.id}`)).toBe("42501");
+    expect(await asUser(owner, (tx) => tx`update public.clients set name = 'Renamed' where id = ${c.id}`)).toBe("OK");
+    // The server (Twilio's START reply) still can.
+    await sql`update public.clients set sms_opt_out = false where id = ${c.id}`;
+  });
 });
