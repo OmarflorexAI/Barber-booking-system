@@ -1,8 +1,17 @@
 # Progress: Barber Master (booking system)
 
-Last updated: 2026-11-19, Apple-look restyle of the staff app (before the security audit; not committed yet). Source of requirements: `Barbershop Booking System PRD.md`.
+Last updated: 2026-11-20, Dashboard charts restyled after the staff app's Apple-look restyle (restyle pushed through `918ab08`; the chart work is described below). Next: the security audit, in a new session. Source of requirements: `Barbershop Booking System PRD.md`.
 
 ## Where we are
+
+### Done 2026-11-20: the Dashboard's charts in the new style
+- **Ask (user):** make the graphs and graph bars look more modern and match the new style.
+- **Bookings per day (`day-chart.tsx`):** each day is a capsule track (`--s-seg-track`, 8px corners) that clips its bar, so the bar's foot is rounded; the bar is a scaled body (`scaleY`, still transform-only, still morphs on the metric switch) plus an unscaled cap riding its top (`h-3`, overlapping the body by 0.25rem so no seam shows), so the rounded top stays round at any value. On arrival the cap starts at the foot (`--rise` + `starting:translate-y`) and rises with the body. Empty days show the bare track. The counts moved out of the plot into one row above the tracks (today's in the ink pill). The old baseline hairline and 3px stub are gone.
+- **Sparklines (`sparkline.tsx`):** a monotone cubic (Fritsch–Carlson: smooth, never overshoots a peak or dips under zero), 2px line, the area fading to nothing toward the baseline (a CSS mask on its own SVG, so no ids), the end dot with a soft `--data` halo.
+- **Barber bars:** 10px tall on the same `--s-seg-track` track. **Busy hours:** 7px corners, empty squares on `--s-seg-track` instead of `--raised`.
+- **Not touched:** the drill-down sheet's small bars (`drilldown-sheet.tsx`) still use the old flat `rounded-t-md` bars; give them the same track + cap if wanted.
+- **Shots:** `docs/screenshots/dashboard-2026-11-20/charts/` (Dashboard, EN, phone + desktop, light + dark).
+- **Checks:** typecheck, lint clean; `dashboard.spec.ts` 5 passed (`--workers=1`). Test login re-created for the shots and deleted again.
 
 ### Done 2026-11-19 (before the audit): the staff app takes the landing's Apple look
 - **Ask (user):** restyle the whole dashboard to match the landing's Apple UI. **Picked:** the whole staff app shell + the Dashboard page (Today's and Settings' inner content left for a follow-up), and keep Light / Dark / System.
@@ -13,7 +22,7 @@ Last updated: 2026-11-19, Apple-look restyle of the staff app (before the securi
 - **Test login:** `shots-owner@test.invalid` was re-created for the shots and deleted again.
 - **Follow-up:** Settings' rows and Today's list still sit straight on the ground; per the iOS recipe they belong in one `.c-card` each (grouped list, inset separators). `DESIGN.md` → "App" still describes the old flat cards; update it with this.
 
-### START HERE next session (written 2026-11-18): a full security audit
+### START HERE next session: a full security audit (planned 2026-11-18, still the next task on 2026-11-20)
 
 **Next task: a thorough security audit (the user's plan for 2026-11-19).** It builds on the first pass in `docs/security-audit-2026-11-18.md` (read it first: its "Checked and OK" list doesn't need redoing unless that code changed). Write the results to a new `docs/security-audit-2026-11-19.md`.
 - **Status of the first pass's open items (checked 2026-11-18 evening):**
@@ -36,7 +45,7 @@ Last updated: 2026-11-19, Apple-look restyle of the staff app (before the securi
   - **The Shop itself:** cover photo, logo, name, address, the booking link.
 - **Reuse, don't rebuild:** everything already exists under `/app/settings/` (`barbers/` with `barber-list.tsx` and `[barberId]/` profile, hours, gallery and prices; `services/`; `shop/`) and in the `shopAdmin()` engine (`src/server/shop-admin/`). This milestone is mostly a new page and navigation over those parts.
 - **Decide with the user first:** move Barbers, Services and Shop profile out of Settings, so Settings keeps rules, blocklist, payments, texts, link, export and sign out? Or leave links in both places?
-- **Design:** Operate mode per `DESIGN.md` → "App". Use the Dashboard's card treatment (16px corners, `card-depth`) and the segmented pills. One primary action per view, EN/ES, both themes. Use `/impeccable` and take screenshots with `scripts/dashboard-shots.mjs` (add `/app/shop` to its screens).
+- **Design:** Operate mode per `DESIGN.md` → "App". Use the Dashboard's card treatment (20px corners, `card-depth`, which `.staff-page` turns into the `.c-card` finish), the `.seg` segmented control and the capsule-track bars. One primary action per view, EN/ES, both themes. Use `/impeccable` and take screenshots with `scripts/dashboard-shots.mjs` (add `/app/shop` to its screens).
 - **Done when:** the tab works on phone and desktop in both languages, an e2e spec covers add and remove Barber from the new page, typecheck, lint and the existing settings e2e tests pass, and `DESIGN.md` and this file are updated.
 
 ### Earlier: START HERE (written 2026-11-18, dashboard-restyle session)
