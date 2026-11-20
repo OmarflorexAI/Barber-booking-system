@@ -11,7 +11,17 @@ import { dictionaries, formatDay, formatTime, type Locale } from "@/lib/i18n/dic
 import { formatPhone, normalizePhone } from "@/lib/phone";
 import { addBarberAction, deleteBarberAction, upcomingAction, type UpcomingItem } from "./actions";
 
-export type BarberItem = { id: string; name: string; photoUrl: string | null; isYou: boolean; bookable: boolean };
+export type BarberItem = {
+  id: string;
+  name: string;
+  photoUrl: string | null;
+  isYou: boolean;
+  bookable: boolean;
+  /** "Haircut $30 · Beard $15": the Services this Barber offers, with their prices. */
+  summary?: string;
+  /** Gallery photo URLs, in order (the list shows three). */
+  thumbs?: string[];
+};
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 /** The gray pill for Delete and Cancel: never red (DESIGN.md → "App buttons"). */
@@ -34,9 +44,10 @@ function localDate(iso: string, tz: string) {
 }
 
 /**
- * The Barber list: ruled rows (photo or initials, name, "You", "Not bookable yet"), a Delete
- * button on every row but the Owner's own, the Add button (a calm notice once there are 6),
- * and the two sheets.
+ * The Barber list (the Shop tab): one grouped card of rows (photo or initials, name, "You",
+ * their Services and prices or "Not bookable yet", gallery thumbnails), a gray Delete button
+ * on every row but the Owner's own, the Add button (a calm notice once there are 6), and the
+ * two sheets.
  */
 export function BarberList(props: {
   shopId: string;
@@ -65,22 +76,37 @@ export function BarberList(props: {
 
   return (
     <div className="flex flex-col gap-6">
-      <ul aria-label={s.listLabel} className="border-t border-line">
+      <ul aria-label={s.listLabel} className="c-card divide-y divide-line overflow-hidden rounded-[1.25rem] [--sep:4.75rem]">
         {items.map((it) => (
-          <li key={it.id} className="flex min-h-16 items-center gap-3 border-b border-line py-2">
+          <li key={it.id} className="flex items-center gap-1 pr-2">
             <Link
               href={`/app/settings/barbers/${it.id}`}
-              className={`group -ml-2 flex min-h-12 min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-1 transition-colors hover:bg-raised ${focusRing}`}
+              className={`c-row group min-w-0 flex-1 transition-colors hover:bg-raised ${focusRing} focus-visible:-outline-offset-2`}
             >
               <Avatar name={it.name} photoUrl={it.photoUrl} />
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="flex min-w-0 items-center gap-2">
                   <span className="truncate font-semibold">{it.name}</span>
                   {it.isYou && (
-                    <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-xs font-medium text-muted">{s.you}</span>
+                    <span className="shrink-0 rounded-full bg-raised px-2 py-0.5 text-xs font-medium text-muted">{s.you}</span>
                   )}
                 </span>
-                {!it.bookable && <span className="text-sm text-muted">{s.notBookable}</span>}
+                {!it.bookable ? (
+                  <span className="text-sm text-muted">{s.notBookable}</span>
+                ) : (
+                  it.summary && <span className="truncate text-sm text-muted">{it.summary}</span>
+                )}
+                {it.thumbs && it.thumbs.length > 0 && (
+                  <span className="mt-1.5 flex gap-1.5" data-testid="barber-thumbs">
+                    {it.thumbs.slice(0, 3).map((src) => (
+                      // eslint-disable-next-line @next/next/no-img-element -- Storage URLs, already small
+                      <img key={src} src={src} alt="" loading="lazy" className="size-9 rounded-lg object-cover shadow-[inset_0_0_0_1px_var(--line)]" />
+                    ))}
+                    {it.thumbs.length > 3 && (
+                      <span className="grid size-9 place-items-center rounded-lg bg-raised font-mono text-xs text-muted tabular-nums">+{it.thumbs.length - 3}</span>
+                    )}
+                  </span>
+                )}
               </span>
               <ChevronIcon className="h-5 w-5 shrink-0 text-muted transition-colors group-hover:text-ink" />
             </Link>
@@ -88,7 +114,7 @@ export function BarberList(props: {
               <button
                 type="button"
                 aria-label={s.deleteLabel(it.name)}
-                className={`${ICON_BTN} -mr-2`}
+                className={ICON_BTN}
                 onClick={(e) => {
                   lastTrigger.current = e.currentTarget;
                   setStatus("");
@@ -175,7 +201,7 @@ export function BarberList(props: {
 
 function Avatar({ name, photoUrl }: { name: string; photoUrl: string | null }) {
   return (
-    <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-full border border-line bg-surface text-sm font-semibold text-muted">
+    <span aria-hidden="true" className={`grid size-12 shrink-0 place-items-center overflow-hidden rounded-full text-sm ${photoUrl ? "c-avatar-photo" : "c-avatar"}`}>
       {photoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- Storage URLs, already square and ≤ 512 px
         <img src={photoUrl} alt="" className="size-full object-cover" />

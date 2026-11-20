@@ -106,10 +106,15 @@ export function landingPath(staff: Staff | null): string {
  */
 export const ADMIN_PANEL_READY = false;
 
-/** The tabs (phone) and sidebar items (desktop): the Owner's three, in order. */
-export type NavKey = "today" | "dashboard" | "settings";
-export const NAV: readonly { key: NavKey; href: string }[] = [
+/**
+ * The tabs (phone) and sidebar items (desktop): the Owner's four, in order. `also` lists the
+ * deeper pages a tab owns although they live under another tab's path: the Shop tab's
+ * Barber profile, Services and Shop profile pages still sit under /app/settings.
+ */
+export type NavKey = "today" | "dashboard" | "shop" | "settings";
+export const NAV: readonly { key: NavKey; href: string; also?: readonly string[] }[] = [
   { key: "today", href: "/app/day" },
   { key: "dashboard", href: "/app/dashboard" },
+  { key: "shop", href: "/app/shop", also: ["/app/settings/barbers", "/app/settings/services", "/app/settings/shop"] },
   { key: "settings", href: "/app/settings" },
 ];

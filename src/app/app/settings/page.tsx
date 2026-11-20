@@ -30,14 +30,14 @@ export default function SettingsPage() {
   );
 }
 
-type RowKey = SettingsKey | "shop" | "texts" | "telegram";
+type RowKey = Exclude<SettingsKey, "services" | "barbers"> | "texts" | "telegram";
 
-/** The rows, in order, with the pages that exist so far. `pro` rows are locked on the Free plan. */
+/**
+ * The rows, in order, with the pages that exist so far. `pro` rows are locked on the Free plan.
+ * The Shop profile, Services and Barbers live on the Shop tab (/app/shop) now.
+ */
 const ROWS: { key: RowKey; href?: string; pro?: true }[] = [
-  { key: "shop", href: "/app/settings/shop" },
-  { key: "services", href: "/app/settings/services" },
   { key: "hours" },
-  { key: "barbers", href: "/app/settings/barbers" },
   { key: "rules", href: "/app/settings/rules" },
   { key: "blocklist", href: "/app/settings/blocklist" },
   { key: "payments", pro: true },
@@ -82,9 +82,7 @@ async function Settings() {
           const locked = pro && plan !== "pro";
           const body = (
             <>
-              {key === "shop" ? (
-                <ShopIcon className="h-6 w-6 shrink-0 text-muted" />
-              ) : key === "texts" ? (
+              {key === "texts" ? (
                 <TextsIcon className="h-6 w-6 shrink-0 text-muted" />
               ) : key === "telegram" ? (
                 <TelegramIcon className="h-6 w-6 shrink-0 text-muted" />
@@ -163,16 +161,6 @@ function TelegramIcon({ className }: { className?: string }) {
   return (
     <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M20.5 4 3.5 11l6 2.5m11-9.5-4 15.5-7-6m11-9.5-11 9.5m0 0v5l2.75-3" />
-    </svg>
-  );
-}
-
-/** A storefront with an awning, in the Settings icons' 1.5px round-capped stroke. */
-function ShopIcon({ className }: { className?: string }) {
-  return (
-    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M4 9.5 5.5 4.5h13L20 9.5a2.67 2.67 0 0 1-5.33 0 2.67 2.67 0 0 1-5.34 0A2.67 2.67 0 0 1 4 9.5Z" />
-      <path d="M5.5 12v7.5h13V12M10 19.5v-4.5h4v4.5" />
     </svg>
   );
 }

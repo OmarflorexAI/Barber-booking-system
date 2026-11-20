@@ -73,13 +73,13 @@ async function BarberProfile({ params }: { params: Promise<{ barberId: string }>
     <div className="flex flex-col gap-10">
       <div className="flex flex-col gap-3">
         <Link
-          href="/app/settings/barbers"
+          href="/app/shop"
           className={`-ml-2 inline-flex min-h-11 items-center gap-1 self-start rounded-md px-2 text-sm font-medium text-muted transition-colors hover:text-ink ${focusRing}`}
         >
           <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
             <path d="m15 6-6 6 6 6" />
           </svg>
-          {bp.back}
+          {t.shopTab.title}
         </Link>
         <div className="flex min-w-0 items-center gap-4">
           <span aria-hidden="true" className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full border border-line bg-surface text-lg font-semibold text-muted">

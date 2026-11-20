@@ -41,6 +41,16 @@ export function NavIcon({ name, filled = false, className = "h-6 w-6" }: { name:
           <rect x="16" y="8.5" width="4" height="11.5" rx="1" fill={fill} />
         </svg>
       );
+    case "shop":
+      // A storefront: a scalloped awning over the shop, with its door.
+      return (
+        <svg {...base} className={className}>
+          {/* Filled, the shop's top drops below the scallops so the awning stays its own shape. */}
+          <path d={filled ? "M5.5 14v5.5h13V14Z" : "M5.5 12v7.5h13V12"} fill={fill} />
+          <path d="M4 9.5 5.5 4.5h13L20 9.5a2.67 2.67 0 0 1-5.33 0 2.67 2.67 0 0 1-5.34 0A2.67 2.67 0 0 1 4 9.5Z" fill={fill} />
+          <path d="M10 19.5v-4.5h4v4.5" {...(filled ? cut : {})} />
+        </svg>
+      );
     case "settings":
       // Two sliders.
       return (

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import Link from "next/link";
 import { Suspense } from "react";
 import { formatPhone } from "@/lib/phone";
@@ -8,9 +7,10 @@ import { addDays, toLocal, weekdayOf } from "@/server/booking-engine/time";
 import { reporting } from "@/server/engine";
 import { ChevronIcon } from "../../_shell/icons";
 import { RowsSkeleton } from "../../_shell/skeleton";
-import { BackToSettings } from "../_back";
+import { BackToShop } from "../_back";
 import { focusRing, ownerContext } from "../_owner";
 import { CopyLink } from "./copy-link";
+import { siteOrigin } from "./origin";
 import { ShopForm } from "./shop-form";
 
 export const metadata: Metadata = { title: "Shop profile" };
@@ -40,16 +40,6 @@ type ShopRow = {
   logo_url?: string | null;
   cover_url?: string | null;
 };
-
-/** The public address: NEXT_PUBLIC_SITE_URL when set, else this request's own origin. */
-async function siteOrigin(): Promise<string> {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL;
-  if (configured) return configured.replace(/\/+$/, "");
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
 
 async function ShopProfile() {
   const ctx = await ownerContext();
@@ -81,7 +71,7 @@ async function ShopProfile() {
   return (
     <div className="flex flex-col gap-10">
       <div className="flex flex-col gap-2">
-        <BackToSettings label={t.settings.back} />
+        <BackToShop label={t.shopTab.title} />
         <h1 className="text-2xl font-semibold tracking-[-0.015em]">{s.title}</h1>
         <p className="max-w-prose leading-relaxed text-muted">{s.intro}</p>
       </div>

@@ -2619,11 +2619,11 @@ body:has(.landing) {
     inset 0 1px 0 var(--c-glint),
     var(--c-depth);
 }
-.client-page .c-card.divide-y > :not(:last-child) {
+:is(.client-page, .staff-page) .c-card.divide-y > :not(:last-child) {
   position: relative;
   border-bottom-color: transparent;
 }
-.client-page .c-card.divide-y > :not(:last-child)::after {
+:is(.client-page, .staff-page) .c-card.divide-y > :not(:last-child)::after {
   content: "";
   position: absolute;
   inset-inline: var(--sep, 1rem) 0;

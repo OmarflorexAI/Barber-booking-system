@@ -8,12 +8,15 @@ import { useSidebarCollapsed } from "./sidebar";
 import type { NavKey } from "./staff";
 import { cssDurationMs } from "@/components/motion/css-time";
 
-export type NavItem = { key: NavKey; href: string; label: string };
+export type NavItem = { key: NavKey; href: string; label: string; also?: readonly string[] };
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 
-function isActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
+const under = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+/** The tab that owns this path: a tab's `also` pages win over the tab whose path they sit under. */
+function activeKey(pathname: string, items: readonly NavItem[]): NavKey | undefined {
+  return (items.find((i) => i.also?.some((a) => under(pathname, a))) ?? items.find((i) => under(pathname, i.href)))?.key;
 }
 
 /**
@@ -24,7 +27,8 @@ function isActive(pathname: string, href: string) {
  */
 export function TabBar({ items, label }: { items: NavItem[]; label: string }) {
   const pathname = usePathname();
-  const activeIndex = items.findIndex((i) => isActive(pathname, i.href));
+  const current = activeKey(pathname, items);
+  const activeIndex = items.findIndex((i) => i.key === current);
   return (
     <nav
       aria-label={label}
@@ -40,7 +44,7 @@ export function TabBar({ items, label }: { items: NavItem[]; label: string }) {
       </span>
       <ul className="grid h-[var(--tabbar-h)]" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
         {items.map((item) => {
-          const active = isActive(pathname, item.href);
+          const active = item.key === current;
           return (
             <li key={item.key} className="flex">
               <Link
@@ -97,11 +101,12 @@ export function RailLink({
 export function SidebarNav({ items, label, initialCollapsed }: { items: NavItem[]; label: string; initialCollapsed: boolean }) {
   const pathname = usePathname();
   const collapsed = useSidebarCollapsed(initialCollapsed);
+  const current = activeKey(pathname, items);
   return (
     <nav aria-label={label}>
       <ul className="flex flex-col gap-1">
         {items.map((item) => {
-          const active = isActive(pathname, item.href);
+          const active = item.key === current;
           return (
             <li key={item.key}>
               <RailLink href={item.href} label={item.label} active={active} collapsed={collapsed} icon={<NavIcon name={item.key} filled={active} />} />
