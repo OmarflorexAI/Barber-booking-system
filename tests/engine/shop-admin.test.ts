@@ -114,6 +114,15 @@ describe("Barbers", () => {
     await expectCode(admin.deleteBarber({ userId: owner, shopId: shop.shopId, barberId: shop.alex, now: NOW }), "OWN_BARBER");
   });
 
+  it("a Barber edits their own profile but not the Owner-only phone (Q27)", async () => {
+    const own = { userId: barberUser, shopId: shop.shopId, barberId: shop.blake, displayName: "Blake", bio: "Fades", specialties: [], photoUrl: null };
+    await admin.updateBarberProfile(own);
+    await expectCode(admin.updateBarberProfile({ ...own, phone: "+12125550123" }), "FORBIDDEN");
+    await expectCode(admin.updateBarberProfile({ ...own, phone: null }), "FORBIDDEN");
+    const [b] = await sql<{ bio: string }[]>`select bio from public.barbers where id = ${shop.blake}`;
+    expect(b.bio).toBe("Fades");
+  });
+
   it("only this Shop's Owner deletes a Barber or lists their upcoming Bookings", async () => {
     const other = await makeShop();
     try {

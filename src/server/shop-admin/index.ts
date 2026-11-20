@@ -423,7 +423,8 @@ export function createShopAdmin(sql: Sql) {
     },
   ): Promise<void> {
     const role = await authorizeForBarber(sql, args.userId, args.shopId, args.barberId);
-    if (args.email !== undefined && !role.owner) throw forbidden();
+    // Owner-only fields (Q27): a Barber editing their own profile may not send them.
+    if ((args.email !== undefined || args.phone !== undefined) && !role.owner) throw forbidden();
     const email = args.email === undefined ? undefined : normalizeEmail(args.email);
     if (email === "invalid") throw new BookingError("INVALID_EMAIL", "That email doesn't look right.");
     const displayName = args.displayName.trim();
