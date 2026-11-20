@@ -30,7 +30,14 @@ Last updated: 2026-11-20, the Shop tab (`/app/shop`) is built (below). Before it
 - **Test login:** `shots-owner@test.invalid` was re-created for the shots and deleted again.
 - **Follow-up:** Settings' rows and Today's list still sit straight on the ground; per the iOS recipe they belong in one `.c-card` each (grouped list, inset separators). `DESIGN.md` → "App" still describes the old flat cards; update it with this.
 
-### START HERE next session: a full security audit (planned 2026-11-18, still the next task on 2026-11-20)
+### START HERE next session: the audit's open items (second pass done 2026-11-20)
+
+- **Second pass done:** `docs/security-audit-2026-11-20.md` (severity table, CSP plan, "Needs the user"). The Shop tab (`2fe67f5`) is pushed and live.
+- **Fixed in code:** `updateBarberProfile` now refuses the Owner-only `phone` from a Barber (test in `tests/engine/shop-admin.test.ts`).
+- **Waiting on the user, in order:** (1) roll the live Stripe key that sits commented in `.env.local` (#8, it was printed in a session's tool output) and delete that line; (2) production Turnstile keys (#1, the live bundle still has `1x0000…AA`); (3) a number for the per-phone Booking cap (#2); (4) OK for one migration for #3/#4/#5; (5) check the Supabase redirect allow list has no wildcards (#10).
+- **Vercel CLI:** installed in the gitignored `tools/vercel/` (run `tools/vercel/node_modules/.bin/vercel.cmd`), logged in, project linked (`.vercel/`). `vercel link` appends `VERCEL_OIDC_TOKEN` to `.env.local` and adds `.env*` to `.gitignore`; revert the `.gitignore` line (it would hide `.env.example`). The Vercel MCP still answers 403 for the team.
+
+### Earlier: the first-pass plan for the second audit (written 2026-11-18)
 
 **Next task: a thorough security audit (the user's plan for 2026-11-19).** It builds on the first pass in `docs/security-audit-2026-11-18.md` (read it first: its "Checked and OK" list doesn't need redoing unless that code changed). Write the results to a new `docs/security-audit-2026-11-19.md`.
 - **Status of the first pass's open items (checked 2026-11-18 evening):**
