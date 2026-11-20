@@ -75,7 +75,7 @@ export function BarberBars({ week, today, locale, className = "" }: { week: Dash
                       {b.bookings}
                     </span>
                   </span>
-                  <span aria-hidden="true" className="block h-2 w-full overflow-hidden rounded-full bg-raised transition-colors group-hover:bg-line">
+                  <span aria-hidden="true" className="block h-2.5 w-full overflow-hidden rounded-full bg-(--s-seg-track) transition-colors group-hover:bg-line">
                     <span className={`block h-full rounded-full bg-data ${growX}`} style={{ width: `${(b.bookings / max) * 100}%`, ...delay(120 + i * 60) }} />
                   </span>
                   {b.walkIns > 0 && <span className="text-sm text-muted">{d.walkInsCount(b.walkIns)}</span>}

@@ -86,29 +86,43 @@ export function DayChart({ week, today, locale, className = "" }: { week: Dashbo
                 setOpened((n) => n + 1);
                 setOpen(true);
               }}
-              className={`press group flex min-w-11 flex-1 cursor-pointer flex-col items-center gap-2 rounded-xl pt-2 pb-2.5 transition-colors hover:bg-raised ${focusRing}`}
+              className={`press group flex min-w-11 flex-1 cursor-pointer flex-col items-center gap-2 rounded-2xl pt-2 pb-2.5 transition-colors hover:bg-raised ${focusRing}`}
             >
-              {/* Fixed-size bar scaled to its value, so switching metric morphs it (transform only);
-                  the count rides a full-height layer translated to the bar's top. */}
-              <span aria-hidden="true" className="relative w-full flex-1 border-b border-line">
-                <span className="absolute inset-x-0 bottom-0 mx-auto h-[3px] w-[calc(100%-0.75rem)] max-w-12 rounded-t-sm bg-line" />
-                <span
-                  className={`absolute inset-x-0 bottom-0 mx-auto h-[78%] w-[calc(100%-0.75rem)] max-w-12 rounded-t-lg ${isToday ? "bg-data" : "bg-data-soft"} ${growY}`}
-                  style={{ transform: `scaleY(${ratio})`, ...delay(i * 50) }}
-                />
-                <span
-                  className="absolute inset-0 flex items-start justify-center motion-safe:transition-transform motion-safe:duration-(--dur-slow) motion-safe:ease-(--ease-out)"
-                  style={{ transform: `translateY(calc(${(1 - 0.78 * ratio) * 100}% - 1.875rem))` }}
-                >
-                  {isToday ? (
-                    <span className={`rounded-full bg-ink px-2 py-0.5 font-mono text-sm leading-5 font-semibold text-paper tabular-nums ${fadeIn}`} style={delay(240 + i * 50)}>
-                      {value}
-                    </span>
-                  ) : (
-                    <span className={`py-0.5 font-mono text-sm leading-5 text-muted tabular-nums transition-colors group-hover:text-ink ${fadeIn}`} style={delay(240 + i * 50)}>
-                      {value}
-                    </span>
-                  )}
+              {/* The count sits in one row above the tracks. Below it, a capsule track (the day's
+                  full height) clips the bar, which rounds its foot. The bar is a fixed-size body
+                  scaled to its value, so switching metric morphs it (transform only), plus an
+                  unscaled cap riding its top (overlapping the body by 0.25rem, so no seam shows),
+                  so the rounded top stays round at any value. Empty days show the bare track. */}
+              <span aria-hidden="true" className="flex w-full flex-1 flex-col items-center gap-1.5">
+                {isToday ? (
+                  <span className={`rounded-full bg-ink px-2 py-0.5 font-mono text-sm leading-5 font-semibold text-paper tabular-nums ${fadeIn}`} style={delay(240 + i * 50)}>
+                    {value}
+                  </span>
+                ) : (
+                  <span className={`py-0.5 font-mono text-sm leading-5 text-muted tabular-nums transition-colors group-hover:text-ink ${fadeIn}`} style={delay(240 + i * 50)}>
+                    {value}
+                  </span>
+                )}
+                <span className="relative w-[calc(100%-0.75rem)] max-w-12 flex-1 overflow-hidden rounded-lg bg-(--s-seg-track)">
+                  <span
+                    className={`absolute inset-x-0 bottom-0 h-[calc(100%-0.5rem)] ${isToday ? "bg-data" : "bg-data-soft"} ${growY}`}
+                    style={{ transform: `scaleY(${ratio})`, ...delay(i * 50) }}
+                  />
+                  <span
+                    className="absolute inset-0 motion-safe:transition-transform motion-safe:duration-(--dur-slow) motion-safe:ease-(--ease-out) motion-safe:starting:translate-y-(--rise)"
+                    style={
+                      {
+                        transform: `translateY(calc(${(1 - ratio) * 100}% - ${(1 - ratio) * 0.5}rem))`,
+                        // On arrival the cap starts at the foot and rises with the body's grow-in.
+                        "--rise": `calc(${ratio * 100}% - ${ratio * 0.5}rem)`,
+                        ...delay(i * 50),
+                      } as React.CSSProperties
+                    }
+                  >
+                    <span
+                      className={`block h-3 rounded-t-lg ${isToday ? "bg-data" : "bg-data-soft"} motion-safe:transition-opacity motion-safe:duration-(--dur-base) ${value ? "" : "opacity-0"}`}
+                    />
+                  </span>
                 </span>
               </span>
               {/* A real space between the count and the weekday, so the visible text reads "2 Tue"

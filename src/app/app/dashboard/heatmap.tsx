@@ -103,8 +103,8 @@ export function Heatmap({ week, today, locale, className = "" }: { week: Dashboa
                     aria-hidden="true"
                     data-c={c}
                     data-r={r}
-                    className={`h-6 rounded-[0.3rem] motion-safe:transition-[scale] motion-safe:duration-(--dur-base) motion-safe:ease-(--ease-spring) motion-safe:starting:scale-0 ${
-                      future ? "border border-dashed border-line" : v ? "bg-data" : "bg-raised"
+                    className={`h-6 rounded-[0.4375rem] motion-safe:transition-[scale] motion-safe:duration-(--dur-base) motion-safe:ease-(--ease-spring) motion-safe:starting:scale-0 ${
+                      future ? "border border-dashed border-line" : v ? "bg-data" : "bg-(--s-seg-track)"
                     } ${on ? "z-10 scale-[1.18] shadow-[0_0_0_2px_var(--surface),0_0_0_4px_var(--ink)]" : ""}`}
                     style={{ opacity: v ? 0.28 + 0.72 * (v / max) : undefined, transitionDelay: settled ? "0ms" : `${(c + r) * 28}ms` }}
                   />
@@ -119,7 +119,7 @@ export function Heatmap({ week, today, locale, className = "" }: { week: Dashboa
         <div aria-hidden="true" className="flex items-center justify-end gap-1.5 text-xs text-muted">
           {d.less}
           {[0.28, 0.52, 0.76, 1].map((o) => (
-            <span key={o} className="h-3 w-3 rounded-[0.2rem] bg-data" style={{ opacity: o }} />
+            <span key={o} className="h-3 w-3 rounded-[0.25rem] bg-data" style={{ opacity: o }} />
           ))}
           {d.more}
         </div>
