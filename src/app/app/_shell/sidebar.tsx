@@ -34,21 +34,32 @@ const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").match
  * in one layout step, then a translate eases it from where it was, in step with the
  * sidebar's clip-path transition).
  */
+let movingTimer: number | undefined;
+
 function toggleSidebar() {
+  const root = document.documentElement;
   const next = readCollapsed() ? "expanded" : COLLAPSED;
   const content = document.querySelector<HTMLElement>(".shell-content");
   const before = content?.getBoundingClientRect().left ?? 0;
+  const duration = cssDurationMs("--dur-slow", 420);
 
-  document.documentElement.setAttribute("data-sidebar", next);
+  // While the panel moves, controls that change shape between the open panel and the rail
+  // (the theme switch lies down / stands up) re-shape out of sight instead of animating
+  // (globals.css → "Theme switcher", `.sidebar-moving`).
+  root.classList.add("sidebar-moving");
+  window.clearTimeout(movingTimer);
+  movingTimer = window.setTimeout(() => root.classList.remove("sidebar-moving"), duration + 100);
+
+  root.setAttribute("data-sidebar", next);
   document.cookie = `${SIDEBAR_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
   window.dispatchEvent(new Event(CHANGE_EVENT));
 
   if (!content || reducedMotion()) return;
   const delta = before - content.getBoundingClientRect().left;
   if (!delta) return;
-  const css = getComputedStyle(document.documentElement);
+  const css = getComputedStyle(root);
   content.animate([{ translate: `${delta}px 0` }, { translate: "0 0" }], {
-    duration: cssDurationMs("--dur-slow", 420),
+    duration,
     easing: css.getPropertyValue("--ease-spring").trim() || "ease-out",
   });
 }

@@ -204,6 +204,23 @@ body {
     scale: 0.85;
   }
 }
+/*
+ * Hiding or showing the sidebar (sidebar.tsx puts .sidebar-moving on <html> for the move):
+ * the thumb never slides between the row and the column (it used to cut diagonally across).
+ * Opening: the switch lies down at once, under the panel's clip. Collapsing: it stays lying
+ * down until the panel has closed over it, then stands up in one step (as the rail rows do).
+ */
+:root.sidebar-moving .theme-switch-thumb {
+  transition: none;
+}
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  :root.sidebar-moving[data-sidebar="collapsed"] .theme-switch-rail {
+    transition: flex-direction 0s var(--dur-slow) allow-discrete;
+  }
+  :root.sidebar-moving[data-sidebar="collapsed"] .theme-switch-rail .theme-switch-thumb {
+    transition: translate 0s var(--dur-slow);
+  }
+}
 
 /* While the theme flips (one frame, see freezeTransitions): every color lands at once. */
 :root.theme-swap *:not(.theme-switch-thumb, .theme-switch-opt svg),
