@@ -9,7 +9,7 @@ function leadFormText(t: SectionProps["t"]): LeadFormText {
 }
 
 /** The centered solid contact card (over the FAQ/Contact Velaris band), holding our lead form (with the Turnstile bot check). */
-export function Contact({ locale, t }: SectionProps) {
+export function Contact({ t }: SectionProps) {
   return (
     <section id={CONTACT_ID} aria-labelledby="contact-title" className="scroll-mt-20 px-4 py-[calc(48px+8vh)] sm:px-6">
       <div className="lead-card relative mx-auto max-w-2xl rounded-2xl p-6 sm:p-8 md:p-12" data-reveal>
@@ -20,7 +20,7 @@ export function Contact({ locale, t }: SectionProps) {
           <p className="mx-auto mt-4 max-w-[46ch] text-lg leading-relaxed text-muted-foreground">{t.formBody}</p>
         </div>
         <div id={FORM_ID} className="mt-10">
-          <LeadForm locale={locale} t={leadFormText(t)} />
+          <LeadForm locale="en" t={leadFormText(t)} />
         </div>
       </div>
     </section>

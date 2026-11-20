@@ -17,6 +17,15 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // The Spanish landing and legal pages were retired (2026-11-20): the site is English and
+  // browsers offer a translation. Old links and search results land on the English page.
+  async redirects() {
+    return [
+      { source: "/es", destination: "/", permanent: true },
+      { source: "/es/privacy", destination: "/privacy", permanent: true },
+      { source: "/es/terms", destination: "/terms", permanent: true },
+    ];
+  },
   partialPrefetching: true,
   turbopack: {
     rules: {

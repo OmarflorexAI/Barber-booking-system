@@ -1,20 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ViewTransition, addTransitionType, startTransition, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { ViewTransition, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Wordmark } from "@/components/brand/logo";
-import { LOCALE_COOKIE, type Locale } from "@/lib/i18n/dictionaries";
 import type { LandingDictionary } from "@/lib/i18n/landing";
 import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { useCompactOnScroll } from "./nav-scroll";
 import { focusRing } from "./ui";
 
 /** Only the nav's own strings: this is a client component, so everything it gets is sent to the browser. */
-type NavText = Pick<LandingDictionary, "nav" | "navLabel" | "navMenu" | "navLogin" | "navSignup" | "otherLang">;
+type NavText = Pick<LandingDictionary, "nav" | "navLabel" | "navMenu" | "navLogin" | "navSignup">;
 
-/** The page-level transitions the header takes part in: the language switch, leaving or entering the landing. */
-const HEADER_TYPES = { "lang-switch": "landing-header", page: "landing-header", default: "none" };
+/** The page-level transitions the header takes part in: leaving or entering the landing. */
+const HEADER_TYPES = { page: "landing-header", default: "none" };
 
 /**
  * The glass, its content row and the menu each get their own transition layer, kept on top and
@@ -34,25 +32,24 @@ function HeaderLayer({ name, children }: { name: string; children: ReactNode }) 
 /**
  * A floating glass bar (rim, glint and glass layers, see the `.nav-*` rules): wordmark left,
  * section links centered (hover: muted to ink and a hairline drawn from the centre), the
- * language switch, "Log in" and a liquid metal "Sign up" ("Crear cuenta") on the right.
+ * "Log in" and a liquid metal "Sign up" on the right. No language switch: the page is English and
+ * browsers offer Spanish speakers a translation.
  * "Talk to us" lives on in the hero and the contact section. Scrolling down contracts it (narrower and shorter),
  * scrolling up opens it again (`useCompactOnScroll` + `.nav-*` rules in globals.css). The
  * header box itself never changes size; only clip and translate move, so nothing below shifts.
  * Below md the links move into a glass card under the bar: Escape or a link tap closes it,
  * Escape gives focus back.
  */
-export function Nav({ locale, t }: { locale: Locale; t: NavText }) {
-  const other: Locale = locale === "en" ? "es" : "en";
+export function Nav({ t }: { t: NavText }) {
   const links = [
     { href: "#how", label: t.nav.how },
     { href: "#setup", label: t.nav.setup },
     { href: "#pricing", label: t.nav.pricing },
     { href: "#faq", label: t.nav.faq },
   ];
-  // The login page goes by the saved language, so the links carry it (the proxy saves ?lang).
-  const loginHref = `/login?lang=${locale}`;
-  const signupHref = `/login?mode=signup&lang=${locale}`;
-  const router = useRouter();
+  // No ?lang: the login page goes by the saved language, else the browser's.
+  const loginHref = "/login";
+  const signupHref = "/login?mode=signup";
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const button = useRef<HTMLButtonElement>(null);
@@ -102,7 +99,7 @@ export function Nav({ locale, t }: { locale: Locale; t: NavText }) {
           <HeaderLayer name="landing-nav-row">
             <div id="main-nav" className="relative flex h-full items-center justify-between gap-2 pl-4 pr-2.5 md:pl-[7px] md:pr-[13px]">
               <div className="nav-start">
-                <Link href={locale === "es" ? "/es" : "/"} className={`flex min-h-11 items-center rounded-full px-1.5 ${focusRing}`}>
+                <Link href="/" className={`flex min-h-11 items-center rounded-full px-1.5 ${focusRing}`}>
                   <Wordmark />
                 </Link>
               </div>
@@ -120,34 +117,6 @@ export function Nav({ locale, t }: { locale: Locale; t: NavText }) {
               </nav>
 
               <div className="nav-end flex items-center gap-1 md:gap-1.5">
-                {/* The other language is another page (/ or /es). With JS: save the choice, then go to
-                    the clean URL in a "lang-switch" transition (cross-fades the two pages). Without JS the
-                    href's ?lang=en has the proxy save it. No prefetch: a prefetch of / would still carry
-                    the old choice and come back redirected. */}
-                <Link
-                  href={other === "es" ? "/es" : "/?lang=en"}
-                  prefetch={false}
-                  onClick={(e) => {
-                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-                    e.preventDefault();
-                    document.cookie = `${LOCALE_COOKIE}=${other}; path=/; max-age=31536000; samesite=lax`;
-                    const to = other === "es" ? "/es" : "/";
-                    // Reduced motion: no "lang-switch" type, so nothing is named or snapshotted.
-                    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-                      router.push(to);
-                      return;
-                    }
-                    startTransition(() => {
-                      addTransitionType("lang-switch");
-                      router.push(to);
-                    });
-                  }}
-                  hrefLang={other}
-                  lang={other}
-                  className={`nav-link inline-flex min-h-11 items-center rounded-full px-3 text-sm text-muted-foreground ${focusRing}`}
-                >
-                  <span className="nav-link-label">{t.otherLang}</span>
-                </Link>
                 <Link href={loginHref} prefetch={false} className={`nav-link hidden min-h-11 items-center rounded-full px-3 text-sm text-muted-foreground md:inline-flex ${focusRing}`}>
                   <span className="nav-link-label">{t.navLogin}</span>
                 </Link>

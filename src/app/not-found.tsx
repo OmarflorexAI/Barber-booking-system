@@ -31,13 +31,13 @@ export default function NotFound() {
           <div className="mt-8 grid max-w-xl gap-6 sm:grid-cols-2">
             <div lang="en" className="flex flex-col items-start">
               <p className="mb-4 text-base leading-relaxed text-foreground/80">{en.body}</p>
-              <Link href="/?lang=en" transitionTypes={["page"]} hrefLang="en" className={`mt-auto ${whitePill}`}>
+              <Link href="/" transitionTypes={["page"]} hrefLang="en" className={`mt-auto ${whitePill}`}>
                 {en.home}
               </Link>
             </div>
             <div lang="es" className="flex flex-col items-start">
               <p className="mb-4 text-base leading-relaxed text-foreground/80">{es.body}</p>
-              <Link href="/es" transitionTypes={["page"]} hrefLang="es" className={`mt-auto ${whitePill}`}>
+              <Link href="/" transitionTypes={["page"]} className={`mt-auto ${whitePill}`}>
                 {es.home}
               </Link>
             </div>

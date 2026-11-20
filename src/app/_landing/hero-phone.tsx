@@ -378,7 +378,6 @@ export function HeroPhone({ p }: { p: Phone }) {
                 default="none"
                 enter={{ "phone-forward": "phone-in-fwd", "phone-back": "phone-in-back", default: "none" }}
                 exit={{ "phone-forward": "phone-out-fwd", "phone-back": "phone-out-back", default: "none" }}
-                update={{ "lang-switch": "lang-swap", default: "none" }}
               >
                 <div ref={screen} className="absolute inset-0 pt-7">
                   {screens[step]}

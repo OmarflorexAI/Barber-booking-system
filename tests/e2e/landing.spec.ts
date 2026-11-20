@@ -1,15 +1,13 @@
 import { config } from "dotenv";
 import { expect, test } from "@playwright/test";
 import postgres from "postgres";
-import { landingDictionaries } from "../../src/lib/i18n/landing";
+import { landingText as en } from "../../src/lib/i18n/landing";
 
 config({ path: ".env.local", quiet: true });
 
-/** The landing page that sells Barber Master to Shop Owners: language, the free-month form, the demo link. */
+/** The landing page that sells Barber Master to Shop Owners: English only, the free-month form, the demo link. */
 const sql = postgres(process.env.DATABASE_URL!, { prepare: false, max: 1 });
 const TAG = `E2E Lead ${Date.now()}`;
-const en = landingDictionaries.en;
-const es = landingDictionaries.es;
 
 test.afterAll(async () => {
   await sql`delete from public.leads where shop_name like ${`${TAG}%`}`;
@@ -26,54 +24,46 @@ test("opens in English for an English phone", async ({ page }) => {
 test.describe("Spanish phone", () => {
   test.use({ locale: "es-US" });
 
-  test("visiting / ends on /es, in Spanish", async ({ page }) => {
-    await page.goto("/");
-    await expect(page).toHaveURL(/\/es$/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(es.heroTitle);
-  });
-
-  test("a saved English choice wins over the phone's language", async ({ page, context }) => {
-    await context.addCookies([{ name: "lang", value: "en", url: "http://localhost:3000" }]);
+  // The browser, not the page, offers Spanish: the page must say it is English, carry no
+  // language switch and never opt out of translation.
+  test("stays on / in English, so the browser can offer a translation", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(en.heroTitle);
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page.getByRole("link", { name: /español/i })).toHaveCount(0);
+    await expect(page.locator('[translate="no"], .notranslate, meta[name="google"][content="notranslate"]')).toHaveCount(0);
+  });
+
+  test("Log in opens the login page in Spanish (from the phone's language)", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("footer").getByRole("link", { name: en.staffSignIn })).toHaveAttribute("href", "/login");
+    await page.goto("/login");
+    await expect(page.locator("html")).toHaveAttribute("lang", "es");
   });
 });
 
-test("the language toggle moves between / and /es, and the choice sticks", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(en.heroTitle);
-  await page.getByRole("link", { name: en.otherLang }).first().click();
-  await expect(page).toHaveURL(/\/es$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(es.heroTitle);
-  await expect(page.locator("html")).toHaveAttribute("lang", "es");
-  // The choice is saved: / now sends this English phone to /es.
-  await page.goto("/");
-  await expect(page).toHaveURL(/\/es$/);
-  await page.getByRole("link", { name: es.otherLang }).first().click();
-  await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(en.heroTitle);
+test("old Spanish addresses forward to the English pages", async ({ page }) => {
+  for (const [from, to] of [["/es", /\/$/], ["/es/privacy", /\/privacy$/], ["/es/terms", /\/terms$/]] as const) {
+    await page.goto(from);
+    await expect(page).toHaveURL(to);
+  }
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
 });
 
-test("the Spanish footer links to the Spanish legal pages", async ({ page }) => {
-  await page.goto("/es");
-  const footer = page.locator("footer");
-  await expect(footer.getByRole("link", { name: es.privacy })).toHaveAttribute("href", "/es/privacy");
-  await expect(footer.getByRole("link", { name: es.terms })).toHaveAttribute("href", "/es/terms");
+test("the footer links to the legal pages", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("footer").getByRole("link", { name: en.privacy })).toHaveAttribute("href", "/privacy");
+  const footer = page.locator("footer");
+  await expect(footer.getByRole("link", { name: en.privacy })).toHaveAttribute("href", "/privacy");
+  await expect(footer.getByRole("link", { name: en.terms })).toHaveAttribute("href", "/terms");
 });
 
-test("/es has its language, description, canonical and hreflang in the head", async ({ page }) => {
-  await page.goto("/es");
-  await expect(page.locator("html")).toHaveAttribute("lang", "es");
-  await expect(page.locator(".landing")).toHaveAttribute("lang", "es");
-  await expect(page.locator('head meta[name="description"]')).toHaveAttribute("content", es.metaDescription);
-  await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute("href", /\/es$/);
-  await expect(page.locator('head link[rel="alternate"][hreflang="en"]')).toHaveAttribute("href", /^https?:\/\/[^/]+\/?$/);
-  await expect(page.locator('head link[rel="alternate"][hreflang="es"]')).toHaveAttribute("href", /\/es$/);
-  await expect(page.locator('head link[rel="alternate"][hreflang="x-default"]')).toHaveCount(1);
+test("/ has its language, description and canonical in the head, and no hreflang", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator(".landing")).toHaveAttribute("lang", "en");
+  await expect(page.locator('head meta[name="description"]')).toHaveAttribute("content", en.metaDescription);
+  await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute("href", /^https?:\/\/[^/]+\/?$/);
+  await expect(page.locator('head link[rel="alternate"][hreflang]')).toHaveCount(0);
   const ld = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent()) ?? "{}");
   const types = (ld["@graph"] as { "@type": string }[]).map((n) => n["@type"]);
   expect(types).toEqual(expect.arrayContaining(["Organization", "WebSite"]));
@@ -83,13 +73,11 @@ test("/es has its language, description, canonical and hreflang in the head", as
 test.describe("JavaScript off", () => {
   test.use({ javaScriptEnabled: false });
 
-  for (const [path, title] of [["/", en.heroTitle], ["/es", es.heroTitle]] as const) {
-    test(`${path} still shows the page`, async ({ page }) => {
-      await page.goto(path);
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
-      await expect(page.locator('head meta[name="description"]')).toHaveCount(1);
-    });
-  }
+  test("/ still shows the page", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(en.heroTitle);
+    await expect(page.locator('head meta[name="description"]')).toHaveCount(1);
+  });
 });
 
 test("an Owner leaves their number and the lead is saved", async ({ page }) => {

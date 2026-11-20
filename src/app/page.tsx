@@ -1,8 +1,8 @@
 import { Landing, landingMetadata } from "./_landing/landing";
 
-export const metadata = landingMetadata("en");
+export const metadata = landingMetadata;
 
-/** The English landing page. Spanish visitors are sent to /es by src/proxy.ts. */
+/** The landing page (English only; browsers offer Spanish speakers a translation). */
 export default function Home() {
-  return <Landing locale="en" />;
+  return <Landing />;
 }

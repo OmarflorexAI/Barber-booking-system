@@ -1,8 +1,9 @@
 import type { Locale } from "./dictionaries";
 
 /**
- * The /privacy and /terms pages (and /es/privacy, /es/terms), in plain language, plus the
- * bilingual 404. A draft written with the user on 2026-11-12 (progress.md, "L4 grill
+ * The /privacy and /terms pages, in English only (Spanish speakers use their browser's
+ * translation; the old /es pages forward here), plus the bilingual 404.
+ * A draft written with the user on 2026-11-12 (progress.md, "L4 grill
  * answers"); have it reviewed before launch.
  * LAUNCH PREREQUISITES: put the operator's legal name in OPERATOR and a real inbox in
  * CONTACT_EMAIL (U5, once the domain exists). While CONTACT_EMAIL is the placeholder the
@@ -13,7 +14,7 @@ export const CONTACT_EMAIL = "support@[domain]";
 export const CONTACT_IS_PLACEHOLDER = CONTACT_EMAIL.includes("[");
 /** ISO date for <time dateTime>; keep it in step with LAST_UPDATED. */
 export const LAST_UPDATED_ISO = "2026-11-12";
-export const LAST_UPDATED = { en: "November 12, 2026", es: "12 de noviembre de 2026" } as const;
+export const LAST_UPDATED = "November 12, 2026";
 
 export type LegalPageKey = "privacy" | "terms";
 export type LegalSection = { heading: string; body: string[] };
@@ -25,17 +26,12 @@ export type LegalDictionary = {
   /** Accessible name of the wordmark link home (keeps the visible "Barber Master"). */
   back: string;
   skipLink: string;
-  /** The link to the same page in the other language, written in that language. */
-  otherLang: string;
   privacy: LegalPage;
   terms: LegalPage;
 };
 
-/** Each legal page's URL in each language. */
-export const legalPaths: Record<LegalPageKey, Record<Locale, string>> = {
-  privacy: { en: "/privacy", es: "/es/privacy" },
-  terms: { en: "/terms", es: "/es/terms" },
-};
+/** Each legal page's URL. */
+export const legalPaths: Record<LegalPageKey, string> = { privacy: "/privacy", terms: "/terms" };
 
 /** The 404 can't know the visitor's language statically, so it shows both. */
 export const notFoundCopy: Record<Locale, { title: string; body: string; home: string }> = {
@@ -49,7 +45,6 @@ const en: LegalDictionary = {
   contactBody: "Questions about this page or your data? Write to us:",
   back: "Barber Master home",
   skipLink: "Skip to content",
-  otherLang: "Leer en español",
   privacy: {
     title: "Privacy",
     metaDescription: "What Barber Master collects, why, who helps us run it, and how to have your data deleted.",
@@ -204,165 +199,4 @@ const en: LegalDictionary = {
   },
 };
 
-const es: LegalDictionary = {
-  updated: "Última actualización",
-  contactLabel: "Contacto",
-  contactBody: "¿Preguntas sobre esta página o tus datos? Escríbenos:",
-  back: "Inicio de Barber Master",
-  skipLink: "Saltar al contenido",
-  otherLang: "Read in English",
-  privacy: {
-    title: "Privacidad",
-    metaDescription: "Qué datos guarda Barber Master, para qué, quién nos ayuda a manejarlo y cómo pedir que se borren.",
-    intro: `${OPERATOR} ("nosotros") ofrece reservas en línea para barberías. Esta página explica qué datos guardamos, para qué y qué opciones tienes. Es corta, y no vendemos tus datos.`,
-    sections: [
-      {
-        heading: "Quién es responsable de tus datos",
-        body: [
-          "Si reservaste un corte, tus datos pertenecen a la barbería donde reservaste (la Barbería). Los guardamos y usamos solo para manejar las citas de esa Barbería, en su nombre. Las preguntas sobre tus citas van primero a la Barbería; nosotros la ayudamos a responder.",
-          "Si eres dueño de una barbería o barbero, o nos escribiste desde nuestra página web, nosotros somos responsables de tus datos.",
-        ],
-      },
-      {
-        heading: "Qué datos guardamos",
-        body: [
-          "Clientes: tu nombre, tu número de celular y tus citas (servicio, barbero, hora, estado y si pagaste en línea). No pedimos correo electrónico ni te creamos una cuenta.",
-          "Pagos: si pagas en línea, el pago con tarjeta lo maneja nuestro procesador de pagos. Nunca vemos ni guardamos el número de tu tarjeta; solo guardamos el estado y el monto del pago.",
-          "Dueños y barberos: tu nombre, el correo con el que inicias sesión, los datos de tu barbería y, si un barbero lo conecta, el chat de Telegram que recibe los avisos de citas.",
-          "Formulario de contacto de la web: tu nombre, el nombre de tu barbería, tu teléfono y lo que quieras escribirnos.",
-          "Datos técnicos: registros básicos (como la dirección IP y el tipo de navegador) que nuestros proveedores guardan para que el servicio funcione y esté protegido.",
-        ],
-      },
-      {
-        heading: "Para qué los usamos",
-        body: [
-          "Para hacer, cambiar y cancelar citas, y para mostrarle a la Barbería su agenda.",
-          "Para enviar los mensajes y avisos de citas que se explican abajo.",
-          "Para procesar pagos en línea y reembolsos.",
-          "Para responderte cuando nos escribes, y para mantener el servicio seguro y funcionando.",
-          "No usamos tus datos para publicidad, y no los vendemos ni alquilamos a nadie.",
-        ],
-      },
-      {
-        heading: "Mensajes de texto",
-        body: [
-          "Al reservar, aceptas recibir un mensaje de confirmación y un recordatorio unas 2 horas antes de tu cita (normalmente 2 mensajes por cita), y un mensaje si la Barbería cancela o cambia tu cita. Pueden aplicarse tarifas de mensajes y datos.",
-          "Responde STOP a cualquier mensaje para no recibir más, o HELP para pedir ayuda. También puedes escribirnos.",
-          "Tu número de celular y tu permiso para recibir mensajes nunca se comparten ni se venden a terceros para su publicidad.",
-        ],
-      },
-      {
-        heading: "Quién nos ayuda a manejar el servicio",
-        body: [
-          "Usamos proveedores de confianza que manejan los datos solo para darnos su servicio: Supabase (base de datos), Twilio (mensajes de texto), Resend (correo), Telegram (avisos a barberos), Stripe (pagos en línea), Cloudflare Turnstile (verificación contra bots en nuestros formularios) y nuestro proveedor de hosting.",
-          "También podemos compartir datos si la ley lo exige, o para proteger la seguridad de las personas o del servicio.",
-        ],
-      },
-      {
-        heading: "Cookies",
-        body: [
-          "Usamos solo las cookies que el servicio necesita: una recuerda tu idioma, otra mantiene la sesión del personal, y nuestros proveedores de verificación y de pagos usan las suyas para funcionar de forma segura. No usamos cookies de publicidad ni de seguimiento.",
-        ],
-      },
-      {
-        heading: "Cuánto tiempo los guardamos",
-        body: [
-          "Guardamos los datos de una Barbería mientras use Barber Master. Si la Barbería cancela, puede descargar su lista de clientes, y borramos sus datos 30 días después.",
-          "Los mensajes del formulario de contacto se guardan mientras estemos en contacto y se borran cuando ya no hacen falta. Nuestros proveedores pueden guardar copias de seguridad y registros por un tiempo limitado.",
-        ],
-      },
-      {
-        heading: "Tus opciones",
-        body: [
-          "Puedes pedir ver, corregir o borrar tus datos. Los clientes también pueden pedírselo directamente a la Barbería. Escríbenos a la dirección de abajo y te responderemos en un máximo de 30 días.",
-        ],
-      },
-      {
-        heading: "Menores",
-        body: ["El servicio no está pensado para menores de 13 años, y no guardamos sus datos a sabiendas."],
-      },
-      {
-        heading: "Seguridad",
-        body: [
-          "Los datos viajan por conexiones cifradas, solo tiene acceso quien lo necesita, y cada vez que nuestro equipo de soporte entra a los datos de una Barbería queda registrado.",
-        ],
-      },
-      {
-        heading: "Cambios",
-        body: ["Si cambiamos esta página, actualizaremos la fecha de arriba. Si el cambio es importante, avisaremos a los dueños de barberías antes de que entre en vigor."],
-      },
-    ],
-  },
-  terms: {
-    title: "Términos",
-    metaDescription: "Las reglas para usar Barber Master: citas, mensajes, pagos y reembolsos, y de qué se encarga cada parte.",
-    intro: `Estos términos aplican cuando usas Barber Master, el servicio de reservas de ${OPERATOR} ("nosotros"). Al reservar una cita o usar el servicio para tu barbería, los aceptas.`,
-    sections: [
-      {
-        heading: "El servicio",
-        body: [
-          "Barber Master permite a los clientes reservar citas en barberías (Barberías) por internet, y a las Barberías manejar esas citas. La Barbería, no Barber Master, es quien da el corte y cualquier otro servicio que reserves, y quien pone sus precios, horarios y reglas.",
-        ],
-      },
-      {
-        heading: "Reservar como cliente",
-        body: [
-          "Usa tu nombre real y un número de celular donde recibas mensajes. Una reserva es una cita con la Barbería a la hora indicada; llega a tiempo, por favor.",
-          "Puedes cancelar o cambiar tu cita desde el enlace de tus mensajes hasta la hora límite de la Barbería. Después de esa hora, llama a la Barbería.",
-          "Una Barbería puede rechazar o cancelar una cita, por ejemplo si tiene que cerrar.",
-        ],
-      },
-      {
-        heading: "Mensajes",
-        body: [
-          "Los mensajes de una cita son una confirmación, un recordatorio unas 2 horas antes y avisos si tu cita cambia (normalmente 2 mensajes por cita). Pueden aplicarse tarifas de mensajes y datos. Responde STOP para no recibir más, HELP para ayuda. Las compañías telefónicas no son responsables de mensajes retrasados o no entregados.",
-        ],
-      },
-      {
-        heading: "Pagos en línea y reembolsos",
-        body: [
-          "Algunas Barberías te dejan pagar en línea al reservar. El pago va a la Barbería, a través de nuestro procesador de pagos. Tu hora se guarda 10 minutos mientras pagas; si el pago no se completa, la hora se libera.",
-          "Si cancelas a tiempo, o si la Barbería cancela, recibes el reembolso completo en la misma tarjeta. Un pago que llega después de que venció la reserva de la hora se reembolsa automáticamente. Si cambias la hora de tu cita, tu pago pasa a la nueva hora. Los reembolsos pueden tardar unos días hábiles en aparecer.",
-          "Pagar en la barbería es un acuerdo entre tú y la Barbería.",
-        ],
-      },
-      {
-        heading: "Para las Barberías",
-        body: [
-          "El primer mes es gratis. Después, el servicio cuesta un solo precio mensual que acordamos contigo en persona, sin contrato: puedes cancelar cuando quieras.",
-          "Mantén al día tus servicios, precios, horarios y barberos, y da acceso solo a las personas que trabajan en tu barbería.",
-          "Tu lista de clientes es tuya. Si cancelas, puedes descargarla, y borramos los datos de tu barbería 30 días después.",
-          "Usa los números de tus clientes solo para las citas, como explica nuestra página de Privacidad, y cumple las reglas de mensajes que te apliquen.",
-        ],
-      },
-      {
-        heading: "Uso justo",
-        body: [
-          "No hagas mal uso del servicio: nada de citas falsas, ni intentar entrar sin permiso o sobrecargarlo, ni usarlo para enviar spam o algo ilegal. Podemos bloquear números o cuentas que lo hagan.",
-        ],
-      },
-      {
-        heading: "Disponibilidad",
-        body: [
-          "Trabajamos para que Barber Master funcione siempre, pero no podemos prometer que nunca se interrumpa. Si algo sale mal con una cita, contacta a la Barbería o a nosotros y te ayudamos a resolverlo.",
-        ],
-      },
-      {
-        heading: "Responsabilidad",
-        body: [
-          "El servicio se ofrece tal como está. En la medida en que la ley lo permita, no somos responsables de pérdidas indirectas ni de los servicios que dan las Barberías. Nada en estos términos limita los derechos que la ley te da y que no se pueden limitar.",
-        ],
-      },
-      {
-        heading: "Ley aplicable",
-        body: ["Estos términos se rigen por las leyes del Estado de Nueva York."],
-      },
-      {
-        heading: "Cambios",
-        body: ["Si cambiamos estos términos, actualizaremos la fecha de arriba. Si el cambio es importante, avisaremos a los dueños de barberías antes de que entre en vigor."],
-      },
-    ],
-  },
-};
-
-export const legalDictionaries: Record<Locale, LegalDictionary> = { en, es };
+export const legalText: LegalDictionary = en;

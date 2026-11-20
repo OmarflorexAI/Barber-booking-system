@@ -2,42 +2,36 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ViewTransition } from "react";
 import { Wordmark } from "@/components/brand/logo";
-import type { Locale } from "@/lib/i18n/dictionaries";
-import { landingDictionaries } from "@/lib/i18n/landing";
-import { CONTACT_EMAIL, CONTACT_IS_PLACEHOLDER, LAST_UPDATED, LAST_UPDATED_ISO, OPERATOR, legalDictionaries, legalPaths, type LegalPageKey } from "@/lib/i18n/legal";
+import { landingText } from "@/lib/i18n/landing";
+import { CONTACT_EMAIL, CONTACT_IS_PLACEHOLDER, LAST_UPDATED, LAST_UPDATED_ISO, OPERATOR, legalText as t, legalPaths, type LegalPageKey } from "@/lib/i18n/legal";
 import { Footer } from "../_landing/footer";
 import { HtmlLang } from "../_landing/html-lang";
 import { focusRing } from "../_landing/ui";
 
 /**
  * The privacy and terms pages: quiet reading pages in the landing's dark brand. Fully
- * static; the language comes from the route (/privacy vs /es/privacy), never a cookie.
+ * static and English only, like the landing (browsers offer Spanish speakers a translation;
+ * the old /es/privacy and /es/terms forward here, next.config.ts).
  */
 
-const other = (locale: Locale): Locale => (locale === "en" ? "es" : "en");
-
-/** Static metadata for one legal page in one language: title, description, canonical and the hreflang pair. */
-export function legalMetadata(page: LegalPageKey, locale: Locale): Metadata {
-  const p = legalDictionaries[locale][page];
-  const path = legalPaths[page][locale];
+/** Static metadata for one legal page: title, description, canonical. */
+export function legalMetadata(page: LegalPageKey): Metadata {
+  const p = t[page];
+  const path = legalPaths[page];
   return {
     title: p.title,
     description: p.metaDescription,
-    alternates: { canonical: path, languages: { en: legalPaths[page].en, es: legalPaths[page].es, "x-default": legalPaths[page].en } },
-    openGraph: { title: `${p.title} · Barber Master`, description: p.metaDescription, type: "article", url: path, locale: locale === "es" ? "es_US" : "en_US", images: [locale === "es" ? "/es/opengraph-image" : "/opengraph-image"] },
+    alternates: { canonical: path },
+    openGraph: { title: `${p.title} · Barber Master`, description: p.metaDescription, type: "article", url: path, locale: "en_US", images: ["/opengraph-image"] },
   };
 }
 
-const textLink = `inline-flex min-h-11 items-center rounded-md text-sm text-muted-foreground underline decoration-white/30 underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground ${focusRing}`;
-
-export function LegalPage({ page, locale }: { page: LegalPageKey; locale: Locale }) {
-  const t = legalDictionaries[locale];
+export function LegalPage({ page }: { page: LegalPageKey }) {
   const p = t[page];
-  const alt = other(locale);
   return (
     <ViewTransition default="none" enter={{ page: "page-in", default: "none" }} exit={{ page: "page-out", default: "none" }}>
-      <div lang={locale} className="landing min-h-screen overflow-x-clip antialiased">
-        <HtmlLang lang={locale} />
+      <div lang="en" className="landing min-h-screen overflow-x-clip antialiased">
+        <HtmlLang lang="en" />
         <a
           href="#main"
           className={`sr-only rounded-full bg-white px-4 py-2 text-sm font-medium text-black focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 ${focusRing}`}
@@ -45,12 +39,9 @@ export function LegalPage({ page, locale }: { page: LegalPageKey; locale: Locale
           {t.skipLink}
         </a>
         <header className="border-b border-border">
-          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-3">
-            <Link href={locale === "es" ? "/es" : "/?lang=en"} transitionTypes={["page"]} aria-label={t.back} className={`-ml-1 flex min-h-11 items-center rounded-md px-1 ${focusRing}`}>
+          <div className="mx-auto flex max-w-5xl items-center gap-4 px-6 py-3">
+            <Link href="/" transitionTypes={["page"]} aria-label={t.back} className={`-ml-1 flex min-h-11 items-center rounded-md px-1 ${focusRing}`}>
               <Wordmark />
-            </Link>
-            <Link href={legalPaths[page][alt]} hrefLang={alt} lang={alt} className={textLink}>
-              {t.otherLang}
             </Link>
           </div>
         </header>
@@ -59,7 +50,7 @@ export function LegalPage({ page, locale }: { page: LegalPageKey; locale: Locale
           <article className="max-w-[68ch]">
             <h1 className="text-balance text-4xl font-medium leading-[1.08] tracking-[-0.035em] sm:text-5xl">{p.title}</h1>
             <p className="mt-4 text-sm text-muted-foreground">
-              {t.updated}: <time dateTime={LAST_UPDATED_ISO}>{LAST_UPDATED[locale]}</time>
+              {t.updated}: <time dateTime={LAST_UPDATED_ISO}>{LAST_UPDATED}</time>
             </p>
             <p className="mt-8 text-pretty text-lg leading-relaxed text-foreground/90">{p.intro}</p>
 
@@ -95,7 +86,7 @@ export function LegalPage({ page, locale }: { page: LegalPageKey; locale: Locale
             </section>
           </article>
         </main>
-        <Footer locale={locale} t={landingDictionaries[locale]} />
+        <Footer t={landingText} />
       </div>
     </ViewTransition>
   );

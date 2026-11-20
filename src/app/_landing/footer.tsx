@@ -23,9 +23,7 @@ async function Year() {
  * The name set large (it links home), what it is and the way to talk to us; the page's sections
  * on the right; then © with the legal pages and the staff door.
  */
-export function Footer({ locale, t }: SectionProps) {
-  // The legal pages come in both languages: Spanish pages link to /es/privacy and /es/terms.
-  const prefix = locale === "es" ? "/es" : "";
+export function Footer({ t }: SectionProps) {
   const sections = [
     { href: "#how", label: t.nav.how },
     { href: "#setup", label: t.nav.setup },
@@ -38,8 +36,9 @@ export function Footer({ locale, t }: SectionProps) {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-[minmax(0,1fr)_auto] md:gap-16">
           <div>
             {/* A plain anchor on purpose: a <Link> to the page you are on does nothing, and this one must always land on the home page's top. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- a full load of / on purpose, see above */}
             <a
-              href={prefix || "/"}
+              href="/"
               aria-label={t.footerHome}
               className={`-ml-1 inline-flex min-h-12 items-center gap-3 rounded-lg px-1 text-foreground ${focusRing}`}
             >
@@ -80,17 +79,17 @@ export function Footer({ locale, t }: SectionProps) {
           <nav aria-label={t.footerLinks}>
             <ul className="flex flex-wrap items-center gap-x-6">
               <li>
-                <Link href={`${prefix}/privacy`} transitionTypes={["page"]} className={link}>
+                <Link href="/privacy" transitionTypes={["page"]} className={link}>
                   <span className={drawn}>{t.privacy}</span>
                 </Link>
               </li>
               <li>
-                <Link href={`${prefix}/terms`} transitionTypes={["page"]} className={link}>
+                <Link href="/terms" transitionTypes={["page"]} className={link}>
                   <span className={drawn}>{t.terms}</span>
                 </Link>
               </li>
               <li>
-                <Link href={`/login?lang=${locale}`} transitionTypes={["page"]} className={link}>
+                <Link href="/login" transitionTypes={["page"]} className={link}>
                   <span className={drawn}>{t.staffSignIn}</span>
                 </Link>
               </li>
