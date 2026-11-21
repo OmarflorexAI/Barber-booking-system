@@ -158,23 +158,35 @@ test.describe("desktop", () => {
     await expect(page.getByRole("button", { name: "Ocultar menú lateral" })).toBeVisible();
   });
 
-  test("Settings picks the app's language, and it sticks", async ({ page, context }) => {
+  test("Settings → Language picks the app's language, and it sticks", async ({ page, context }) => {
     await signIn(page);
     await page.goto("/app/settings");
-    const picker = page.getByRole("radiogroup", { name: "Language" });
-    await expect(picker.getByRole("radio", { name: "English" })).toHaveAttribute("aria-checked", "true");
-    await picker.getByRole("radio", { name: "Español" }).click();
-    await expect(page.getByRole("heading", { level: 1, name: "Ajustes" })).toBeVisible();
+    // A row in the list, after Export clients, showing the current language.
+    const rows = page.locator("main ul").first().getByRole("link");
+    await expect(rows.last()).toHaveAccessibleName(/^Language/);
+    await expect(page.getByTestId("row-state-language")).toHaveText("English");
+    await rows.last().click();
+    await expect(page).toHaveURL(/\/app\/settings\/language$/);
+
+    const list = page.getByRole("radiogroup", { name: "Language" });
+    await expect(list.getByRole("radio")).toHaveText(["English", "Español"]);
+    await expect(list.getByRole("radio", { name: "English" })).toHaveAttribute("aria-checked", "true");
+    await list.getByRole("radio", { name: "Español" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Idioma" })).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("lang", "es");
     await expect(page.getByRole("radiogroup", { name: "Idioma" }).getByRole("radio", { name: "Español" })).toHaveAttribute("aria-checked", "true");
     expect((await context.cookies()).find((c) => c.name === "lang")?.value).toBe("es");
-    // Other pages follow it; arrow keys move the choice back.
-    await page.goto("/app/day");
+
+    // Other pages follow it, and the Settings row says so.
+    await page.getByRole("link", { name: "Ajustes" }).first().click();
+    await expect(page.getByTestId("row-state-language")).toHaveText("Español");
     await expect(page.getByRole("button", { name: "Ocultar menú lateral" })).toBeVisible();
-    await page.goto("/app/settings");
-    await page.getByRole("radiogroup", { name: "Idioma" }).getByRole("radio", { name: "Español" }).focus();
-    await page.keyboard.press("ArrowLeft");
-    await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+
+    // Arrow keys move the choice back.
+    await page.goto("/app/settings/language");
+    await page.getByRole("radio", { name: "Español" }).focus();
+    await page.keyboard.press("ArrowUp");
+    await expect(page.getByRole("heading", { level: 1, name: "Language" })).toBeVisible();
     await expect(page.getByRole("radiogroup", { name: "Language" }).getByRole("radio", { name: "English" })).toBeFocused();
   });
 

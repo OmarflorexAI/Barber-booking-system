@@ -1,5 +1,10 @@
 export type Locale = "en" | "es";
 export const LOCALES: Locale[] = ["en", "es"];
+/**
+ * Each language's name, written in that language (the Settings → Language list). Adding a
+ * language: its dictionary below, its code in Locale and LOCALES, and its name here.
+ */
+export const LOCALE_NAMES: Record<Locale, string> = { en: "English", es: "Español" };
 export const LOCALE_COOKIE = "lang";
 
 const en = {
@@ -388,8 +393,6 @@ const en = {
         "Export clients",
       ],
       shop: "Shop",
-      /** The Settings row that picks the app's language (saved on this device). */
-      language: "Language",
     },
   },
   // The Shop tab (/app/shop): the Owner's Barbers, Services and Shop profile in one place.
@@ -429,6 +432,12 @@ const en = {
       payments: { title: "Online payments", desc: "Let Clients pay when they book." },
       link: { title: "Booking link & QR code", desc: "Share your link or print a QR code for the counter." },
       export: { title: "Export clients", desc: "Download your Clients as a CSV file." },
+      language: { title: "Language", desc: "The language this app is shown in." },
+    },
+    // /app/settings/language: the app's language, saved on this device.
+    language: {
+      title: "Language",
+      intro: "Pick the language for this app. It's saved on this phone or computer. Clients pick their own language on your booking page.",
     },
     shop: {
       title: "Shop profile",
@@ -1191,7 +1200,6 @@ const es: Dictionary = {
         "Exportar clientes",
       ],
       shop: "Barbería",
-      language: "Idioma",
     },
   },
   shopTab: {
@@ -1230,6 +1238,11 @@ const es: Dictionary = {
       payments: { title: "Pagos en línea", desc: "Que los clientes paguen al reservar." },
       link: { title: "Enlace de citas y código QR", desc: "Comparte tu enlace o imprime un código QR para el mostrador." },
       export: { title: "Exportar clientes", desc: "Descarga tus clientes en un archivo CSV." },
+      language: { title: "Idioma", desc: "El idioma en que ves esta app." },
+    },
+    language: {
+      title: "Idioma",
+      intro: "Elige el idioma de esta app. Se guarda en este teléfono o computadora. Los clientes eligen su propio idioma en tu página de citas.",
     },
     shop: {
       title: "Perfil de la barbería",

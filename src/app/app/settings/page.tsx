@@ -7,9 +7,9 @@ import { ADMIN_PANEL_READY } from "../_shell/staff";
 import { RowsSkeleton } from "../_shell/skeleton";
 import { shopPlan } from "@/server/booking-engine/plans";
 import { getSql } from "@/server/db";
+import { LOCALE_NAMES } from "@/lib/i18n/dictionaries";
 import { SettingsIcon, type SettingsKey } from "./_icons";
 import { focusRing, ownerContext } from "./_owner";
-import { LanguagePicker } from "./language-picker";
 import { ProRow } from "./upgrade";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -19,8 +19,8 @@ export const metadata: Metadata = { title: "Settings" };
  * is built link to it; the others stay plain, muted and marked "Soon" (no dead links).
  * Under the title, the Shop's plan (M7). On Free, the Pro rows (online payments, Client texts,
  * Telegram alerts) carry a gray "Pro" tag and open the "Ask us to upgrade" sheet instead.
- * At the bottom: the Shop's name, the app's language (English / Español, saved on this device),
- * the Platform admin link when it applies, and Sign out.
+ * The Language row shows the app's current language and opens /app/settings/language.
+ * At the bottom: the Shop's name, the Platform admin link when it applies, and Sign out.
  */
 export default function SettingsPage() {
   return (
@@ -47,6 +47,7 @@ const ROWS: { key: RowKey; href?: string; pro?: true }[] = [
   { key: "telegram", pro: true },
   { key: "link", href: "/app/settings/link" },
   { key: "export", href: "/app/settings/export" },
+  { key: "language", href: "/app/settings/language" },
 ];
 
 const row = "-mx-2 flex min-h-14 items-center gap-4 px-2 py-3";
@@ -102,6 +103,11 @@ async function Settings() {
               {href ? (
                 <Link href={href} className={`${row} rounded-md transition-colors hover:bg-surface ${focusRing}`}>
                   {body}
+                  {key === "language" && (
+                    <span className="shrink-0 text-sm text-muted" lang={locale} data-testid="row-state-language">
+                      {LOCALE_NAMES[locale]}
+                    </span>
+                  )}
                   <ChevronIcon className="h-5 w-5 shrink-0 text-muted" />
                 </Link>
               ) : locked ? (
@@ -126,12 +132,6 @@ async function Settings() {
         <li className="flex min-h-14 items-center justify-between gap-4 border-b border-line">
           <span className="font-medium">{t.shell.settings.shop}</span>
           <span className="min-w-0 truncate text-muted">{membership.shopName}</span>
-        </li>
-        <li className="flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line py-2">
-          <span id="settings-language" className="font-medium">
-            {t.shell.settings.language}
-          </span>
-          <LanguagePicker locale={locale} labelledBy="settings-language" />
         </li>
         {staff.isPlatformAdmin && ADMIN_PANEL_READY && (
           <li className="border-b border-line">

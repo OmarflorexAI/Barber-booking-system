@@ -2,7 +2,7 @@
  * Settings row icons: 24px line drawings in the shell's one 1.5px round-capped stroke
  * (DESIGN.md → "Shape, icons and motion in the app").
  */
-export type SettingsKey = "services" | "hours" | "barbers" | "rules" | "blocklist" | "payments" | "link" | "export";
+export type SettingsKey = "services" | "hours" | "barbers" | "rules" | "blocklist" | "payments" | "link" | "export" | "language";
 
 const base = {
   viewBox: "0 0 24 24",
@@ -73,6 +73,13 @@ const paths: Record<SettingsKey, React.ReactNode> = {
     <>
       <path d="M12 4v10M8 10.5l4 4 4-4" />
       <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+    </>
+  ),
+  // A globe.
+  language: (
+    <>
+      <circle cx="12" cy="12" r="8.25" />
+      <path d="M3.75 12h16.5M12 3.75c2.2 2.3 3.3 5 3.3 8.25s-1.1 5.95-3.3 8.25c-2.2-2.3-3.3-5-3.3-8.25S9.8 6.05 12 3.75Z" />
     </>
   ),
 };
