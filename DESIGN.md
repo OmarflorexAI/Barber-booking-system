@@ -378,7 +378,7 @@ Everything else is grayscale. In particular the **"Paid online" tag is gray**, w
 - A Platform admin who is also Shop staff gets a switch between `/admin` and `/app` in the top nav (and in Settings on the `/app` side).
 - **After sign-in:** Owner → Today, Platform admin → `/admin` (or `/app` when also Shop staff).
 - Tabs: icon (24px line) plus a label in both languages, the active tab in `--ink` with a filled icon, the others `--muted`. The tab bar sits on `--surface` with a `--line` top edge and respects the phone's safe area.
-- Every app header holds: the page or Shop name on the left; the theme switch on the right. The Owner app picks its language on the Settings page (a Language row: English / Español), not in the header or sidebar; login, `/setup` and the Client pages keep their EN/ES button.
+- Every app header holds: the page or Shop name on the left; the theme switch on the right. The Owner app picks its language on Settings → Language (a row in the Settings list showing the current language, opening a list of languages, each named in itself, with a check on the chosen one), not in the header or sidebar; login, `/setup` and the Client pages keep their EN/ES button.
 - In the desktop sidebar the theme switch lies down when the panel is open and stands up in the collapsed rail. It changes shape only out of sight (under the panel's clip, see `.sidebar-moving` in `globals.css`); its thumb never slides between the two shapes.
 
 ### Bottom sheets for row actions
